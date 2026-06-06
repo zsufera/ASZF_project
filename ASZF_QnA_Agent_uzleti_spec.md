@@ -24,6 +24,13 @@ Belső **ügyintézői copilot** B2C panaszokhoz: a hatályos ÁSZF-re, szerződ
 | **PoC csatornák** | Mindhárom: email, chat, telefon (eltérő érettséggel) |
 | **Jóváhagyás** | v1: egyszintű (ÜI); többszintű (supervisor/jogi) betervezve, későbbi fázis |
 | **Adatok** | Valós, anonimizált ÁSZF + panasz-email készlet |
+| **Iparág / forrás** | Telekom — ONE (one.hu/aszf): ONE törzs, helyi kábeles, AH Média, Invitech ÁSZF-jei + mellékletek + „Egyéb felhasználási feltételek"; mind feldolgozva |
+| **Osztályozás** | Az agent nulláról osztályoz (önálló POC); előosztályozó később szimulálható |
+| **Eszkaláció** | Emelt ügy supervisor-sorba kerül az appban (valódi átadás) |
+| **Konfidencia** | Konfigurálható küszöb, alatta automatikus emelés |
+| **Kimeneti módok** | (1) teljes AI-automata → kötelező disclaimer; (2) human-in-the-loop alapeset → disclaimer nem kötelező; valós kiküldés nincs (mock) |
+
+> A technikai megvalósítás és a teljes tech-stack: lásd [ASZF_QnA_Agent_megvalositasi_terv.md](ASZF_QnA_Agent_megvalositasi_terv.md).
 
 ### Alapelvek (megerősített, nem felülbírálható)
 
@@ -38,35 +45,44 @@ Belső **ügyintézői copilot** B2C panaszokhoz: a hatályos ÁSZF-re, szerződ
 ```mermaid
 flowchart TD
     subgraph inbound [Beeso_csatornak]
-        Email[Email_eloosztalyozva]
+        Email[Email_beerkezik]
         Chat[Chat]
         Phone[Telefon]
     end
     subgraph realtime [Realtime_UI_tamogatas]
         Copilot[UI_kerdez_feluleten]
-        Transcript[Feliratozas_kesobb]
+        Transcript[Feliratozas_szimulalt]
     end
     subgraph emailFlow [Email_feldolgozas]
-        Digitize[Papir_digitalizalas]
-        PreProc[Tartalmi_elofeldolgozas]
+        Lang[Nyelv_es_tipus_felismeres]
+        Mask[GDPR_maszkolas]
+        Classify[Osztalyozas_nullarol]
         DocMap[Szabalyzat_terkep_UI_nak]
-        Template[Sablon_javaslat]
+        Template[Sablon_es_intezkedes_javaslat]
         FollowUp[UI_QandA_ciklus]
         GenLetter[Valaszlevel_generalas]
+        Verify[Ellenorzo_groundedness]
+    end
+    subgraph escalation [Emeles]
+        SupQueue[Supervisor_sor]
     end
     subgraph close [Zaras]
         Audit[Naplozas]
-        Approve[UI_jovahagyas]
-        SendOut[Kuldes]
+        Approve[UI_jovahagyas_es_unmask]
+        SendOut[Kuldes_mock]
+        Feedback[UI_visszajelzes]
     end
     Phone --> Copilot
     Chat --> Copilot
     Phone -.-> Transcript
-    Email --> Digitize --> PreProc --> DocMap --> Template --> FollowUp --> GenLetter
+    Email --> Lang --> Mask --> Classify --> DocMap --> Template --> FollowUp --> GenLetter --> Verify
+    Classify -->|"alacsony konfidencia / trigger"| SupQueue
+    Verify --> Audit
     Copilot --> Audit
-    GenLetter --> Audit
-    Audit --> Approve --> SendOut
+    Audit --> Approve --> SendOut --> Feedback
 ```
+
+> A folyamat üzleti szintű; a részletes, lépésenkénti agent-gráf (node-ok, eszközhívások, állapot): lásd [ASZF_QnA_Agent_megvalositasi_terv.md](ASZF_QnA_Agent_megvalositasi_terv.md) Fázis 3.
 
 ---
 
@@ -102,15 +118,15 @@ A „Forrás” oszlop: **Fix policy** (alapelvből egyértelmű) / **Dok-param�
 
 | # | Pont | Javaslat | Forrás |
 |---|------|----------|--------|
-| 1 | Emelési triggerlista | Kötelező emelés: egyedi szerződésre utaló kérdés, vitatott összeg, ismétlődő panasz, fogyasztóvédelmi határidő közeleg, jogi/hatósági/média fenyegetés, alacsony konfidencia. | Dok-paraméterezés + Tisztázandó (konfidencia-küszöb) |
+| 1 | Emelési triggerlista | Kötelező emelés: egyedi szerződésre utaló kérdés, vitatott összeg, ismétlődő panasz, fogyasztóvédelmi határidő közeleg, jogi/hatósági/média fenyegetés, alacsony konfidencia. **Eldőlt:** konfigurálható konfidencia-küszöb, alatta automatikus emelés. | Dok-paraméterezés + Fix policy (küszöb konfigból) |
 | 2 | Kimenő levél jóváhagyási workflow | Minden kimenőt ember hagy jóvá. v1: egyszintű ÜI. Többszintű (supervisor/jogi) betervezve, későbbi fázis. | Fix policy (PoC: egyszintű) + Roadmap |
 | 3 | Kötelező behivatkozás panasztípusonként | Agent javasol behivatkozást és figyelmeztet, ha kihagyják; a listát szabályzatokból állítja össze. | Dok-paraméterezés |
 | 4 | Osztályozás felülbírálás | ÜI bármikor felülírhatja; bizonytalanságnál agent több kategóriát + forrást javasol. | Fix policy |
 | 5 | Egyedi szerződés határ | Egyedi előfizetésre utaló jel → „egyedi szerződést érinthet” + emelés; ÁSZF/sablon-válasznál mindig disclaimer. | Fix policy + Dok-paraméterezés |
 | 6 | Sablonválasztás | Agent csak javasol (rangsorolva), nem választ automatikusan; ÜI dönt és szerkeszt. | Fix policy |
 | 7 | Draft verzió | Minden iteráció naplózott verzió; explicit „Jóváhagyom kiküldésre” rögzíti a hivatalos szöveget. | Fix policy |
-| 8 | Csatorna-prioritás | Ügy-azonosító alapú összevonás; vezető csatorna a jóváhagyott válaszé. | Tisztázandó (source of truth) |
-| 9 | Disclaimer szöveg | Fix, jogilag jóváhagyott szöveg minden kimenő tartalmon; agent szövegjavaslatot ad. | Dok-paraméterezés + Tisztázandó (jogi jóváhagyás) |
+| 8 | Csatorna-prioritás | Ügy-azonosító alapú összevonás; vezető csatorna a jóváhagyott válaszé. **Eldőlt:** manuális összekapcsolás ügy-azonosítóval a POC-ban (auto-dedup később). | Fix policy (PoC: manuális) |
+| 9 | Disclaimer szöveg | Fix, jogilag jóváhagyott szöveg; agent szövegjavaslatot ad. **Eldőlt:** jogilag óvatos draftot adunk, üzleti/jogi véglegesíti; teljes AI-automata módban kötelező, human-in-the-loop módban opcionális. | Dok-paraméterezés + Tisztázandó (jogi jóváhagyás) |
 | 10 | Dokumentum-frissítés | Verziószám + hatályba lépés dátuma; frissítéskor újra-paraméterezés. | Tisztázandó (governance) |
 
 ### Betanulási / paraméterezési fázis
@@ -122,19 +138,23 @@ A „Dok-paraméterezés” pontoknál az agent a feltöltött dokumentumokból 
 ## 6. PoC üzleti hatókör
 
 **Benne:**
-- Valós, anonimizált dokumentumkészlet: aktuális ÁSZF + panaszkezelési szabályzat + 1–2 szerződéssablon, valós anonimizált panasz-email készlet a validációhoz.
-- Chat + telefon copilot (manuális bevitel), kizárólag ÜI-segítségként.
-- Email (elektronikus): szabályzat-térkép (belső) + sablon-javaslat + iteratív Q&A.
-- Forráshivatkozás minden válasznál.
-- Emelési szabály bizonytalan / egyedi szerződés esetén.
-- Egyszintű ÜI jóváhagyás minden kimenő ügyfél-tartalomnál (többszintű betervezve).
-- Alap audit: kérdés–válasz–forrás napló.
+- **Dokumentumkészlet**: a ONE összes letöltött ÁSZF-je (ONE törzs, helyi kábeles, AH Média, Invitech) + mellékletek + „Egyéb felhasználási feltételek", §-szintű indexeléssel; `dok_tipus` megjelöléssel a hivatkozásnál.
+- **Panasz-emailek**: ~10 generált magyar, anonim minta a fix taxonómia kategóriáira + legalább 1 nem-panasz és 1 idegen nyelvű példa; valós email beilleszthető/feltölthető.
+- **Csatornák**: email (teljes flow) + chat/telefon copilot (manuális bevitel / beilleszthető átirat, feliratozás szimulált), kizárólag ÜI-segítségként.
+- **Email-flow**: nyelv-/típusfelismerés → GDPR-maszkolás → osztályozás (nulláról) → szabályzat-térkép → sablon- és intézkedés-javaslat → iteratív Q&A → válaszlevél → groundedness-ellenőrzés.
+- **Forráshivatkozás** minden válasznál (§ + szó szerinti szöveg + `dok_tipus`), jogi szöveg mellett közérthető magyarázat.
+- **Emelés**: supervisor-sorba, konfigurálható konfidencia-küszöb alatt / triggerre (egyedi szerződés, vitatott összeg, SLA-lejárat stb.).
+- **Intézkedés-javaslat** kockázat-szintezve (engedélyezett: önkiszolgáló/tájékoztatás, visszahívás/technikus).
+- **Kimeneti módok**: (1) teljes AI-automata (kötelező disclaimer), (2) human-in-the-loop alapeset; kiküldés mock.
+- **Szerepkörök**: ÜI + supervisor (emelt ügyek sora + összesített statisztika), konfig-userlistával.
+- **Audit + Evaluation**: kérdés–válasz–forrás–jóváhagyó + modell/prompt/ÁSZF-verzió napló; referencia-mentes kiértékelő UI.
+- **GDPR/biztonság**: visszafordítható PII-maszkolás, EU-rezidens felhős LLM (no-training), RBAC, napló-redakció.
 
 **Üzletileg később / szimulált PoC-ben:**
-- Papír digitalizálás + OCR.
-- Feliratozás-alapú telefon.
-- rsz. szolgáltatás-azonosító + előzmény (n2h).
-- Automatikus email/posta kiküldés.
+- Papír digitalizálás + OCR (email-mellékletek teljes feldolgozása).
+- Feliratozás-alapú telefon (most szimulált átirat).
+- rsz. szolgáltatás-azonosító + előzmény (n2h); automatikus dedup többcsatornás ügyekhez.
+- Automatikus email/posta kiküldés; többszintű (supervisor/jogi) jóváhagyás; admin/„betanulási" UI.
 
 ---
 
@@ -161,10 +181,62 @@ A „Dok-paraméterezés” pontoknál az agent a feltöltött dokumentumokból 
 
 ## 8. Nyitott kérdések (tisztázandó)
 
-- **A. Szervezeti kontextus:** iparág/szolgáltatás (telekom, energia, e-ker, bank, SaaS); meglévő FAQ/wiki/sablon-katalógus.
-- **B. Governance:** tudásbázis tulajdonosa (jogi/compliance); ÁSZF-frissítés gyakorisága/SLA; ki hagyja jóvá élesítés előtt.
-- **C. Elfogadási küszöb:** pl. ≥80% gold standard; hackathon/fix határidő.
-- **E. Integrációs határok:** előosztályozó agent kimenete (kategória, confidence, szolgáltatás-azonosító); source-of-truth rendszer (ticketing/rsz./irattár).
+- **A. Szervezeti kontextus:** **Eldőlt:** iparág = telekom, forrás = ONE (one.hu/aszf). Meglévő FAQ/wiki/sablon-katalógus: nincs, válasz-sablonokat LLM-mel generálunk és emberi jóváhagyással validálunk.
+- **B. Governance:** tudásbázis tulajdonosa (jogi/compliance); ÁSZF-frissítés gyakorisága/SLA; ki hagyja jóvá élesítés előtt. (Továbbra is tisztázandó az éles bevezetéshez.)
+- **C. Elfogadási küszöb:** **Eldőlt:** nincs előzetes gold set; referencia-mentes (RAGAS-szerű) kiértékelés — groundedness, citation support, relevancy, retrieval-support — LLM-as-judge-dzsal.
+- **E. Integrációs határok:** **Eldőlt:** a POC nulláról osztályoz (nincs külső előosztályozó-függés); source-of-truth = manuális ügy-azonosító, a vezető csatorna a jóváhagyott válaszé. Ticketing/CRM/rsz. integráció későbbi fázis.
+
+### 8.1 Eldőlt funkcionális döntések (2. kör)
+
+- **Nem-panasz email:** felismerés + rövid válaszjavaslat + „nem panasz" címke.
+- **Hatókörön kívüli / megválaszolhatatlan kérdés:** elutasítás + emelés, nincs „biztos" állítás.
+- **Email-mellékletek:** POC-ban csak jelzés (OCR későbbi fázis).
+- **Szabályzat-térkép (ÜI nézet):** releváns §-ok + kötelező behivatkozások + alkalmazandó szabályzatok, forrással.
+- **Kötelező behivatkozás kihagyása:** agent figyelmeztet, de nem blokkol (ÜI felel).
+- **Levél hangneme:** hivatalos, udvarias magyar, konfigurálható.
+- **Dokumentum-verziókezelés:** egy aktuális verzió, verzió/dátum metaadattal (elavult-kezelés később).
+- **GDPR:** automatikus, visszafordítható PII-maszkolás feldolgozás előtt; csak maszkolt szöveg megy (felhős) LLM-be.
+
+### 8.2 Eldőlt funkcionális döntések (3. kör)
+
+- **Hatókör:** tájékoztatás + javasolt intézkedés, kockázat-szintezett végrehajtási modellel (lásd 8.3).
+- **ÜI-visszajelzés:** strukturált értékelés (jó/rossz, rossz forrás), betanulást és KPI-t táplál.
+- **Válaszlevél:** teljes, formázott email (tárgy, megszólítás, törzs, intézkedés, disclaimer, aláírás).
+- **Telefon/chat copilot:** beszédpontok + forráshivatkozás (nem szó szerinti script).
+- **Jogi nyelv:** szó szerinti § + közérthető magyar magyarázat.
+- **Ügy-státusz:** új → folyamatban → emelve → jóváhagyásra vár → lezárva.
+- **Prioritás:** agent javasol (sürgős/normál), inbox-rendezés eszerint.
+- **SLA:** figyelmeztetés + automatikus emelés supervisorhoz lejáratkor.
+- **Tudás-frissítés:** manuális újraindexelés + verzió/dátum kijelzés.
+- **Idegen nyelvű email:** felismerés + jelzés, de magyar válasz.
+- **ÜI szerkeszthet:** levélszöveg + forrás-hivatkozások (hozzáadás/elvétel).
+- **Dokumentumtípus a hivatkozásnál:** ÁSZF / melléklet / „Egyéb felhasználási feltételek" megjelölve.
+
+### 8.3 Intézkedés-javaslatok végrehajtása (eldőlt)
+
+- **Kockázat-szintezett modell:** alacsony kockázatú intézkedés automatikusan végrehajtható (mock) a teljes AI-automata módban; közepes/magas kockázatú mindig emberi jóváhagyást igényel.
+- **Engedélyezett intézkedés-típusok a POC-ban:** (a) önkiszolgáló-link / GYIK / tájékoztatás, (b) visszahívás / technikus időpont ajánlása. Jóváírás/kompenzáció és szerződésfelmondás NEM engedélyezett intézkedésként — ezeknél az agent emel.
+- **Audit:** minden javasolt és (mock) végrehajtott intézkedés naplózva (ki, mikor, mit, mely módban).
+- A POC-ban valós CRM/számlázó hiányában a végrehajtás mock.
+
+### 8.4 Compliance és adatbiztonság (eldőlt)
+
+**POC-ban megvalósítva:**
+- **Felhős LLM EU adatrezidencia:** Azure OpenAI (EU) + DPA + no-training; csak maszkolt szöveg távozik. On-prem módban teljes egress-tiltás.
+- **De-identifikációs térkép (token↔PII):** titkosított, elkülönített tár, hozzáférés-korlát, rövid megőrzés.
+- **Prompt-injection védelem:** input-szanitálás + elhatárolás + instrukció-hierarchia + kimenet-/groundedness-validáció.
+- **RBAC + PII-láthatóság:** maszkolatlan PII csak adott szerepkörnek, hozzáférés naplózva.
+- **Napló-redakció:** logokban csak maszkolt szöveg.
+- **GDPR Art. 22:** teljes-automata mód alacsony kockázatra korlátozva, emberi felülvizsgálat + átláthatósági tájékoztatás + naplózás.
+- **DPIA + adatáramlási térkép:** könnyű DPIA POC-leszállítandóként.
+
+**Tudatos POC-egyszerűsítés (prod-roadmap):**
+- Titkosítás nyugalmi állapotban: POC = host lemeztitkosítás; prod = SQLCipher/kezelt tárak.
+- Megőrzés/törlés: POC = politika dokumentálva; prod = auto-purge + érintetti törlés (Art. 17).
+- Audit: POC = standard tábla; prod = append-only / hash-láncolt.
+- Telekom Eht. (előfizetői/forgalmi adat): POC = standard PII-kezelés; prod = kiemelt kezelés.
+
+**Governance:** titokkezelés (POC `.env`, prod vault); modell-/prompt-/ÁSZF-verzió rögzítése a válaszhoz; ÜI/supervisor feladatszétválasztás.
 
 ---
 
