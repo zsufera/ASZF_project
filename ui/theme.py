@@ -84,6 +84,8 @@ def theme_css() -> str:
   padding:0 7px; font-weight:600; margin:0 2px; }}
 .one-card {{ background:#fff; border:1px solid var(--one-line); border-radius:12px;
   padding:12px; margin-bottom:10px; }}
+.one-card__title {{ font-weight:700; font-size:13px; color:var(--one-ink);
+  margin-bottom:8px; }}
 .one-src {{ border-left:3px solid var(--one-turq); background:#FbFdfd;
   border-radius:0 8px 8px 0; padding:7px 9px; margin-bottom:7px; }}
 .one-src__sec {{ font-weight:700; color:var(--one-turq-d); font-size:12px; }}
