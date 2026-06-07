@@ -48,3 +48,19 @@ def test_case_view_renders_with_timeline():
         cv.render_case_view("1234", "ui_demo", "hitl", role="ui")
     at = AppTest.from_function(script).run()
     assert not at.exception
+
+
+def test_inbox_view_renders_items():
+    def script():
+        from unittest import mock
+        import ui.views.inbox_view as iv
+        iv.api_client = mock.MagicMock()
+        iv.api_client.ApiError = RuntimeError
+        iv.api_client.list_inbox.return_value = {"items": [
+            {"case_id": "1", "category_label": "Számlázás", "priority": "surgos",
+             "status_label": "Új", "channel_label": "email", "subject": "Téves számla",
+             "sla_days_remaining": 2, "escalated": False, "confidence": 0.8},
+        ]}
+        iv.render_inbox_view()
+    at = AppTest.from_function(script).run()
+    assert not at.exception
