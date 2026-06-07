@@ -6,6 +6,8 @@ POC-level belső copilot telekom ügyfélszolgálathoz:
 - eszkalációs döntéstámogatás
 - auditálható, human-in-the-loop működés
 
+Fejlesztés közben kötelező iránytű: [FEJLESZTESI_GUARDRAILS.md](FEJLESZTESI_GUARDRAILS.md).
+
 ## Gyors indulás
 
 1. Python környezet és csomagok:
