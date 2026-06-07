@@ -119,6 +119,26 @@ def make_client() -> QdrantClient:
     return QdrantClient(url=settings.qdrant_url)
 
 
+# ---------------------------------------------------------------------------
+# Process-level singleton — helyi módban a HNSW index ~615 MB-os fájlból tölt;
+# minden egyes make_client() + close() ciklus újra betölti. A singleton egyszer
+# nyitja meg és folyamatosan életben tartja a backend folyamat alatt.
+# ---------------------------------------------------------------------------
+_shared_client: QdrantClient | None = None
+
+
+def get_shared_client() -> QdrantClient:
+    """Return a process-level singleton QdrantClient.
+
+    Local mode: avoids reloading the HNSW index on every retrieval call.
+    Server mode: reuses the HTTP connection pool.
+    """
+    global _shared_client
+    if _shared_client is None:
+        _shared_client = make_client()
+    return _shared_client
+
+
 def ensure_collection(
     client: QdrantClient,
     collection_name: str = DEFAULT_COLLECTION,
