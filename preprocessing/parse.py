@@ -15,6 +15,10 @@ from preprocessing.manifest import DEFAULT_OUTPUT_PATH, build_manifest, write_ma
 DEFAULT_PAGES_OUTPUT = Path("data/processed/parsed_pages.jsonl")
 DEFAULT_CHUNKS_OUTPUT = Path("data/processed/chunks.jsonl")
 
+# text-embedding-3-large: 8192 token limit. Hungarian ≈ 4 chars/token → 25 000 chars
+# gives ~6250 tokens, leaving ~25% headroom.
+MAX_CHUNK_CHARS = 25_000
+
 SECTION_PATTERN = re.compile(
     r"(?m)^\s*(?P<section>(?:\d+(?:\.\d+){0,4}|[IVXLCDM]+)\.?\s+.+|(?:\d+\.\s*)?[§]\s*\d+.*)$"
 )
@@ -113,6 +117,69 @@ def extract_cross_refs(text: str) -> list[str]:
     return sorted(refs)
 
 
+def _split_text(text: str, max_chars: int) -> list[str]:
+    """Split text at natural boundaries (paragraphs → lines → chars) to stay under max_chars."""
+    if len(text) <= max_chars:
+        return [text]
+
+    parts: list[str] = []
+    current = ""
+
+    def _flush(buf: str) -> str:
+        if buf.strip():
+            parts.append(buf)
+        return ""
+
+    for para in re.split(r"\n\n+", text):
+        candidate = (current + "\n\n" + para).lstrip("\n") if current else para
+        if len(candidate) <= max_chars:
+            current = candidate
+            continue
+        current = _flush(current)
+        if len(para) <= max_chars:
+            current = para
+            continue
+        # Para itself is too long — split at line boundaries
+        for line in para.splitlines():
+            candidate = (current + "\n" + line).lstrip("\n") if current else line
+            if len(candidate) <= max_chars:
+                current = candidate
+                continue
+            current = _flush(current)
+            if len(line) <= max_chars:
+                current = line
+                continue
+            # Single line is too long — hard split as last resort
+            for i in range(0, len(line), max_chars):
+                parts.append(line[i : i + max_chars])
+
+    _flush(current)
+    return [p for p in parts if p.strip()]
+
+
+def _maybe_split_chunk(chunk: Chunk, max_chars: int = MAX_CHUNK_CHARS) -> list[Chunk]:
+    """Return chunk unchanged if short enough, otherwise sub-split preserving all metadata."""
+    if len(chunk.text) <= max_chars:
+        return [chunk]
+    sub_texts = _split_text(chunk.text, max_chars)
+    return [
+        Chunk(
+            chunk_id=f"{chunk.chunk_id}_sub{idx:03d}",
+            doc_id=chunk.doc_id,
+            szolgaltato=chunk.szolgaltato,
+            dok_tipus=chunk.dok_tipus,
+            dok_cim=chunk.dok_cim,
+            paragrafus_szam=chunk.paragrafus_szam,
+            szulo_szakasz=chunk.szulo_szakasz,
+            oldalszam=chunk.oldalszam,
+            cross_refs=chunk.cross_refs,
+            source_file=chunk.source_file,
+            text=part,
+        )
+        for idx, part in enumerate(sub_texts, start=1)
+    ]
+
+
 def chunk_pages(document: dict[str, Any], pages: list[ParsedPage]) -> list[Chunk]:
     chunks: list[Chunk] = []
     for page in pages:
@@ -121,21 +188,20 @@ def chunk_pages(document: dict[str, Any], pages: list[ParsedPage]) -> list[Chunk
                 continue
             resolved_title = section_title or extract_section_title(section_text)
             chunk_id = f"{document['doc_id']}_p{page.page_number:04d}_s{section_index:03d}"
-            chunks.append(
-                Chunk(
-                    chunk_id=chunk_id,
-                    doc_id=document["doc_id"],
-                    szolgaltato=document["szolgaltato"],
-                    dok_tipus=document["dok_tipus"],
-                    dok_cim=document["dok_cim"],
-                    paragrafus_szam=extract_paragraph_number(resolved_title),
-                    szulo_szakasz=resolved_title,
-                    oldalszam=page.page_number,
-                    cross_refs=extract_cross_refs(section_text),
-                    source_file=document["local_path"],
-                    text=section_text,
-                )
+            base_chunk = Chunk(
+                chunk_id=chunk_id,
+                doc_id=document["doc_id"],
+                szolgaltato=document["szolgaltato"],
+                dok_tipus=document["dok_tipus"],
+                dok_cim=document["dok_cim"],
+                paragrafus_szam=extract_paragraph_number(resolved_title),
+                szulo_szakasz=resolved_title,
+                oldalszam=page.page_number,
+                cross_refs=extract_cross_refs(section_text),
+                source_file=document["local_path"],
+                text=section_text,
             )
+            chunks.extend(_maybe_split_chunk(base_chunk))
     return chunks
 
 
