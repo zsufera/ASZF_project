@@ -4,6 +4,8 @@ from typing import Any
 
 import streamlit as st
 
+from ui import theme
+
 
 def priority_badge(priority: str | None) -> str:
     if priority == "surgos":
@@ -119,3 +121,32 @@ def highlight_inbound(text: str, chunks: list[dict[str, Any]]) -> str:
                 1,
             )
     return highlighted
+
+
+def case_badges_html(case: dict[str, Any]) -> str:
+    """Színkódolt One badge-sor egy ügyhöz/inbox-sorhoz (HTML fragmentum)."""
+    parts: list[str] = []
+    if case.get("category_label"):
+        parts.append(theme.badge_html("category", case["category_label"]))
+    if case.get("priority") == "surgos":
+        parts.append(theme.badge_html("priority", "surgos"))
+    confidence = case.get("confidence")
+    if confidence is not None:
+        parts.append(theme.badge_html("confidence", f"Konf {confidence:.2f}"))
+    if case.get("escalated"):
+        parts.append(theme.badge_html("escalation", "⚠ Eszkaláció"))
+    if case.get("channel_label"):
+        parts.append(theme.badge_html("channel", case["channel_label"]))
+    if case.get("status_label"):
+        parts.append(theme.badge_html("status", case["status_label"]))
+    return " ".join(parts)
+
+
+def card(title: str | None = None):
+    """One-kártya konténer context managerként: `with components.card('Cím'):`."""
+    container = st.container(border=True)
+    if title:
+        container.markdown(
+            f"<div class='one-card__title'>{title}</div>", unsafe_allow_html=True
+        )
+    return container
