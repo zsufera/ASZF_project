@@ -1,0 +1,7 @@
+users:
+  - username: ui_demo
+    role: ui
+    password_hash: "$2b$12$replace.with.real.hash.for.demo.user"
+  - username: supervisor_demo
+    role: supervisor
+    password_hash: "$2b$12$replace.with.real.hash.for.supervisor.user"

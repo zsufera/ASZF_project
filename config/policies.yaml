@@ -1,0 +1,8 @@
+confidence_threshold: 0.75
+sla_fallback_days: 30
+escalation_triggers:
+  - egyedi_szerzodes_gyanu
+  - vitatott_osszeg
+  - ismetlodo_panasz
+  - jogi_hatosagi_media
+  - sla_kozel_lejarat

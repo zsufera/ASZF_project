@@ -1,0 +1,15 @@
+mandatory_by_category:
+  szamlazas:
+    - A szamlazasi szabalyok relevans paragrafusai
+  dijemeles:
+    - A dijmodositasra vonatkozo szabalyok relevans paragrafusai
+  hibabejelentes_szolgaltataskieses:
+    - Hibabejelentes es SLA paragrafusok
+  szerzodesfelmondas_modositas:
+    - Felmondas es modositas feltetelei
+  lefedettseg:
+    - Lefedettsegre vonatkozo tajekoztato szabalyok
+  eszkoz_keszulek:
+    - Eszkozre es garanciara vonatkozo szabalyok
+  adatvedelem:
+    - GDPR es adatkezelesi tajekoztato szabalyok

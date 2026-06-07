@@ -123,6 +123,7 @@ flowchart TD
 ```
 
 ## Fázis 0 — Repó- és projektváz
+- Implementáció előtti szerződés-specek: lásd [ASZF_QnA_Agent_contract_spec.md](ASZF_QnA_Agent_contract_spec.md) (SQLite adatmodell, API kontraktusok, LangGraph állapot-séma, konfig-kulcsok).
 - Python projekt (`pyproject.toml` vagy `requirements.txt`), modulstruktúra a komponensekhez:
   - `preprocessing/` — letöltő, parser, chunker, indexelő, minta-email generátor (CLI belépőkkel).
   - `backend/` — FastAPI app, retrieval/rerank szolgáltatás, modell-router, citation-építő.

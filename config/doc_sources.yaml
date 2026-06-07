@@ -1,0 +1,7 @@
+source_pages:
+  - https://www.one.hu/aszf#aszf-one
+  - https://www.one.hu/aszf#aszf-helyi-kabeles
+  - https://www.one.hu/aszf#aszf-ah-media
+  - https://www.one.hu/aszf#aszf-invitech
+manual_pdf_urls: []
+local_pdf_dir: data/raw_pdfs
