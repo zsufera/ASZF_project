@@ -4,9 +4,11 @@ from config.settings import settings
 
 
 def get_model_profile() -> str:
+    from backend.llm import llm_available
+
     if settings.provider == "onprem":
         return f"onprem/ollama@{settings.ollama_url}"
-    if settings.openai_api_key:
+    if llm_available():
         return f"cloud/{settings.openai_model}"
     return f"cloud/{settings.openai_model}-no-key"
 
