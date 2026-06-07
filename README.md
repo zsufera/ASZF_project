@@ -53,16 +53,27 @@ Opcionális letöltő: `python -m preprocessing.download` (WAF esetén nem megb�
 Ha nincs PDF a `data/raw_pdfs/` alatt, a manifest üres dokumentumlistával jön létre.
 A `/retrieve` endpoint a `data/processed/chunks.jsonl` alapján lokális fallback keresést ad, így Qdrant nélkül is tesztelhető a forráshivatkozásos találat.
 
-## Backend minimál flow
+## Backend flow (Fázis 2)
 
-Az első vertikális backend sorrend:
+Indítás: `uvicorn backend.main:app --reload`
 
-1. `/classify` -> determinisztikus fallback kategória + konfidencia
-2. `/retrieve` -> forrásos chunkok
-3. `/policy-map` -> ÜI-nak mutatható szabályzat-térkép
-4. `backend.escalation.decide_escalation()` -> eszkalációs döntési helper
-5. `/draft` -> válaszjavaslat citationökkel és automata módban disclaimerrel
-6. `/verify` -> groundedness és kötelező hivatkozás ellenőrzés
+Vertikális sorrend:
+
+1. `POST /mask` -> visszafordítható PII-maszkolás (SQLite token-térkép)
+2. `POST /classify` -> kategória + konfidencia + ismétlődés-jelzés
+3. `GET /history?address=` -> azonos feladó előzményei (SQLite)
+4. `GET /customer-lookup?address=` -> mock ügyféltörzs-jelöltek
+5. `POST /retrieve` -> hibrid (sparse+dense) retrieval, cross-ref bővítés, opcionális Qdrant
+6. `POST /policy-map` -> szabályzat-térkép + kötelező hivatkozások
+7. `backend.escalation.decide_escalation()` -> eszkalációs helper
+8. `POST /draft` -> válaszjavaslat citationökkel
+9. `POST /verify` -> groundedness ellenőrzés
+10. `POST /unmask` -> draft visszafejtés jóváhagyás előtt
+11. `POST /ocr` -> postai PDF szövegkinyerés + maszkolás
+12. `POST /reindex` -> manifest + parse + index + derive_params
+13. `POST /eval/run` -> minta-email alapú retrieval/osztályozás metrikák
+
+Minden válasz tartalmazza: `request_id`, `model_profile`, `prompt_version`, `aszf_version`.
 
 ## Projektváz
 

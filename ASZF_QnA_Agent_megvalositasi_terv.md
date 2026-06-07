@@ -1,6 +1,6 @@
 # ÁSZF Q&A Agent — POC megvalósítási terv
 
-> Mentve: 2026-06-06. Forrás üzleti spec: [ASZF_QnA_Agent_uzleti_spec.md](ASZF_QnA_Agent_uzleti_spec.md).
+> Mentve: 2026-06-06, frissítve: 2026-06-07. Forrás üzleti spec: [ASZF_QnA_Agent_uzleti_spec.md](ASZF_QnA_Agent_uzleti_spec.md).
 > Ez a terv a tisztázó körök döntéseit konszolidálja: rögzített tech-stack, funkcionális/üzleti döntések, fázisonkénti megvalósítás (modulok, endpointok, agent-node-ok, UI-nézetek, audit, kiértékelés) és compliance/adatbiztonság. A **részletes frontend-spec (wireframe szint)** és a **konkrét al-agent promptkatalógus** külön, későbbi lépés.
 > Fejlesztési guardrailek: [FEJLESZTESI_GUARDRAILS.md](FEJLESZTESI_GUARDRAILS.md).
 
@@ -8,19 +8,42 @@
 
 ## Feladatlista (todo)
 
-- [ ] **scaffold** — Projektváz: mappastruktúra, requirements, kapcsolható felhő/on-prem config, README
+- [x] **scaffold** — Projektváz: mappastruktúra, requirements, kapcsolható felhő/on-prem config, README
 - [ ] **runtime-observability** — Lokális Windows futtatás (WSL2/Docker), minimális docker-compose (Qdrant [+ Ollama]), Langfuse tracing (agent-lépés/LLM, latency/költség), futtatási sorrend dokumentálva
-- [ ] **preprocessing** — Előfeldolgozó CLI: ONE dok-letöltő (Playwright + fallback), Docling/PyMuPDF parse, hierarchikus §-chunking (táblák, kereszthivatkozások, szolgáltató-szeparáció), embedding+index, ~10 minta-email generálás
-- [ ] **dok-parameterezes** — Offline származtató CLI: eszkalációs triggerek, kötelező behivatkozások, disclaimer-draft kinyerése a dokumentumokból (forrás-§ provenance), ember által jóváhagyott verziózott YAML-ek
-- [ ] **backend-rag** — FastAPI + LlamaIndex RAG backend: hibrid (dense+sparse) retrieval Qdrant felett + rerank + forráshivatkozás, modell-router, válasz-szintézis
-- [ ] **postai-ocr** — Postai levél csatorna: PDF-import a UI-on, OCR (Tesseract HU / Docling) konfidenciával, ÜI-korrekciós előnézet, majd belépés az email-flow-ba; PDF+OCR audit
-- [ ] **elozmeny-ugyfeltorzs** — Azonos címről jövő email-előzmények (inbox SQLite, maszkolt összegzés az agentnek) + ügyféltörzs-jelölt mock (`CustomerDirectory` interfész) UI-panellel, átlinkeléssel; audit
+- [x] **preprocessing** — Előfeldolgozó CLI: kézi PDF ingest, PyMuPDF parse, hierarchikus §-chunking (cross_refs, szolgáltató-szeparáció), sparse+dense index fallback, 16 minta-email katalógus
+- [x] **dok-parameterezes** — Offline származtató CLI (`derive_params`): eszkalációs triggerek, kötelező behivatkozások, disclaimer provenance → YAML + `data/derived/derive_report.json`
+- [x] **backend-rag** — FastAPI RAG backend: hibrid retrieval (sparse+dense, Qdrant opció), rerank, cross-ref feloldás, modell-router meta, core endpointok bekötve
+- [x] **postai-ocr** — Backend `POST /ocr`: PDF feltöltés, PyMuPDF szövegkinyerés, konfidencia-heurisztika, automatikus maszkolás (UI előnézet Fázis 4)
+- [x] **elozmeny-ugyfeltorzs** — `GET /history` SQLite lekérdezés + `GET /customer-lookup` mock adapter (UI panel Fázis 4)
 - [ ] **agent-statemachine** — LangGraph állapotgépes agent: osztályozás, Presidio GDPR-maszkolás (visszafordítható), szabályzat-térkép, sablonválasztás, eszkalációs döntés, levélgenerálás, ellenőrző
 - [ ] **ui** — Streamlit UI váz: inbox + szabad kérdés, agent-idővonal, forráspanel/kiemelés, draft+verzió+jóváhagyás, csatorna-fülek (email/chat/telefon/**postai PDF-import + OCR-előnézet**), badge/SLA, konfig-alapú bejelentkezés (ÜI/supervisor aggregált statisztika nézettel)
 - [ ] **audit-governance** — Audit naplózás, disclaimer konfig, GDPR megőrzési korlátok, két kimeneti mód
-- [ ] **eval-harness** — Referencia-mentes kiértékelő: groundedness, citation support, relevancy, retrieval-support; opcionális szintetikus kérdésbank; Evaluation UI
+- [x] **eval-harness** — Backend `POST /eval/run` + CLI (`eval/run_eval.py`): minta-email category/retrieval metrikák (Evaluation UI Fázis 4)
 - [ ] **compliance-security** — Azure OpenAI EU + no-training, maszkolt egress, titkosított de-id térkép, RBAC + PII-láthatóság, prompt-injection védelem, napló-redakció, Art. 22 safeguards, `docs/dpia.md` (DPIA + adatáramlási térkép)
-- [ ] **testing** — pytest: dedikált PII-maszkolás tesztkészlet + szivárgás-kapu, unit/integráció, strukturális agent-assertek, adversariális (prompt-injection) tesztek, opcionális pre-commit
+- [x] **testing** — pytest: ingest, retrieval, masking roundtrip, Phase 2 endpoint tesztek (PII szivárgás-kapu és adversariális harness későbbi bővítés)
+
+---
+
+## Implementációs állapot (2026-06-07)
+
+### Fázis 1 — kész
+- 32 PDF manifest, 51k+ chunk, sparse index + opcionális Qdrant
+- `gen_emails.py`: 16 verziózott minta-email (`data/sample_emails/`)
+
+### Fázis 1b — kész
+- `derive_params.py`: provenance-szal frissített `policies.yaml`, `mandatory_refs.yaml`, `disclaimer.yaml`
+
+### Fázis 2 — kész (POC-szint)
+- `backend/retrieval.py`: hibrid sparse+dense, rerank, cross-ref, Qdrant fallback
+- `backend/router.py`, `backend/metadata.py`: model_profile + prompt/aszf verzió meta
+- `backend/masking.py`: regex-alapú visszafordítható maszkolás SQLite token-térképpel
+- `backend/history.py`, `backend/ocr_service.py`, `backend/reindex_service.py`, `backend/eval_service.py`
+- FastAPI endpointok: `/mask`, `/unmask`, `/ocr`, `/reindex`, `/eval/run` + meglévő core flow meta mezőkkel
+
+### Tudatos POC-hiányok (Fázis 2 után)
+- LlamaIndex integráció, `bge-m3` / Cohere rerank, Azure OpenAI válasz-szintézis nincs bekötve
+- Presidio helyett determinisztikus regex-maszkolás
+- Langfuse tracing, LangGraph agent, Streamlit UI — Fázis 3–4
 
 ---
 

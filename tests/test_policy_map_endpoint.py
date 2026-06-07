@@ -20,7 +20,8 @@ def test_policy_map_endpoint_returns_policy_items() -> None:
         )
     )
 
-    assert response["request_id"] == "stub"
+    assert response["request_id"]
+    assert response["prompt_version"]
     assert response["policy_items"][0]["chunk_id"] == "one-3-1"
     from backend.policy_map import load_mandatory_refs
 

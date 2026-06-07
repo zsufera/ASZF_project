@@ -1,15 +1,30 @@
-from fastapi import FastAPI
+from __future__ import annotations
+
+import shutil
+import sqlite3
+from pathlib import Path
+
+from fastapi import FastAPI, File, Form, UploadFile
 from pydantic import BaseModel, Field
 
 from backend.classify import classify_message
 from backend.db import init_db
 from backend.draft import build_draft
+from backend.eval_service import run_eval
+from backend.history import get_history
+from backend.masking import mask_text, unmask_text
+from backend.metadata import response_meta
+from backend.ocr_service import run_ocr
 from backend.policy_map import build_policy_map
+from backend.reindex_service import run_reindex
+from backend.retrieval import retrieve
 from backend.verify import verify_draft
-from preprocessing.index import load_chunks, search_chunks
+from config.settings import settings
+from integrations.customer_directory import MockCustomerDirectory
 
 
-app = FastAPI(title="ASZF QnA Agent API", version="0.1.0")
+app = FastAPI(title="ASZF QnA Agent API", version="0.2.0")
+POSTAL_PDF_DIR = Path("data/postal_pdfs")
 
 
 class ClassifyRequest(BaseModel):
@@ -23,6 +38,7 @@ class RetrieveRequest(BaseModel):
     query_masked: str
     service_provider: str | None = None
     customer_id: str | None = None
+    limit: int = 5
 
 
 class PolicyMapRequest(BaseModel):
@@ -46,14 +62,35 @@ class VerifyRequest(BaseModel):
     mandatory_refs: list[str]
 
 
+class MaskRequest(BaseModel):
+    case_id: str
+    text: str
+
+
+class UnmaskRequest(BaseModel):
+    case_id: str
+    draft_version_id: int | None = None
+    subject_masked: str | None = None
+    body_masked: str | None = None
+
+
+class ReindexRequest(BaseModel):
+    force: bool = False
+
+
+class EvalRequest(BaseModel):
+    limit: int = 10
+
+
 @app.on_event("startup")
 def on_startup() -> None:
     init_db()
+    POSTAL_PDF_DIR.mkdir(parents=True, exist_ok=True)
 
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok"}
+    return {"status": "ok", **response_meta()}
 
 
 @app.post("/classify")
@@ -62,30 +99,25 @@ def classify(payload: ClassifyRequest) -> dict:
         message_text_masked=payload.message_text_masked,
         history_summary_masked=payload.history_summary_masked,
     )
-    return {
-        "request_id": "stub",
-        **result,
-    }
+    if payload.history_summary_masked and "ismetlodo" in payload.history_summary_masked.lower():
+        result["is_repeated"] = True
+    return {**response_meta(), **result}
 
 
 @app.post("/retrieve")
-def retrieve(payload: RetrieveRequest) -> dict:
-    chunks = load_chunks()
-    results = search_chunks(
+def retrieve_endpoint(payload: RetrieveRequest) -> dict:
+    result = retrieve(
         query=payload.query_masked,
-        chunks=chunks,
         service_provider=payload.service_provider,
+        limit=payload.limit,
     )
-    return {
-        "request_id": "stub",
-        "chunks": results,
-    }
+    return {**response_meta(), **result}
 
 
 @app.post("/policy-map")
 def policy_map(payload: PolicyMapRequest) -> dict:
     result = build_policy_map(category=payload.category, chunks=payload.chunks)
-    return {"request_id": "stub", **result}
+    return {**response_meta(), **result}
 
 
 @app.post("/draft")
@@ -97,7 +129,7 @@ def draft(payload: DraftRequest) -> dict:
         policy_map=payload.policy_map,
         actions=payload.actions,
     )
-    return {"request_id": "stub", **result}
+    return {**response_meta(), **result}
 
 
 @app.post("/verify")
@@ -107,40 +139,66 @@ def verify(payload: VerifyRequest) -> dict:
         chunks=payload.chunks,
         mandatory_refs=payload.mandatory_refs,
     )
-    return {"request_id": "stub", **result}
+    return {**response_meta(), **result}
+
+
+@app.post("/mask")
+def mask(payload: MaskRequest) -> dict:
+    result = mask_text(case_id=payload.case_id, text=payload.text)
+    return {**response_meta(), "masked_text": result["masked_text"], "token_count": result["token_count"]}
+
+
+@app.post("/unmask")
+def unmask(payload: UnmaskRequest) -> dict:
+    subject = payload.subject_masked or ""
+    body = payload.body_masked or ""
+    if payload.draft_version_id is not None:
+        with sqlite3.connect(settings.sqlite_path) as conn:
+            row = conn.execute(
+                """
+                SELECT subject, body_masked
+                FROM draft_versions
+                WHERE id = ?
+                """,
+                (payload.draft_version_id,),
+            ).fetchone()
+        if row:
+            subject = row[0] or ""
+            body = row[1] or ""
+    return {
+        **response_meta(),
+        "subject_unmasked": unmask_text(payload.case_id, subject),
+        "body_unmasked": unmask_text(payload.case_id, body),
+    }
 
 
 @app.get("/history")
 def history(address: str) -> dict:
-    return {"request_id": "stub", "items": [], "summary_masked": "", "is_repeated": False, "address": address}
+    return {**response_meta(), **get_history(address)}
 
 
 @app.get("/customer-lookup")
 def customer_lookup(address: str) -> dict:
-    return {
-        "request_id": "stub",
-        "candidates": [
-            {
-                "customer_id": "CUST-DEMO-001",
-                "customer_name": "Teszt Ugyfel",
-                "link_url": "https://example.local/customer/CUST-DEMO-001",
-                "source": "mock",
-            }
-        ],
-        "address": address,
-    }
+    directory = MockCustomerDirectory()
+    return {**response_meta(), "candidates": directory.lookup_by_email(address), "address": address}
 
 
 @app.post("/ocr")
-def ocr() -> dict:
-    return {"request_id": "stub", "ocr_text_masked": "", "ocr_confidence": 0.0, "low_conf_spans": []}
-
-
-@app.post("/unmask")
-def unmask() -> dict:
-    return {"request_id": "stub", "subject_unmasked": "", "body_unmasked": ""}
+async def ocr(case_id: str = Form(...), pdf_file: UploadFile = File(...)) -> dict:
+    target = POSTAL_PDF_DIR / f"{case_id}_{pdf_file.filename or 'upload.pdf'}"
+    with target.open("wb") as handle:
+        shutil.copyfileobj(pdf_file.file, handle)
+    result = run_ocr(case_id=case_id, pdf_path=target)
+    return {**response_meta(), **result}
 
 
 @app.post("/reindex")
-def reindex() -> dict:
-    return {"request_id": "stub", "aszf_version": None, "indexed_docs": 0, "indexed_chunks": 0}
+def reindex(payload: ReindexRequest) -> dict:
+    result = run_reindex(force=payload.force)
+    return {**response_meta(), **result}
+
+
+@app.post("/eval/run")
+def eval_run(payload: EvalRequest) -> dict:
+    result = run_eval(limit=payload.limit)
+    return {**response_meta(), **result}

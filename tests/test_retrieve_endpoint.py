@@ -5,32 +5,29 @@ from backend.main import RetrieveRequest
 def test_retrieve_endpoint_returns_source_grounded_chunks(monkeypatch) -> None:
     monkeypatch.setattr(
         main,
-        "load_chunks",
-        lambda: [
-            {
-                "chunk_id": "one-3-1",
-                "szolgaltato": "ONE",
-                "dok_tipus": "ÁSZF",
-                "dok_cim": "ONE ÁSZF",
-                "paragrafus_szam": "3.1",
-                "oldalszam": 12,
-                "cross_refs": [],
-                "text": "A számlázási kifogást az ügyfélszolgálat kivizsgálja.",
-            },
-            {
-                "chunk_id": "invitech-3-1",
-                "szolgaltato": "Invitech",
-                "dok_tipus": "ÁSZF",
-                "dok_cim": "Invitech ÁSZF",
-                "paragrafus_szam": "3.1",
-                "oldalszam": 9,
-                "cross_refs": [],
-                "text": "A számlázási kifogás másik szolgáltatóhoz tartozik.",
-            },
-        ],
+        "retrieve",
+        lambda **kwargs: {
+            "chunks": [
+                {
+                    "chunk_id": "one-3-1",
+                    "quote": "A számlázási kifogást az ügyfélszolgálat kivizsgálja.",
+                    "score": 0.9,
+                    "dok_tipus": "ÁSZF",
+                    "paragrafus": "3.1",
+                    "szolgaltato": "ONE",
+                    "dok_cim": "ONE ÁSZF",
+                    "oldalszam": 12,
+                    "cross_refs": [],
+                    "source_file": "one.pdf",
+                    "retrieval_source": "hybrid_local",
+                }
+            ],
+            "retrieval_mode": "hybrid_local",
+            "result_count": 1,
+        },
     )
 
-    response = main.retrieve(
+    response = main.retrieve_endpoint(
         RetrieveRequest(
             case_id="CASE-1",
             query_masked="számlázási kifogás",

@@ -4,7 +4,8 @@ import argparse
 import json
 from pathlib import Path
 
-from preprocessing.index import DEFAULT_CHUNKS_PATH, load_chunks, search_chunks
+from backend.retrieval import retrieve
+from preprocessing.index import DEFAULT_CHUNKS_PATH
 
 
 def main() -> None:
@@ -15,14 +16,24 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=5)
     args = parser.parse_args()
 
-    chunks = load_chunks(Path(args.chunks))
-    results = search_chunks(
+    result = retrieve(
         query=args.query,
-        chunks=chunks,
         service_provider=args.service_provider,
         limit=args.limit,
+        chunks_path=Path(args.chunks),
+        prefer_qdrant=False,
     )
-    print(json.dumps({"query": args.query, "results": results}, ensure_ascii=False, indent=2))
+    print(
+        json.dumps(
+            {
+                "query": args.query,
+                "retrieval_mode": result.get("retrieval_mode"),
+                "results": result.get("chunks", []),
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":
