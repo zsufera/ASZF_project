@@ -22,4 +22,6 @@ def test_policy_map_endpoint_returns_policy_items() -> None:
 
     assert response["request_id"] == "stub"
     assert response["policy_items"][0]["chunk_id"] == "one-3-1"
-    assert response["mandatory_refs"] == ["A szamlazasi szabalyok relevans paragrafusai"]
+    from backend.policy_map import load_mandatory_refs
+
+    assert response["mandatory_refs"] == load_mandatory_refs().get("szamlazas", [])

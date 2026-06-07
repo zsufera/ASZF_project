@@ -1,0 +1,11 @@
+{
+  "email_id": "email-002-dijemeles-one",
+  "targy": "Díjemelés értesítés - nem értem az indoklást",
+  "torzs": "Tisztelt One!\n\nNagy Péter (ügyfélazonosító: 77210455) vagyok.\nA számlalevélben 3,5%-os díjmódosítást olvastam a vezetékes internetemre.\nKérem írásban megindokolni, mely ÁSZF-pont alapján történt.\n\nNagy Péter",
+  "felado_email": "nagy.peter.poc@example.invalid",
+  "varht_kategoria": "dijemeles",
+  "szolgaltato": "ONE",
+  "varhato_eszkalacio": false,
+  "edge_case": null,
+  "catalog_version": "2026.06.07"
+}

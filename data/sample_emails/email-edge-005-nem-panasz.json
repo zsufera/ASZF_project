@@ -1,0 +1,11 @@
+{
+  "email_id": "email-edge-005-nem-panasz",
+  "targy": "Köszönet a gyors segítségért",
+  "torzs": "Sziasztok!\n\nCsak jelezni szeretném, hogy tegnap a 1270-en kapott segítség rendben megoldotta a problémát.\nKöszönöm a gyors ügyintézést!\n\nSimon Réka",
+  "felado_email": "simon.reka.poc@example.invalid",
+  "varht_kategoria": "egyeb",
+  "szolgaltato": "ONE",
+  "varhato_eszkalacio": false,
+  "edge_case": "nem_panasz",
+  "catalog_version": "2026.06.07"
+}

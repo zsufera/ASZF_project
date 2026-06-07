@@ -1,4 +1,4 @@
-from backend.policy_map import build_policy_map
+from backend.policy_map import build_policy_map, load_mandatory_refs
 
 
 def test_build_policy_map_turns_chunks_into_source_cards() -> None:
@@ -29,13 +29,15 @@ def test_build_policy_map_turns_chunks_into_source_cards() -> None:
             "score": 1.0,
         }
     ]
-    assert result["mandatory_refs"] == ["A szamlazasi szabalyok relevans paragrafusai"]
+    expected_refs = load_mandatory_refs().get("szamlazas", [])
+    assert result["mandatory_refs"] == expected_refs
     assert result["missing_mandatory"] == []
 
 
 def test_build_policy_map_marks_missing_mandatory_when_no_sources() -> None:
     result = build_policy_map(category="szamlazas", chunks=[])
 
+    expected_refs = load_mandatory_refs().get("szamlazas", [])
     assert result["policy_items"] == []
-    assert result["mandatory_refs"] == ["A szamlazasi szabalyok relevans paragrafusai"]
-    assert result["missing_mandatory"] == ["A szamlazasi szabalyok relevans paragrafusai"]
+    assert result["mandatory_refs"] == expected_refs
+    assert result["missing_mandatory"] == expected_refs

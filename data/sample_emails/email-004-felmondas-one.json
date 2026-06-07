@@ -1,0 +1,11 @@
+{
+  "email_id": "email-004-felmondas-one",
+  "targy": "Előfizetés felmondása határidőre",
+  "torzs": "Tisztelt Ügyintéző!\n\nTóth Gábor vagyok, szerződésszám: VF-2024-11820.\n2026. július 31-i hatállyal szeretném felmondani a vezetékes TV és internet előfizetésemet.\nKérem visszaigazolni a felmondás dátumát és az eszközök visszaszolgáltatásának módját.\n\nTóth Gábor",
+  "felado_email": "toth.gabor.poc@example.invalid",
+  "varht_kategoria": "szerzodesfelmondas_modositas",
+  "szolgaltato": "ONE",
+  "varhato_eszkalacio": false,
+  "edge_case": null,
+  "catalog_version": "2026.06.07"
+}

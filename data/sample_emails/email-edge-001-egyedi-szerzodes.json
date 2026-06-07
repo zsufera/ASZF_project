@@ -1,0 +1,11 @@
+{
+  "email_id": "email-edge-001-egyedi-szerzodes",
+  "targy": "Egyedi kedvezményes szerződésem módosulhat?",
+  "torzs": "Tisztelt One!\n\nDr. Papp László, ügyfélszám 99001122.\n2023-ban egyedi, aláírt kedvezményes szerződést kötöttem a céges flottával.\nMost azt írják, hogy az általános ÁSZF rendelkezései érvényesek.\nKérem jogi egyeztetést és írásbeli állásfoglalást.\n\nDr. Papp László",
+  "felado_email": "papp.laszlo.poc@example.invalid",
+  "varht_kategoria": "szerzodesfelmondas_modositas",
+  "szolgaltato": "ONE",
+  "varhato_eszkalacio": true,
+  "edge_case": "egyedi_szerzodes_gyanu",
+  "catalog_version": "2026.06.07"
+}

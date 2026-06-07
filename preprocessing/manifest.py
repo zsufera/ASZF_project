@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -56,20 +57,43 @@ def infer_provider(file_name: str) -> str:
     normalized = file_name.lower()
     if "invitech" in normalized:
         return "Invitech"
-    if "ah" in normalized or "media" in normalized:
+    if re.search(r"ah[_\s-]?m[eé]dia|mindigtv|volt_ah", normalized):
         return "AH Media"
-    if "helyi" in normalized or "kabel" in normalized or "kábel" in normalized:
+    if "helyi" in normalized or "eurocable" in normalized or "i-tv" in normalized:
         return "helyi_kabeles"
     return "ONE"
 
 
 def infer_doc_type(file_name: str) -> str:
     normalized = file_name.lower()
-    if "melleklet" in normalized or "melléklet" in normalized:
+    if "melleklet" in normalized or "melléklet" in normalized or "fuggelek" in normalized:
         return "melléklet"
-    if "egyeb" in normalized or "egyéb" in normalized or "felhasznalasi" in normalized:
+    if any(
+        token in normalized
+        for token in (
+            "egyeb",
+            "egyéb",
+            "felhasznalasi",
+            "vasarlasi",
+            "online_shop",
+            "eszszf",
+            "eszmr",
+            "eszr",
+            "edsz",
+            "dpo",
+            "tajekoztato",
+        )
+    ):
         return "Egyéb felhasználási feltételek"
     return "ÁSZF"
+
+
+def infer_version_hint(file_name: str) -> str | None:
+    match = re.search(r"(20\d{6})(?!\d)", file_name)
+    if match:
+        raw = match.group(1)
+        return f"{raw[:4]}-{raw[4:6]}-{raw[6:8]}"
+    return None
 
 
 def build_manifest(config_path: Path = DEFAULT_CONFIG_PATH) -> list[DocumentManifestItem]:
@@ -102,7 +126,7 @@ def build_manifest(config_path: Path = DEFAULT_CONFIG_PATH) -> list[DocumentMani
                 szolgaltato=file_meta.get("szolgaltato") or infer_provider(pdf_path.name),
                 dok_tipus=file_meta.get("dok_tipus") or infer_doc_type(pdf_path.name),
                 dok_cim=file_meta.get("dok_cim") or pdf_path.stem,
-                version_hint=file_meta.get("version_hint"),
+                version_hint=file_meta.get("version_hint") or infer_version_hint(pdf_path.name),
                 discovered_at=discovered_at,
             )
         )

@@ -1,0 +1,11 @@
+{
+  "email_id": "email-003-hiba-one",
+  "targy": "Internetkimaradás 3 napja",
+  "torzs": "Üdvözlöm!\n\nSzabó Eszter, 2044 Budaörs, Levendula utca 8.\nHárom napja nincs vezetékes internet a lakásban, a modem villog.\nKérem a hiba elhárítását és kompenzációról tájékoztatást.\n\nSzabó Eszter",
+  "felado_email": "szabo.eszter.poc@example.invalid",
+  "varht_kategoria": "hibabejelentes_szolgaltataskieses",
+  "szolgaltato": "ONE",
+  "varhato_eszkalacio": false,
+  "edge_case": null,
+  "catalog_version": "2026.06.07"
+}

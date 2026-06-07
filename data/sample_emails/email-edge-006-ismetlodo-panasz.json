@@ -1,0 +1,11 @@
+{
+  "email_id": "email-edge-006-ismetlodo-panasz",
+  "targy": "Re: Re: Internetkimaradás - harmadszor írok",
+  "torzs": "Tisztelt One!\n\nBenedek Tamás, 1188 Budapest, Kossuth utca 44.\nMár harmadjára írok ugyanarról a több napos internetkimaradásról.\nAz előző két ígéret ellenére még mindig nincs megoldás.\nKérem azonnali eszkalációt.\n\nBenedek Tamás",
+  "felado_email": "benedek.tamas.poc@example.invalid",
+  "varht_kategoria": "hibabejelentes_szolgaltataskieses",
+  "szolgaltato": "ONE",
+  "varhato_eszkalacio": true,
+  "edge_case": "ismetlodo_panasz",
+  "catalog_version": "2026.06.07"
+}

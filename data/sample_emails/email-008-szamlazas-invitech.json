@@ -1,0 +1,11 @@
+{
+  "email_id": "email-008-szamlazas-invitech",
+  "targy": "Invitech számla értelmezése",
+  "torzs": "Tisztelt Invitech Ügyfélszolgálat!\n\nKiss Roland, ügyfélazonosító: INV-55201.\nA vezetékes számlán két egyszeri adminisztrációs díj is szerepel ugyanarra az időszakra.\nKérem ellenőrizni és javítani.\n\nKiss Roland",
+  "felado_email": "kiss.roland.poc@example.invalid",
+  "varht_kategoria": "szamlazas",
+  "szolgaltato": "Invitech",
+  "varhato_eszkalacio": false,
+  "edge_case": null,
+  "catalog_version": "2026.06.07"
+}

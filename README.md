@@ -25,28 +25,30 @@ Fejlesztés közben kötelező iránytű: [FEJLESZTESI_GUARDRAILS.md](FEJLESZTES
 
 ## ÁSZF ingest első lépései
 
-WAF vagy manuális beszerzés esetén másold a PDF-eket a `data/raw_pdfs/` mappába.
+Másold a PDF-eket a `data/raw_pdfs/` mappába (POC elsődleges út).
 
-1. ONE ÁSZF PDF-ek letöltése:
-   - `python -m preprocessing.download`
-   - kimenet: `data/raw_pdfs/` és `data/raw_pdfs/download_metadata.json`
-2. Manifest generálás:
+1. Manifest generálás:
    - `python -m preprocessing.manifest`
    - kimenet: `data/ingest_manifest.json`
-3. PDF parse + hierarchikus chunkolás:
+2. PDF parse + hierarchikus chunkolás:
    - `python -m preprocessing.parse`
    - kimenetek:
      - `data/processed/parsed_pages.jsonl`
      - `data/processed/chunks.jsonl`
-
-4. Chunkok betöltésének ellenőrzése Qdrant nélkül:
-   - `python -m preprocessing.index --skip-qdrant`
-5. Qdrant indexelés:
-   - `python -m preprocessing.index`
-6. Lokális retrieval smoke ellenőrzés:
+3. Indexelés:
+   - `python -m preprocessing.index --skip-qdrant` (lokális sparse fallback)
+   - `python -m preprocessing.index` (Qdrant, ha fut a compose)
+4. Dok-paraméterezés (Fázis 1b):
+   - `python -m preprocessing.derive_params`
+   - kimenetek: `config/policies.yaml`, `config/mandatory_refs.yaml`, `config/disclaimer.yaml`, `data/derived/derive_report.json`
+5. Minta-emailek:
+   - `python -m preprocessing.gen_emails`
+   - kimenet: `data/sample_emails/`
+6. Smoke ellenőrzés:
    - `python -m preprocessing.smoke_retrieve "számlázási kifogás" --service-provider ONE`
-7. Teljes lokális ingest smoke:
    - `python -m preprocessing.smoke_ingest --query "számlázási kifogás" --service-provider ONE`
+
+Opcionális letöltő: `python -m preprocessing.download` (WAF esetén nem megbízható).
 
 Ha nincs PDF a `data/raw_pdfs/` alatt, a manifest üres dokumentumlistával jön létre.
 A `/retrieve` endpoint a `data/processed/chunks.jsonl` alapján lokális fallback keresést ad, így Qdrant nélkül is tesztelhető a forráshivatkozásos találat.

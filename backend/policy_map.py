@@ -9,12 +9,24 @@ import yaml
 DEFAULT_MANDATORY_REFS_PATH = Path("config/mandatory_refs.yaml")
 
 
+def _mandatory_entry_label(entry: Any) -> str:
+    if isinstance(entry, str):
+        return entry
+    if isinstance(entry, dict):
+        return str(entry.get("label") or entry.get("chunk_id") or "").strip()
+    return ""
+
+
 def load_mandatory_refs(path: Path = DEFAULT_MANDATORY_REFS_PATH) -> dict[str, list[str]]:
     if not path.exists():
         return {}
     payload = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     refs = payload.get("mandatory_by_category", {})
-    return {str(category): list(values or []) for category, values in refs.items()}
+    result: dict[str, list[str]] = {}
+    for category, values in refs.items():
+        labels = [_mandatory_entry_label(entry) for entry in (values or [])]
+        result[str(category)] = [label for label in labels if label]
+    return result
 
 
 def build_policy_map(

@@ -5,6 +5,7 @@ import hashlib
 import json
 import math
 import re
+import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -32,8 +33,13 @@ def load_chunks(chunks_path: Path = DEFAULT_CHUNKS_PATH) -> list[dict[str, Any]]
     return chunks
 
 
+def fold_text(text: str) -> str:
+    normalized = unicodedata.normalize("NFD", text.lower())
+    return "".join(char for char in normalized if unicodedata.category(char) != "Mn")
+
+
 def tokenize(text: str) -> list[str]:
-    return [token.lower() for token in TOKEN_PATTERN.findall(text)]
+    return [fold_text(token) for token in TOKEN_PATTERN.findall(text)]
 
 
 def sparse_score(query: str, text: str) -> float:

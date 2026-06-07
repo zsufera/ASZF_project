@@ -1,0 +1,11 @@
+{
+  "email_id": "email-009-hiba-helyi-kabeles",
+  "targy": "TV jelkimaradás helyi hálózaton",
+  "torzs": "Üdvözlöm!\n\nMolnár Edit, 7621 Pécs, Rákóczi tér 5.\nA helyi kábeles TV csatornák többsége tegnap óta nem jön.\nKérem a hibaelhárítás ütemezését.\n\nMolnár Edit",
+  "felado_email": "molnar.edit.poc@example.invalid",
+  "varht_kategoria": "hibabejelentes_szolgaltataskieses",
+  "szolgaltato": "helyi_kabeles",
+  "varhato_eszkalacio": false,
+  "edge_case": null,
+  "catalog_version": "2026.06.07"
+}

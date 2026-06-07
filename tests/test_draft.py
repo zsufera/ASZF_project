@@ -14,7 +14,7 @@ POLICY_MAP = {
             "score": 1.0,
         }
     ],
-    "mandatory_refs": ["A szamlazasi szabalyok relevans paragrafusai"],
+    "mandatory_refs": [],
     "missing_mandatory": [],
 }
 

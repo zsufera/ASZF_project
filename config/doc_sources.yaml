@@ -1,13 +1,5 @@
-source_pages:
-  - https://www.one.hu/aszf#aszf-one
-  - https://www.one.hu/aszf#aszf-helyi-kabeles
-  - https://www.one.hu/aszf#aszf-ah-media
-  - https://www.one.hu/aszf#aszf-invitech
-manual_pdf_urls:
-  - https://www.one.hu/static/documents/20143/6574800/1-20210503.pdf
-  - https://www.one.hu/static/documents/20143/6475191/1-20210401.pdf
-  - https://www.one.hu/static/documents/20143/6188434/1-20210101.pdf
-  - https://www.one.hu/static/documents/20143/3618239/2-20200106.pdf
-  - https://www.one.hu/static/documents/20143/1217449/Vezetekes_ASZF_1_melleklet_uzleti_hatalyos_20210120.pdf
-  - https://www.one.hu/static/documents/20143/330620/flotta-arlista.pdf
+# A POC ingest elsődleges forrása: kézzel bemásolt PDF-ek a local_pdf_dir alatt.
+# Opcionális: source_pages + manual_pdf_urls a preprocessing.download modulhoz.
+source_pages: []
+manual_pdf_urls: []
 local_pdf_dir: data/raw_pdfs
