@@ -61,7 +61,18 @@ Másold a PDF-eket a `data/raw_pdfs/` mappába (POC elsődleges út).
 Opcionális letöltő: `python -m preprocessing.download` (WAF esetén nem megbízható).
 
 Ha nincs PDF a `data/raw_pdfs/` alatt, a manifest üres dokumentumlistával jön létre.
-A `/retrieve` endpoint a `data/processed/chunks.jsonl` alapján lokális fallback keresést ad, így Qdrant nélkül is tesztelhető a forráshivatkozásos találat.
+A `/retrieve` endpoint a `data/processed/chunks.jsonl` alapján lokális fallback keresést ad, így OpenAI-kulcs nélkül is tesztelhető a forráshivatkozásos találat.
+
+## Embedding mód (felhő / fallback)
+
+A vektoros keresés közös embedding-interfészen át megy (`preprocessing/embedding.py`):
+
+- **OpenAI mód** (`PROVIDER != onprem` és van `OPENAI_API_KEY`): valódi szemantikus embedding (`text-embedding-3-large`), az indexelés a beágyazott helyi Qdrant-ba ír, a `/retrieve` onnan keres (`qdrant_semantic`). Az embeddingek sqlite cache-be kerülnek (`data/processed/embedding_cache.db`), így az újraindexelés nem fizet újra ugyanazért a szövegért.
+- **Determinisztikus fallback** (nincs kulcs vagy `PROVIDER=onprem`): a régi 64-dimenziós hash-alapú vektor, és a `/retrieve` a lokális `hybrid_local` (sparse+dense) keresést használja a `chunks.jsonl` fölött. Offline és tesztekben is működik.
+
+A `/reindex` válasza jelenti az aktív `embedding_mode`-ot és `embedding_dim`-et.
+
+> Megjegyzés: a beágyazott (helyi) Qdrant 20 000 pont fölött teljesítmény-figyelmeztetést ír (a teljes ÁSZF-korpusz ~51 ezer chunk). A POC-hoz működik; nagy léptékű, gyors szemantikus lekérdezéshez `QDRANT_MODE=server` ajánlott.
 
 ## Backend flow (Fázis 2)
 
