@@ -34,7 +34,13 @@ WAF vagy manuális beszerzés esetén másold a PDF-eket a `data/raw_pdfs/` mapp
      - `data/processed/parsed_pages.jsonl`
      - `data/processed/chunks.jsonl`
 
-Ha nincs PDF a `data/raw_pdfs/` alatt, a manifest üres dokumentumlistával jön létre. A Qdrant indexelés a következő implementációs lépés.
+3. Chunkok betöltésének ellenőrzése Qdrant nélkül:
+   - `python -m preprocessing.index --skip-qdrant`
+4. Qdrant indexelés:
+   - `python -m preprocessing.index`
+
+Ha nincs PDF a `data/raw_pdfs/` alatt, a manifest üres dokumentumlistával jön létre.
+A `/retrieve` endpoint a `data/processed/chunks.jsonl` alapján lokális fallback keresést ad, így Qdrant nélkül is tesztelhető a forráshivatkozásos találat.
 
 ## Projektváz
 

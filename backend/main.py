@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from backend.db import init_db
+from preprocessing.index import load_chunks, search_chunks
 
 
 app = FastAPI(title="ASZF QnA Agent API", version="0.1.0")
@@ -44,9 +45,15 @@ def classify(payload: ClassifyRequest) -> dict:
 
 @app.post("/retrieve")
 def retrieve(payload: RetrieveRequest) -> dict:
+    chunks = load_chunks()
+    results = search_chunks(
+        query=payload.query_masked,
+        chunks=chunks,
+        service_provider=payload.service_provider,
+    )
     return {
         "request_id": "stub",
-        "chunks": [],
+        "chunks": results,
     }
 
 
