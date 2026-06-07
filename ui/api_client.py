@@ -38,7 +38,7 @@ def request_json(
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     req = urllib.request.Request(url, data=data, headers=headers, method=method)
     try:
-        with urllib.request.urlopen(req, timeout=120) as response:
+        with urllib.request.urlopen(req, timeout=300) as response:
             return _parse_response(response.read())
     except urllib.error.HTTPError as exc:
         body = exc.read()

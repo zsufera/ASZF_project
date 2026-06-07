@@ -28,7 +28,7 @@ mandatory_by_category:
     oldalszam: 7
     szolgaltato: ONE
   hibabejelentes_szolgaltataskieses:
-  - label: 46 — ASZF_7_melleklet_hatalyos_20260605 (1) (hibabejelentes_szolgaltataskieses)
+  - label: 46 — ASZF_7_melleklet_hatalyos_20260605 (hibabejelentes_szolgaltataskieses)
     chunk_id: doc_bddcfcfb4358bf1c_p0046_s001
     paragrafus: '46'
     idezet: '46 Internet Pro csomagajánlatok esetében a Wifi pótló opció belföldön
@@ -38,7 +38,7 @@ mandatory_by_category:
       a helyhez kötött internet-hozzáférés szolgáltatás tervezett (rendszeres), vagy
       alkalmi hálózati karbantartása, a helyhez kötött internet-hozzáférés szolgáltatás
       költöztetése, il'
-    dok_cim: ASZF_7_melleklet_hatalyos_20260605 (1)
+    dok_cim: ASZF_7_melleklet_hatalyos_20260605
     oldalszam: 46
     szolgaltato: ONE
   szerzodesfelmondas_modositas:
@@ -96,5 +96,5 @@ mandatory_by_category:
     dok_cim: ASZF_3_melleklet_hatalyos_20260605
     oldalszam: 4
     szolgaltato: ONE
-derived_at: '2026-06-07T10:20:47.244830+00:00'
+derived_at: '2026-06-07T18:51:46.558255+00:00'
 source_chunks: data/processed/chunks.jsonl

@@ -30,7 +30,9 @@ def llm_available() -> bool:
 def _chat_completion(messages: list[dict[str, str]]) -> str:
     from openai import OpenAI
 
-    client = OpenAI(api_key=settings.openai_api_key)
+    # 90 s per call: classify + draft + verify + escalation should each finish
+    # well within this; prevents silent hangs on API-side delays.
+    client = OpenAI(api_key=settings.openai_api_key, timeout=90)
     response = client.chat.completions.create(
         model=settings.openai_model,
         temperature=settings.openai_temperature,
