@@ -57,7 +57,7 @@ def test_unmask_endpoint_restores_masked_text(tmp_path, monkeypatch) -> None:
     main.mask(MaskRequest(case_id="CASE-3", text="Email: test.poc@example.invalid"))
 
     response = main.unmask(
-        UnmaskRequest(case_id="CASE-3", body_masked="Email: [MASK_EMAIL_1]")
+        UnmaskRequest(case_id="CASE-3", body_masked="Email: [MASK_EMAIL_1]", role="ui")
     )
 
     assert response["body_unmasked"] == "Email: test.poc@example.invalid"

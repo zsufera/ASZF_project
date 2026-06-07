@@ -22,6 +22,9 @@ Fejlesztés közben kötelező iránytű: [FEJLESZTESI_GUARDRAILS.md](FEJLESZTES
    - `python -m backend.db`
 5. Backend indítás:
    - `uvicorn backend.main:app --reload`
+6. Streamlit UI (Fázis 4):
+   - `streamlit run ui/app.py`
+   - demo belépés: `ui_demo` / `ui_demo` vagy `supervisor_demo` / `supervisor_demo`
 
 ## ÁSZF ingest első lépései
 
@@ -72,8 +75,40 @@ Vertikális sorrend:
 11. `POST /ocr` -> postai PDF szövegkinyerés + maszkolás
 12. `POST /reindex` -> manifest + parse + index + derive_params
 13. `POST /eval/run` -> minta-email alapú retrieval/osztályozás metrikák
+14. `POST /agent/run` -> LangGraph állapotgép végponttól független teljes agent-folyamat
 
 Minden válasz tartalmazza: `request_id`, `model_profile`, `prompt_version`, `aszf_version`.
+
+## Agent flow (Fázis 3)
+
+`POST /agent/run` mezők: `case_id`, `channel` (`email|chat|phone|postal`), `input_text` vagy `input_text_masked`, opcionálisan `sender_email`, `service_provider`, `output_mode`.
+
+Lépések: nyelv/típus → maszkolás → kontextus → osztályozás → prioritás → retrieval → policy-map → eszkaláció → intézkedés → draft → verify → unmask-előkészítés.
+
+Válasz tartalmazza a `timeline` listát UI-idővonalhoz.
+
+## Streamlit UI (Fázis 4)
+
+Indítás: `streamlit run ui/app.py` (a backend fusson: `uvicorn backend.main:app --reload`).
+
+Nézetek:
+- **Inbox** — minta-emailek listája, szűrés/rendezés, ügy nézet
+- **Szabad bevitel** — ad-hoc feldolgozás
+- **Csatornák** — email / chat / telefon copilot / postai PDF+OCR
+- **Evaluation** — `/eval/run` KPI-k
+- **Supervisor** — eszkalált sor + aggregált statisztika
+
+Ügy nézet: háromhasábos elrendezés (források, draft-szerkesztő, agent-idővonal), jóváhagyás mock küldéssel, ÜI-visszajelzés.
+
+Backend ügy-endpointok: `GET /inbox`, `GET /cases/{id}`, `POST /cases/process`, `POST /cases/draft`, `POST /cases/approve`, `POST /cases/feedback`, `GET /supervisor/*`.
+
+## Audit és governance (Fázis 5)
+
+- Strukturált audit: `GET /audit/cases/{id}`, `GET /audit/events`, `GET /audit/completeness/{id}`
+- Státusz workflow: `POST /cases/status`
+- RBAC: `/unmask` és jóváhagyás `role` + `username` mellett; minden PII-hozzáférés naplózva
+- Megőrzés: `config/retention.yaml`, `POST /governance/purge` (supervisor, dry-run alap)
+- DPIA: [docs/dpia.md](docs/dpia.md)
 
 ## Projektváz
 

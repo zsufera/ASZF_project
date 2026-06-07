@@ -16,6 +16,17 @@ def load_disclaimer(path: Path = DEFAULT_DISCLAIMER_PATH) -> str:
     return str(payload.get("text_hu", "")).strip()
 
 
+def ensure_disclaimer(body_masked: str, output_mode: str) -> tuple[str, bool]:
+    if output_mode != "automata":
+        return body_masked, False
+    disclaimer = load_disclaimer()
+    if not disclaimer:
+        return body_masked, False
+    if disclaimer in body_masked:
+        return body_masked, True
+    return f"{body_masked.rstrip()}\n\n{disclaimer}", True
+
+
 def build_draft(
     case_id: str,
     category: str,

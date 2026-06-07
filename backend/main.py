@@ -4,12 +4,35 @@ import shutil
 import sqlite3
 from pathlib import Path
 
-from fastapi import FastAPI, File, Form, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
+from backend.audit_service import (
+    build_case_audit_record,
+    check_audit_completeness,
+    list_audit_events,
+    record_pii_access,
+)
+from backend.auth import ensure_users_in_db, get_user_id, get_user_role, verify_login
+from backend.case_service import (
+    approve_draft,
+    create_ad_hoc_case,
+    get_case_detail,
+    get_supervisor_queue,
+    get_supervisor_stats,
+    list_inbox,
+    process_case,
+    save_draft_version,
+    seed_inbox_from_samples,
+    submit_feedback,
+    transition_case_status,
+)
+from backend.retention_service import purge_expired_records
+from backend.workflow import WorkflowError
 from backend.classify import classify_message
 from backend.db import init_db
 from backend.draft import build_draft
+from agent.runner import run_agent
 from backend.eval_service import run_eval
 from backend.history import get_history
 from backend.masking import mask_text, unmask_text
@@ -21,9 +44,11 @@ from backend.retrieval import retrieve
 from backend.verify import verify_draft
 from config.settings import settings
 from integrations.customer_directory import MockCustomerDirectory
+from security.prompt_guard import detect_prompt_injection
+from security.rbac import RBACError, require_permission
 
 
-app = FastAPI(title="ASZF QnA Agent API", version="0.2.0")
+app = FastAPI(title="ASZF QnA Agent API", version="0.3.0")
 POSTAL_PDF_DIR = Path("data/postal_pdfs")
 
 
@@ -72,6 +97,8 @@ class UnmaskRequest(BaseModel):
     draft_version_id: int | None = None
     subject_masked: str | None = None
     body_masked: str | None = None
+    username: str | None = None
+    role: str | None = None
 
 
 class ReindexRequest(BaseModel):
@@ -82,9 +109,109 @@ class EvalRequest(BaseModel):
     limit: int = 10
 
 
+class AgentRunRequest(BaseModel):
+    case_id: str
+    channel: str = "email"
+    input_text: str | None = None
+    input_text_masked: str | None = None
+    sender_email: str | None = None
+    service_provider: str | None = None
+    output_mode: str = "hitl"
+    selected_customer_id: str | None = None
+    history_summary_masked: str | None = None
+    sla_expired: bool = False
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class InboxQuery(BaseModel):
+    category: str | None = None
+    priority: str | None = None
+    status: str | None = None
+    channel: str | None = None
+    search: str | None = None
+    sort_by: str = "priority"
+
+
+class CaseProcessRequest(BaseModel):
+    case_id: str
+    output_mode: str = "hitl"
+    username: str | None = None
+    selected_customer_id: str | None = None
+    service_provider: str | None = None
+    input_text_masked: str | None = None
+    sla_expired: bool = False
+
+
+class CaseCreateRequest(BaseModel):
+    channel: str = "email"
+    input_text: str
+    sender_email: str | None = None
+    service_provider: str | None = None
+
+
+class DraftSaveRequest(BaseModel):
+    case_id: str
+    subject: str
+    body_masked: str
+    output_mode: str = "hitl"
+    citations: list[str] = Field(default_factory=list)
+    username: str | None = None
+
+
+class DraftApproveRequest(BaseModel):
+    case_id: str
+    draft_version_id: int | None = None
+    subject_masked: str | None = None
+    body_masked: str | None = None
+    username: str | None = None
+
+
+class FeedbackRequest(BaseModel):
+    case_id: str
+    rating: str
+    wrong_source: bool = False
+    username: str | None = None
+
+
+class SeedRequest(BaseModel):
+    force: bool = False
+
+
+class StatusTransitionRequest(BaseModel):
+    case_id: str
+    target_status: str
+    username: str | None = None
+    role: str | None = None
+
+
+class PurgeRequest(BaseModel):
+    dry_run: bool = True
+    username: str | None = None
+    role: str | None = None
+
+
+def _resolve_actor(username: str | None) -> tuple[int | None, str | None]:
+    if not username:
+        return None, None
+    return get_user_id(username), get_user_role(username)
+
+
+def _guard_permission(role: str | None, action: str) -> None:
+    try:
+        require_permission(role, action)  # type: ignore[arg-type]
+    except RBACError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+
+
 @app.on_event("startup")
 def on_startup() -> None:
     init_db()
+    ensure_users_in_db()
+    seed_inbox_from_samples()
     POSTAL_PDF_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -95,10 +222,14 @@ def health() -> dict:
 
 @app.post("/classify")
 def classify(payload: ClassifyRequest) -> dict:
+    injection = detect_prompt_injection(payload.message_text_masked)
     result = classify_message(
         message_text_masked=payload.message_text_masked,
         history_summary_masked=payload.history_summary_masked,
     )
+    if injection["detected"]:
+        result["prompt_injection_detected"] = True
+        result["subtype"] = "prompt_injection"
     if payload.history_summary_masked and "ismetlodo" in payload.history_summary_masked.lower():
         result["is_repeated"] = True
     return {**response_meta(), **result}
@@ -150,6 +281,16 @@ def mask(payload: MaskRequest) -> dict:
 
 @app.post("/unmask")
 def unmask(payload: UnmaskRequest) -> dict:
+    role = payload.role or (get_user_role(payload.username) if payload.username else None)
+    _guard_permission(role, "unmask")
+    actor_id, _ = _resolve_actor(payload.username)
+    record_pii_access(
+        payload.case_id,
+        action="unmask_endpoint",
+        actor_user_id=actor_id,
+        role=role,
+        details={"draft_version_id": payload.draft_version_id},
+    )
     subject = payload.subject_masked or ""
     body = payload.body_masked or ""
     if payload.draft_version_id is not None:
@@ -202,3 +343,201 @@ def reindex(payload: ReindexRequest) -> dict:
 def eval_run(payload: EvalRequest) -> dict:
     result = run_eval(limit=payload.limit)
     return {**response_meta(), **result}
+
+
+@app.post("/agent/run")
+def agent_run(payload: AgentRunRequest) -> dict:
+    if not payload.input_text and not payload.input_text_masked:
+        return {**response_meta(), "error": "input_text vagy input_text_masked kötelező"}
+    return run_agent(
+        case_id=payload.case_id,
+        channel=payload.channel,
+        input_text=payload.input_text,
+        input_text_masked=payload.input_text_masked,
+        sender_email=payload.sender_email,
+        service_provider=payload.service_provider,
+        output_mode=payload.output_mode,
+        selected_customer_id=payload.selected_customer_id,
+        history_summary_masked=payload.history_summary_masked,
+        sla_expired=payload.sla_expired,
+    )
+
+
+@app.post("/auth/login")
+def auth_login(payload: LoginRequest) -> dict:
+    user = verify_login(payload.username, payload.password)
+    if not user:
+        return {**response_meta(), "error": "Hibás felhasználónév vagy jelszó"}
+    return {**response_meta(), **user, "user_id": get_user_id(user["username"])}
+
+
+@app.post("/cases/seed")
+def cases_seed(payload: SeedRequest) -> dict:
+    return {**response_meta(), **seed_inbox_from_samples(force=payload.force)}
+
+
+@app.get("/inbox")
+def inbox(
+    category: str | None = None,
+    priority: str | None = None,
+    status: str | None = None,
+    channel: str | None = None,
+    search: str | None = None,
+    sort_by: str = "priority",
+) -> dict:
+    items = list_inbox(
+        category=category,
+        priority=priority,
+        status=status,
+        channel=channel,
+        search=search,
+        sort_by=sort_by,
+    )
+    return {**response_meta(), "items": items, "count": len(items)}
+
+
+@app.get("/cases/{case_id}")
+def case_detail(case_id: str) -> dict:
+    detail = get_case_detail(case_id)
+    if not detail:
+        return {**response_meta(), "error": "Ügy nem található", "case_id": case_id}
+    return {**response_meta(), **detail}
+
+
+@app.post("/cases/create")
+def case_create(payload: CaseCreateRequest) -> dict:
+    case_id = create_ad_hoc_case(
+        channel=payload.channel,
+        input_text=payload.input_text,
+        sender_email=payload.sender_email,
+        service_provider=payload.service_provider,
+    )
+    return {**response_meta(), "case_id": case_id}
+
+
+@app.post("/cases/process")
+def case_process(payload: CaseProcessRequest) -> dict:
+    actor_id, actor_role = _resolve_actor(payload.username)
+    try:
+        result = process_case(
+            case_code=payload.case_id,
+            output_mode=payload.output_mode,
+            actor_user_id=actor_id,
+            actor_role=actor_role,
+            selected_customer_id=payload.selected_customer_id,
+            service_provider=payload.service_provider,
+            input_text_masked=payload.input_text_masked,
+            sla_expired=payload.sla_expired,
+        )
+    except RBACError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    return {**response_meta(), **result}
+
+
+@app.post("/cases/draft")
+def case_draft_save(payload: DraftSaveRequest) -> dict:
+    actor_id, actor_role = _resolve_actor(payload.username)
+    try:
+        result = save_draft_version(
+            case_code=payload.case_id,
+            subject=payload.subject,
+            body_masked=payload.body_masked,
+            output_mode=payload.output_mode,
+            citations=payload.citations,
+            actor_user_id=actor_id,
+            actor_role=actor_role,
+        )
+    except RBACError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    return {**response_meta(), **result}
+
+
+@app.post("/cases/approve")
+def case_approve(payload: DraftApproveRequest) -> dict:
+    actor_id, actor_role = _resolve_actor(payload.username)
+    try:
+        result = approve_draft(
+            case_code=payload.case_id,
+            draft_version_id=payload.draft_version_id,
+            subject_masked=payload.subject_masked,
+            body_masked=payload.body_masked,
+            actor_user_id=actor_id,
+            actor_role=actor_role,
+        )
+    except RBACError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    return {**response_meta(), **result}
+
+
+@app.post("/cases/feedback")
+def case_feedback(payload: FeedbackRequest) -> dict:
+    actor_id = get_user_id(payload.username) if payload.username else None
+    return {
+        **response_meta(),
+        **submit_feedback(
+            case_code=payload.case_id,
+            rating=payload.rating,
+            wrong_source=payload.wrong_source,
+            actor_user_id=actor_id,
+        ),
+    }
+
+
+@app.get("/supervisor/queue")
+def supervisor_queue() -> dict:
+    items = get_supervisor_queue()
+    return {**response_meta(), "items": items, "count": len(items)}
+
+
+@app.get("/supervisor/stats")
+def supervisor_stats() -> dict:
+    return {**response_meta(), **get_supervisor_stats()}
+
+
+@app.post("/cases/status")
+def case_status_transition(payload: StatusTransitionRequest) -> dict:
+    actor_id, actor_role = _resolve_actor(payload.username)
+    _guard_permission(actor_role or payload.role, "change_status")
+    try:
+        result = transition_case_status(
+            case_code=payload.case_id,
+            target_status=payload.target_status,
+            actor_user_id=actor_id,
+            actor_role=actor_role or payload.role,
+        )
+    except RBACError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except WorkflowError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    if result.get("error"):
+        raise HTTPException(status_code=404, detail=result["error"])
+    return {**response_meta(), **result}
+
+
+@app.get("/audit/cases/{case_id}")
+def audit_case_record(case_id: str, role: str | None = None) -> dict:
+    _guard_permission(role, "view_audit")
+    record = build_case_audit_record(case_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="Ügy nem található")
+    return {**response_meta(), **record}
+
+
+@app.get("/audit/events")
+def audit_events(case_id: str | None = None, limit: int = 50, role: str | None = None) -> dict:
+    _guard_permission(role, "view_audit")
+    events = list_audit_events(case_code=case_id, limit=limit)
+    return {**response_meta(), "events": events, "count": len(events)}
+
+
+@app.get("/audit/completeness/{case_id}")
+def audit_completeness(case_id: str, role: str | None = None) -> dict:
+    _guard_permission(role, "view_audit")
+    return {**response_meta(), **check_audit_completeness(case_id)}
+
+
+@app.post("/governance/purge")
+def governance_purge(payload: PurgeRequest) -> dict:
+    role = payload.role or (get_user_role(payload.username) if payload.username else None)
+    _guard_permission(role, "purge_retention")
+    return {**response_meta(), **purge_expired_records(dry_run=payload.dry_run)}

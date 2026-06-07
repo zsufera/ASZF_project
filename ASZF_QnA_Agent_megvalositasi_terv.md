@@ -15,11 +15,11 @@
 - [x] **backend-rag** — FastAPI RAG backend: hibrid retrieval (sparse+dense, Qdrant opció), rerank, cross-ref feloldás, modell-router meta, core endpointok bekötve
 - [x] **postai-ocr** — Backend `POST /ocr`: PDF feltöltés, PyMuPDF szövegkinyerés, konfidencia-heurisztika, automatikus maszkolás (UI előnézet Fázis 4)
 - [x] **elozmeny-ugyfeltorzs** — `GET /history` SQLite lekérdezés + `GET /customer-lookup` mock adapter (UI panel Fázis 4)
-- [ ] **agent-statemachine** — LangGraph állapotgépes agent: osztályozás, Presidio GDPR-maszkolás (visszafordítható), szabályzat-térkép, sablonválasztás, eszkalációs döntés, levélgenerálás, ellenőrző
-- [ ] **ui** — Streamlit UI váz: inbox + szabad kérdés, agent-idővonal, forráspanel/kiemelés, draft+verzió+jóváhagyás, csatorna-fülek (email/chat/telefon/**postai PDF-import + OCR-előnézet**), badge/SLA, konfig-alapú bejelentkezés (ÜI/supervisor aggregált statisztika nézettel)
-- [ ] **audit-governance** — Audit naplózás, disclaimer konfig, GDPR megőrzési korlátok, két kimeneti mód
+- [x] **agent-statemachine** — LangGraph állapotgép (`agent/graph.py`): 12 node, `POST /agent/run`, timeline + audit meta
+- [x] **ui** — Streamlit UI (`ui/app.py`): inbox, szabad bevitel, ügy nézet (idővonal/források/draft), csatorna-fülek, Evaluation, Supervisor, demo login
+- [x] **audit-governance** — `backend/audit_service.py`: iterációs audit, teljesség-ellenőrzés, workflow, disclaimer, Art. 22, retention
 - [x] **eval-harness** — Backend `POST /eval/run` + CLI (`eval/run_eval.py`): minta-email category/retrieval metrikák (Evaluation UI Fázis 4)
-- [ ] **compliance-security** — Azure OpenAI EU + no-training, maszkolt egress, titkosított de-id térkép, RBAC + PII-láthatóság, prompt-injection védelem, napló-redakció, Art. 22 safeguards, `docs/dpia.md` (DPIA + adatáramlási térkép)
+- [x] **compliance-security** — `security/rbac.py`, `security/redaction.py`, `security/prompt_guard.py`, RBAC unmask/approve, `docs/dpia.md` (POC-szint)
 - [x] **testing** — pytest: ingest, retrieval, masking roundtrip, Phase 2 endpoint tesztek (PII szivárgás-kapu és adversariális harness későbbi bővítés)
 
 ---
@@ -40,10 +40,30 @@
 - `backend/history.py`, `backend/ocr_service.py`, `backend/reindex_service.py`, `backend/eval_service.py`
 - FastAPI endpointok: `/mask`, `/unmask`, `/ocr`, `/reindex`, `/eval/run` + meglévő core flow meta mezőkkel
 
-### Tudatos POC-hiányok (Fázis 2 után)
-- LlamaIndex integráció, `bge-m3` / Cohere rerank, Azure OpenAI válasz-szintézis nincs bekötve
-- Presidio helyett determinisztikus regex-maszkolás
-- Langfuse tracing, LangGraph agent, Streamlit UI — Fázis 3–4
+### Fázis 3 — kész (POC-szint)
+- `agent/nodes.py`: 12 determinisztikus node (lang/típus, maszkolás, kontextus, classify, priority, retrieve, policy-map, escalation, actions, draft, verify, unmask)
+- `agent/graph.py` + `agent/runner.py`: LangGraph compile + `POST /agent/run`
+- Copilot csatorna (`chat`/`phone`) beszédpont-formátum; email csatorna teljes draft
+- `timeline[]` minden lépés kimenetével (UI-idővonalhoz)
+
+### Fázis 4 — kész (POC-szint)
+- `ui/app.py` + `ui/views/*`: inbox, szabad bevitel, háromhasábos ügy nézet, csatorna-fülek (email/chat/telefon/postai OCR)
+- `backend/case_service.py`: inbox seed, feldolgozás, draft verzió, mock jóváhagyás, feedback, supervisor statisztika
+- API: `/auth/login`, `/inbox`, `/cases/*`, `/supervisor/*`
+- Demo belépés: `config/users.yaml` (`ui_demo` / `supervisor_demo`)
+
+### Fázis 5 — kész (POC-szint)
+- `backend/audit_service.py`: `case_iteration` audit rekord, teljesség-ellenőrzés, PII-hozzáférés napló
+- `backend/workflow.py`: státusz-átmenetek (`uj` → `folyamatban` → `eszkalálva` → `jovahagyasra_var` → `lezarva`)
+- `security/rbac.py` + `security/redaction.py`: unmask/approve/audit/purge jogosultság, redakció
+- `config/retention.yaml` + `POST /governance/purge`; GDPR Art. 22 esemény automata módban
+- `docs/dpia.md`: DPIA és adatáramlási térkép
+- API: `/audit/cases/{id}`, `/audit/events`, `/audit/completeness/{id}`, `/cases/status`
+
+### Tudatos POC-hiányok (Fázis 5 után)
+- LlamaIndex / Azure OpenAI LLM-node-ok nincsenek bekötve (determinisztikus fallback)
+- Presidio helyett regex-maszkolás; titkosított de-id tár és append-only audit — prod
+- Langfuse tracing; teljes session middleware — Fázis 6+
 
 ---
 

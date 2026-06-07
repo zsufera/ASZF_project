@@ -1,0 +1,8 @@
+poc_retention_days: 90
+audit_events_days: 365
+pii_token_map_days: 30
+auto_purge_enabled: false
+gdpr_art22_notice_hu: >
+  Automata kimeneti mod eseten a rendszer AI-tamogatott dontes-elokeszitest vegez.
+  Az ugyfel felé kikuldott tartalom csak emberi jovahagyas utan ervenyes (POC mock kuldes).
+data_subject_erasure_contact: privacy@example.invalid
