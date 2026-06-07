@@ -2,6 +2,30 @@ from __future__ import annotations
 
 from typing import Any
 
+from backend.llm import chat_json, llm_available
+from preprocessing.index import fold_text
+
+
+ALLOWED_CATEGORIES = {
+    "szamlazas",
+    "dijemeles",
+    "hibabejelentes_szolgaltataskieses",
+    "szerzodesfelmondas_modositas",
+    "lefedettseg",
+    "eszkoz_keszulek",
+    "adatvedelem",
+    "egyeb",
+}
+
+CLASSIFY_SYSTEM = (
+    "Sorold be a panaszt a következő fix kategóriákba (egy fő + szükség esetén több jelölt): "
+    "számlázás, díjemelés, hibabejelentés_szolgáltatáskiesés, szerződésfelmondás_módosítás, "
+    "lefedettség, eszköz_készülék, adatvédelem, egyéb. Ha van rá jel, adj szabályzati altípust is. "
+    "Vedd figyelembe a korábbi azonos-című ügyek összegzését, ha adott. "
+    'Válasz JSON: {"fo_kategoria": "...", "altipus": "string|null", '
+    '"tobb_jelolt": [{"kategoria": "...", "konfidencia": 0.0}], "konfidencia": 0.0}'
+)
+
 
 CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
     "szamlazas": ("számla", "szamla", "számlázás", "szamlazas", "számlázási", "szamlazasi"),
@@ -25,7 +49,7 @@ def normalize(text: str) -> str:
     return text.lower()
 
 
-def classify_message(message_text_masked: str, history_summary_masked: str | None = None) -> dict[str, Any]:
+def classify_message_rule(message_text_masked: str, history_summary_masked: str | None = None) -> dict[str, Any]:
     text = normalize(message_text_masked)
     scores: list[tuple[int, str]] = []
     for category, keywords in CATEGORY_KEYWORDS.items():
@@ -50,3 +74,38 @@ def classify_message(message_text_masked: str, history_summary_masked: str | Non
         "candidates": candidates,
         "is_repeated": is_repeated,
     }
+
+
+def classify_message(message_text_masked: str, history_summary_masked: str | None = None) -> dict[str, Any]:
+    rule = classify_message_rule(message_text_masked, history_summary_masked)
+    if not llm_available():
+        rule["classify_mode"] = "rule"
+        return rule
+    try:
+        user = (
+            f'Maszkolt üzenet:\n"""\n{message_text_masked}\n"""\n'
+            f"Előzmény-összegzés (opcionális): {history_summary_masked or ''}"
+        )
+        data = chat_json(CLASSIFY_SYSTEM, user)
+        category = fold_text(str(data.get("fo_kategoria", "")))
+        if category not in ALLOWED_CATEGORIES:
+            raise ValueError("invalid category")
+        confidence = float(data.get("konfidencia", 0.6))
+        candidates: list[dict[str, Any]] = []
+        for candidate in data.get("tobb_jelolt", []) or []:
+            key = fold_text(str(candidate.get("kategoria", "")))
+            if key in ALLOWED_CATEGORIES:
+                candidates.append({"category": key, "confidence": float(candidate.get("konfidencia", 0.5))})
+        if not candidates:
+            candidates = [{"category": category, "confidence": confidence}]
+        return {
+            "category": category,
+            "subtype": data.get("altipus"),
+            "confidence": confidence,
+            "candidates": candidates,
+            "is_repeated": rule["is_repeated"],
+            "classify_mode": "llm",
+        }
+    except Exception:
+        rule["classify_mode"] = "rule"
+        return rule
