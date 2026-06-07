@@ -4,5 +4,7 @@ __pycache__/
 .env
 data/app.db
 data/qdrant_storage/
+data/qdrant_local/
+data/processed/embedding_cache.db
 data/ollama/
 .superpowers/
