@@ -1,0 +1,12 @@
+targets:
+  faithfulness: 0.85
+  citation_support_rate: 0.95
+  judge_score: 4.0
+  retrieval_support: 0.95
+  coverage: 0.80
+  escalation_appropriateness: 0.90
+  time_to_answer_ms: 30000
+  category_accuracy: 0.70
+  out_of_scope_answer_rate_max: 0.05
+  version_mismatch_max: 0
+  audit_completeness: 1.0

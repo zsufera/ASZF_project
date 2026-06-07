@@ -137,8 +137,30 @@ def run_reindex(force: bool = False) -> dict[str, Any]:
     return request_json("POST", "/reindex", {"force": force})
 
 
-def run_eval(limit: int = 10) -> dict[str, Any]:
-    return request_json("POST", "/eval/run", {"limit": limit})
+def run_eval(
+    limit: int = 10,
+    category: str | None = None,
+    service_provider: str | None = None,
+    include_edge: bool = True,
+) -> dict[str, Any]:
+    return request_json(
+        "POST",
+        "/eval/run",
+        {
+            "limit": limit,
+            "category": category,
+            "service_provider": service_provider,
+            "include_edge": include_edge,
+        },
+    )
+
+
+def save_eval_baseline(run_id: str) -> dict[str, Any]:
+    return request_json("POST", "/eval/baseline", {"run_id": run_id})
+
+
+def save_human_score(run_id: str, email_id: str, score: int) -> dict[str, Any]:
+    return request_json("POST", "/eval/human-score", {"run_id": run_id, "email_id": email_id, "score": score})
 
 
 def supervisor_queue() -> dict[str, Any]:

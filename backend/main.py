@@ -33,7 +33,8 @@ from backend.classify import classify_message
 from backend.db import init_db
 from backend.draft import build_draft
 from agent.runner import run_agent
-from backend.eval_service import run_eval
+from backend.eval_service import export_run, run_eval, set_baseline_from_run
+from eval.report import load_baseline, save_human_score
 from backend.history import get_history
 from backend.masking import mask_text, unmask_text
 from backend.metadata import response_meta
@@ -107,6 +108,20 @@ class ReindexRequest(BaseModel):
 
 class EvalRequest(BaseModel):
     limit: int = 10
+    category: str | None = None
+    service_provider: str | None = None
+    include_edge: bool = True
+    save_report: bool = True
+
+
+class EvalBaselineRequest(BaseModel):
+    run_id: str
+
+
+class EvalHumanScoreRequest(BaseModel):
+    run_id: str
+    email_id: str
+    score: int = Field(ge=1, le=5)
 
 
 class AgentRunRequest(BaseModel):
@@ -341,8 +356,43 @@ def reindex(payload: ReindexRequest) -> dict:
 
 @app.post("/eval/run")
 def eval_run(payload: EvalRequest) -> dict:
-    result = run_eval(limit=payload.limit)
+    result = run_eval(
+        limit=payload.limit,
+        category=payload.category,
+        service_provider=payload.service_provider,
+        include_edge=payload.include_edge,
+        save_report=payload.save_report,
+    )
     return {**response_meta(), **result}
+
+
+@app.get("/eval/runs/{run_id}")
+def eval_run_detail(run_id: str) -> dict:
+    report = export_run(run_id)
+    if not report:
+        return {**response_meta(), "error": "Futás nem található", "run_id": run_id}
+    return {**response_meta(), **report}
+
+
+@app.get("/eval/baseline")
+def eval_baseline() -> dict:
+    baseline = load_baseline()
+    if not baseline:
+        return {**response_meta(), "has_baseline": False}
+    return {**response_meta(), "has_baseline": True, **baseline}
+
+
+@app.post("/eval/baseline")
+def eval_baseline_save(payload: EvalBaselineRequest) -> dict:
+    result = set_baseline_from_run(payload.run_id)
+    if result.get("error"):
+        return {**response_meta(), **result}
+    return {**response_meta(), **result}
+
+
+@app.post("/eval/human-score")
+def eval_human_score(payload: EvalHumanScoreRequest) -> dict:
+    return {**response_meta(), **save_human_score(payload.run_id, payload.email_id, payload.score)}
 
 
 @app.post("/agent/run")

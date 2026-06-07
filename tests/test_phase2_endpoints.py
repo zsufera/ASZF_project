@@ -67,7 +67,14 @@ def test_eval_run_endpoint_returns_metrics(monkeypatch) -> None:
     monkeypatch.setattr(
         main,
         "run_eval",
-        lambda limit=10: {"evaluated": 2, "category_accuracy": 1.0, "retrieval_support": 0.5, "results": []},
+        lambda **kwargs: {
+            "evaluated": 2,
+            "category_accuracy": 1.0,
+            "retrieval_support": 0.5,
+            "results": [],
+            "kpis": {"values": {}, "status": {}, "targets": {}},
+            "run_id": "test-run",
+        },
     )
 
     response = main.eval_run(EvalRequest(limit=2))

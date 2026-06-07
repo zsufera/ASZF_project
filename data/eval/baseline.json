@@ -1,0 +1,50 @@
+{
+  "run_id": "20260607T090138-3e1d5be4",
+  "created_at": "2026-06-07T09:01:38.625675+00:00",
+  "kpis": {
+    "values": {
+      "faithfulness": 1.0,
+      "citation_support_rate": 1.0,
+      "judge_score": 4.85,
+      "retrieval_support": 1.0,
+      "coverage": 1.0,
+      "escalation_appropriateness": 1.0,
+      "time_to_answer_ms_p95": 16,
+      "category_accuracy": 0.5,
+      "out_of_scope_answer_rate": 0.0,
+      "version_mismatch": 1,
+      "audit_completeness": 1.0,
+      "prompt_version": "2026.06.07",
+      "aszf_version": "2026-06-05",
+      "time_to_answer_ms": 16
+    },
+    "targets": {
+      "faithfulness": 0.85,
+      "citation_support_rate": 0.95,
+      "judge_score": 4.0,
+      "retrieval_support": 0.95,
+      "coverage": 0.8,
+      "escalation_appropriateness": 0.9,
+      "time_to_answer_ms": 30000,
+      "category_accuracy": 0.7,
+      "out_of_scope_answer_rate_max": 0.05,
+      "version_mismatch_max": 0,
+      "audit_completeness": 1.0
+    },
+    "status": {
+      "faithfulness": "green",
+      "citation_support_rate": "green",
+      "judge_score": "green",
+      "retrieval_support": "green",
+      "coverage": "green",
+      "escalation_appropriateness": "green",
+      "time_to_answer_ms": "green",
+      "category_accuracy": "red",
+      "out_of_scope_answer_rate": "red",
+      "version_mismatch": "red",
+      "audit_completeness": "green"
+    }
+  },
+  "prompt_version": "2026.06.07",
+  "aszf_version": "2026-06-05"
+}

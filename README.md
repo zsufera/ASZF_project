@@ -110,6 +110,18 @@ Backend ügy-endpointok: `GET /inbox`, `GET /cases/{id}`, `POST /cases/process`,
 - Megőrzés: `config/retention.yaml`, `POST /governance/purge` (supervisor, dry-run alap)
 - DPIA: [docs/dpia.md](docs/dpia.md)
 
+## Evaluation harness (Fázis 6)
+
+CLI: `python -m eval.run_eval --limit 10`
+
+API:
+- `POST /eval/run` — teljes KPI riport (szűrők: kategória, szolgáltató, edge esetek)
+- `GET /eval/runs/{run_id}` — mentett futás
+- `POST /eval/baseline` + `GET /eval/baseline` — regresszió diff
+- `POST /eval/human-score` — emberi 1–5 spot-check
+
+KPI célértékek: `config/eval_targets.yaml`. Riportok: `data/eval/runs/`.
+
 ## Projektváz
 
 - `preprocessing/` letöltés, parse, chunk, index, mintaadat

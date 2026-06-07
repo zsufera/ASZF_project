@@ -18,7 +18,7 @@
 - [x] **agent-statemachine** — LangGraph állapotgép (`agent/graph.py`): 12 node, `POST /agent/run`, timeline + audit meta
 - [x] **ui** — Streamlit UI (`ui/app.py`): inbox, szabad bevitel, ügy nézet (idővonal/források/draft), csatorna-fülek, Evaluation, Supervisor, demo login
 - [x] **audit-governance** — `backend/audit_service.py`: iterációs audit, teljesség-ellenőrzés, workflow, disclaimer, Art. 22, retention
-- [x] **eval-harness** — Backend `POST /eval/run` + CLI (`eval/run_eval.py`): minta-email category/retrieval metrikák (Evaluation UI Fázis 4)
+- [x] **eval-harness** — Teljes harness: KPI-k, judge, baseline diff, human score, export (`eval/`, `POST /eval/*`)
 - [x] **compliance-security** — `security/rbac.py`, `security/redaction.py`, `security/prompt_guard.py`, RBAC unmask/approve, `docs/dpia.md` (POC-szint)
 - [x] **testing** — pytest: ingest, retrieval, masking roundtrip, Phase 2 endpoint tesztek (PII szivárgás-kapu és adversariális harness későbbi bővítés)
 
@@ -60,10 +60,17 @@
 - `docs/dpia.md`: DPIA és adatáramlási térkép
 - API: `/audit/cases/{id}`, `/audit/events`, `/audit/completeness/{id}`, `/cases/status`
 
-### Tudatos POC-hiányok (Fázis 5 után)
-- LlamaIndex / Azure OpenAI LLM-node-ok nincsenek bekötve (determinisztikus fallback)
-- Presidio helyett regex-maszkolás; titkosított de-id tár és append-only audit — prod
-- Langfuse tracing; teljes session middleware — Fázis 6+
+### Fázis 6 — kész (POC-szint)
+- `eval/metrics.py`, `eval/judge.py`, `eval/report.py`, `eval/question_bank.py`: referencia-mentes KPI-k
+- Metrikák: faithfulness, citation support, judge score (heurisztikus), retrieval-support, coverage, eszkaláció, idő, out-of-scope
+- `config/eval_targets.yaml` célértékek + állapotjelzés (zöld/sárga/piros)
+- Baseline diff + export + emberi 1–5 spot-check; PII-szivárgás kapu teszt
+- API: `/eval/run`, `/eval/runs/{id}`, `/eval/baseline`, `/eval/human-score`
+
+### Tudatos POC-hiányok (Fázis 6 után)
+- LLM-as-judge külön bíró-modell helyett determinisztikus heurisztika
+- Szintetikus LLM kérdésbank generálás helyett minta-email katalógus
+- Langfuse tracing; prod adversariális red-team bővítés
 
 ---
 
