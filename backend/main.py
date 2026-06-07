@@ -33,7 +33,10 @@ from backend.classify import classify_message
 from backend.db import init_db
 from backend.draft import build_draft
 from agent.runner import run_agent
+from backend.acceptance_service import run_acceptance
 from backend.eval_service import export_run, run_eval, set_baseline_from_run
+from backend.tracing_service import list_recent_traces
+from demo.runner import run_all_scenarios
 from eval.report import load_baseline, save_human_score
 from backend.history import get_history
 from backend.masking import mask_text, unmask_text
@@ -49,7 +52,7 @@ from security.prompt_guard import detect_prompt_injection
 from security.rbac import RBACError, require_permission
 
 
-app = FastAPI(title="ASZF QnA Agent API", version="0.3.0")
+app = FastAPI(title="ASZF QnA Agent API", version="0.4.0")
 POSTAL_PDF_DIR = Path("data/postal_pdfs")
 
 
@@ -207,6 +210,16 @@ class PurgeRequest(BaseModel):
     dry_run: bool = True
     username: str | None = None
     role: str | None = None
+
+
+class AcceptanceRequest(BaseModel):
+    eval_limit: int = 10
+    include_edge: bool = True
+    run_demo: bool = True
+
+
+class DemoRunRequest(BaseModel):
+    save_report: bool = True
 
 
 def _resolve_actor(username: str | None) -> tuple[int | None, str | None]:
@@ -591,3 +604,26 @@ def governance_purge(payload: PurgeRequest) -> dict:
     role = payload.role or (get_user_role(payload.username) if payload.username else None)
     _guard_permission(role, "purge_retention")
     return {**response_meta(), **purge_expired_records(dry_run=payload.dry_run)}
+
+
+@app.post("/acceptance/run")
+def acceptance_run(payload: AcceptanceRequest) -> dict:
+    return {
+        **response_meta(),
+        **run_acceptance(
+            eval_limit=payload.eval_limit,
+            include_edge=payload.include_edge,
+            run_demo=payload.run_demo,
+        ),
+    }
+
+
+@app.post("/demo/run")
+def demo_run(payload: DemoRunRequest) -> dict:
+    return {**response_meta(), **run_all_scenarios(save_report=payload.save_report)}
+
+
+@app.get("/observability/traces")
+def observability_traces(limit: int = 50) -> dict:
+    traces = list_recent_traces(limit=limit)
+    return {**response_meta(), "traces": traces, "count": len(traces)}

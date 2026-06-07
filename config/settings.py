@@ -13,6 +13,9 @@ class Settings:
     openai_api_key: str = os.getenv("OPENAI_API_KEY", "")
     openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4.1")
     openai_embed_model: str = os.getenv("OPENAI_EMBED_MODEL", "text-embedding-3-large")
+    langfuse_enabled: bool = os.getenv("LANGFUSE_ENABLED", "false").lower() == "true"
+    langfuse_host: str = os.getenv("LANGFUSE_HOST", "http://localhost:3000")
+    trace_dir: str = os.getenv("TRACE_DIR", "data/traces")
 
 
 settings = Settings()

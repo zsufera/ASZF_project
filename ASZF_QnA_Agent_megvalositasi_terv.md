@@ -9,7 +9,7 @@
 ## Feladatlista (todo)
 
 - [x] **scaffold** — Projektváz: mappastruktúra, requirements, kapcsolható felhő/on-prem config, README
-- [ ] **runtime-observability** — Lokális Windows futtatás (WSL2/Docker), minimális docker-compose (Qdrant [+ Ollama]), Langfuse tracing (agent-lépés/LLM, latency/költség), futtatási sorrend dokumentálva
+- [x] **runtime-observability** — docker-compose (Qdrant, Ollama onprem, Langfuse observability profile), lokális JSON trace (`backend/tracing_service.py`), futtatási sorrend README + `docs/demo_script.md`
 - [x] **preprocessing** — Előfeldolgozó CLI: kézi PDF ingest, PyMuPDF parse, hierarchikus §-chunking (cross_refs, szolgáltató-szeparáció), sparse+dense index fallback, 16 minta-email katalógus
 - [x] **dok-parameterezes** — Offline származtató CLI (`derive_params`): eszkalációs triggerek, kötelező behivatkozások, disclaimer provenance → YAML + `data/derived/derive_report.json`
 - [x] **backend-rag** — FastAPI RAG backend: hibrid retrieval (sparse+dense, Qdrant opció), rerank, cross-ref feloldás, modell-router meta, core endpointok bekötve
@@ -20,7 +20,7 @@
 - [x] **audit-governance** — `backend/audit_service.py`: iterációs audit, teljesség-ellenőrzés, workflow, disclaimer, Art. 22, retention
 - [x] **eval-harness** — Teljes harness: KPI-k, judge, baseline diff, human score, export (`eval/`, `POST /eval/*`)
 - [x] **compliance-security** — `security/rbac.py`, `security/redaction.py`, `security/prompt_guard.py`, RBAC unmask/approve, `docs/dpia.md` (POC-szint)
-- [x] **testing** — pytest: ingest, retrieval, masking roundtrip, Phase 2 endpoint tesztek (PII szivárgás-kapu és adversariális harness későbbi bővítés)
+- [x] **testing** — pytest: ingest, retrieval, masking, Phase 2–7 endpoint tesztek, PII szivárgás-kapu, adversariális harness, demó-szcenáriók, acceptance kapu
 
 ---
 
@@ -67,10 +67,20 @@
 - Baseline diff + export + emberi 1–5 spot-check; PII-szivárgás kapu teszt
 - API: `/eval/run`, `/eval/runs/{id}`, `/eval/baseline`, `/eval/human-score`
 
-### Tudatos POC-hiányok (Fázis 6 után)
+### Fázis 7 — kész (POC-szint)
+- `backend/tracing_service.py`: lokális JSON trace (agent_run, demo_scenario); opcionális Langfuse compose profile
+- `integrations/sqlite_case_store.py`, `integrations/mock_email_adapter.py`: adapter határok mock implementációval
+- `demo/scenarios.py` + `demo/runner.py`: 4 demó-szcenárió (számlázás E2E, egyedi szerződés, SLA, copilot)
+- `backend/acceptance_service.py`: eval KPI + demó együttes elfogadási kapu
+- `scripts/run_quality_gate.py`: pytest + acceptance CLI
+- Dokumentáció: `docs/demo_script.md`, `docs/compliance_checklist.md`
+- API: `POST /demo/run`, `POST /acceptance/run`, `GET /observability/traces`
+
+### Tudatos POC-hiányok (Fázis 7 után)
 - LLM-as-judge külön bíró-modell helyett determinisztikus heurisztika
 - Szintetikus LLM kérdésbank generálás helyett minta-email katalógus
-- Langfuse tracing; prod adversariális red-team bővítés
+- Langfuse éles SDK bekötés (lokális JSON trace helyett); prod adversariális red-team bővítés
+- Valós CRM/email integráció (mock adapterek készültek)
 
 ---
 

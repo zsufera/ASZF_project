@@ -122,6 +122,26 @@ API:
 
 KPI célértékek: `config/eval_targets.yaml`. Riportok: `data/eval/runs/`.
 
+## POC lezárás (Fázis 7)
+
+Demó-szcenáriók:
+- `python -m demo` vagy `POST /demo/run`
+- Forgatókönyv: [docs/demo_script.md](docs/demo_script.md)
+
+Elfogadási kapu:
+- `python scripts/run_quality_gate.py` (pytest + eval KPI + demó)
+- `POST /acceptance/run`
+
+Observability:
+- `GET /observability/traces` — lokális trace (`data/traces/`)
+- Opcionális Langfuse: `docker compose --profile observability up -d`, `.env`: `LANGFUSE_ENABLED=true`
+
+Integrációs adapterek (mock):
+- `integrations/sqlite_case_store.py` — `CaseStore` Protocol
+- `integrations/mock_email_adapter.py` — outbound mock küldés
+
+Compliance: [docs/compliance_checklist.md](docs/compliance_checklist.md)
+
 ## Projektváz
 
 - `preprocessing/` letöltés, parse, chunk, index, mintaadat
@@ -129,6 +149,9 @@ KPI célértékek: `config/eval_targets.yaml`. Riportok: `data/eval/runs/`.
 - `agent/` LangGraph állapotgép
 - `ui/` Streamlit felület
 - `eval/` referencia-mentes kiértékelés
+- `demo/` automatizált demó-szcenáriók
+- `integrations/` külső rendszer adapterek (mock)
+- `scripts/` minőség-kapu és segéd CLI-k
 - `config/` policy és runtime konfig
 - `data/` lokális adatok
-- `docs/` DPIA és egyéb dokumentáció
+- `docs/` DPIA, demó forgatókönyv, compliance

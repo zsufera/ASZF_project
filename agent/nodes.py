@@ -27,7 +27,18 @@ ENGLISH_HINTS = ("dear", "hello", "please", "invoice", "billing", "thank you", "
 NEM_PANASZ_HINTS = ("köszön", "koszon", "köszönet", "kosznet", "megoldotta", "rendben volt")
 HATOKORON_KIVULI_HINTS = ("munkahely", "hr ", "human resources", "fizetés nélküli", "fizetes nelkuli")
 TRIGGER_KEYWORDS: dict[str, tuple[str, ...]] = {
-    "egyedi_szerzodes_gyanu": ("egyedi szerződés", "egyedi szerzodes", "egyedi kedvezmény", "aláírt szerződés"),
+    "egyedi_szerzodes_gyanu": (
+        "egyedi szerződés",
+        "egyedi szerzodes",
+        "egyedi kedvezmény",
+        "aláírt szerződés",
+        "egyedi, aláírt",
+        "egyedi, alairt",
+        "kedvezményes szerződést",
+        "kedvezmenyes szerzodest",
+        "egyedi előfizetői",
+        "egyedi elofizetoi",
+    ),
     "vitatott_osszeg": ("vitatott összeg", "vitatott osszeg", "jogvit", "visszatérítés", "visszaterites"),
     "jogi_hatosagi_media": ("bíróság", "birosag", "hatóság", "hatosag", "nmhh", "fogyasztóvédelem", "fogyvedelem"),
     "sla_kozel_lejarat": ("azonnal", "sürgős", "surgos", "határidő lejárt", "hatarido lejart"),

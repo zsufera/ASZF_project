@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import time
 from datetime import datetime, timezone
 from typing import Any
 
 from agent.graph import compiled_agent_graph
 from agent.state import AgentState
 from backend.metadata import response_meta
+from backend.tracing_service import trace_event
 from config.settings import settings
 
 
@@ -103,12 +105,27 @@ def run_agent(
         customer_candidates=customer_candidates,
         sla_expired=sla_expired,
     )
+    started = time.perf_counter()
     final_state = compiled_agent_graph.invoke(initial)
+    duration_ms = int((time.perf_counter() - started) * 1000)
     if persist:
         try:
             persist_agent_run(case_id, final_state)
         except sqlite3.Error:
             pass
+
+    trace_event(
+        "agent_run",
+        {
+            "channel": channel,
+            "classification": final_state.get("classification", {}).get("category"),
+            "escalated": final_state.get("escalation", {}).get("required"),
+            "draft_format": final_state.get("draft", {}).get("format"),
+            "timeline_steps": len(final_state.get("timeline", [])),
+        },
+        case_id=case_id,
+        duration_ms=duration_ms,
+    )
 
     return {
         **response_meta(),
