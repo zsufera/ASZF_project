@@ -78,9 +78,10 @@ A közös embedding-interfész, amely elrejti a provider-választást a hívók 
   - `qdrant_mode == "local"` → `QdrantClient(path=settings.qdrant_path)`.
   - `qdrant_mode == "server"` → `QdrantClient(url=settings.qdrant_url)` (visszafelé kompatibilitás).
 - `ensure_collection`: ha a kollekció létezik, de a vektor-dimenziója eltér a kívánttól (modellváltás), újra létrehozza.
-- Minden chunk payloadjába bekerül a `content_hash` (`sha256(text)`).
-- `index_chunks` egy `force: bool = False` paramétert kap: `force=False` esetén csak az új / megváltozott `content_hash`-ű chunkokat embeddeli és upsertálja; `force=True` mindent.
-- A point ID determinisztikus a `chunk_id`-ből (stabil upsert): `uuid5` vagy a sorindex helyett a `chunk_id` hash. (Stabil azonosító kell a részleges reindexhez.)
+- Minden chunk payloadjába bekerül a `content_hash` (`sha256(text)`) — metaadatként és jövőbeli diffhez.
+- A point ID determinisztikus a `chunk_id`-ből (`uuid5(NAMESPACE_URL, chunk_id)`), így az upsert **idempotens** (ugyanaz a chunk mindig ugyanazt a pontot frissíti).
+- `index_chunks` egy `force: bool = False` paramétert kap: ez az **embedding-cache megkerülését** vezérli (`force=True` → újra-embeddel API-ból). A pontok feltöltése mindig teljes és idempotens; a költségmegtakarítást az embedding-cache adja, nem külön diff-logika (YAGNI).
+- `index_chunks` opcionális `client` paramétert is kap (tesztelhetőség / a helyi mód fájl-lockja miatt); ha maga hozza létre a klienst, a végén lezárja.
 
 ### 4.3 `backend/retrieval.py` (módosul)
 
