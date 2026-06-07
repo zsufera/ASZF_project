@@ -8,6 +8,12 @@ def test_settings_have_local_qdrant_defaults():
     assert s.openai_embed_dim is None
 
 
+def test_settings_have_llm_defaults():
+    s = Settings()
+    assert s.llm_enabled is True
+    assert s.openai_temperature == 0.2
+
+
 def test_dotenv_file_is_loaded(tmp_path):
     # Run in a clean subprocess so loading a temp .env does not pollute the
     # parent test process (which may already have a real .env loaded).
