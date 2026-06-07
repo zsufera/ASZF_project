@@ -81,3 +81,20 @@ def test_copilot_stream_lines_yields_talking_points():
     import ui.views.copilot_view as cv
     out = "".join(cv._stream_lines("• pont 1\n• pont 2"))
     assert "pont 1" in out and "pont 2" in out
+
+
+def test_copilot_create_case_button_returns_case_id():
+    def script():
+        from unittest import mock
+        import streamlit as st
+        import ui.views.copilot_view as cv
+        cv.api_client = mock.MagicMock()
+        cv.api_client.ApiError = RuntimeError
+        st.session_state.setdefault("chat_case_chat", "C9")
+        result = cv.render_copilot_view("chat", "ui_demo", "hitl")
+        st.session_state["_result"] = result
+    at = AppTest.from_function(script).run()
+    assert not at.exception
+    assert any("Ügy létrehozása" in b.label for b in at.button)
+    at.button(key="mkcase_chat").click().run()
+    assert at.session_state["_result"] == "C9"

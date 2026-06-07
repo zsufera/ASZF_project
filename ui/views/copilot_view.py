@@ -30,6 +30,7 @@ def render_copilot_view(channel: str, username: str, default_output_mode: str) -
     )
 
     hist_key = f"chat_hist_{channel}"
+    case_key = f"chat_case_{channel}"
     st.session_state.setdefault(hist_key, [])
     for turn in st.session_state[hist_key]:
         with st.chat_message(turn["role"]):
@@ -41,7 +42,6 @@ def render_copilot_view(channel: str, username: str, default_output_mode: str) -
         else "Írj üzenetet…"
     )
     prompt = st.chat_input(placeholder)
-    created_case_id: str | None = None
 
     if prompt:
         st.session_state[hist_key].append({"role": "user", "content": prompt})
@@ -51,9 +51,8 @@ def render_copilot_view(channel: str, username: str, default_output_mode: str) -
             created = api_client.create_case(
                 channel=channel, input_text=prompt, service_provider=provider
             )
-            created_case_id = created["case_id"]
             result = api_client.process_case(
-                case_id=created_case_id,
+                case_id=created["case_id"],
                 output_mode=default_output_mode,
                 username=username,
                 service_provider=provider,
@@ -69,10 +68,14 @@ def render_copilot_view(channel: str, username: str, default_output_mode: str) -
             if chunks:
                 answer += "\n\nForrások: " + _sources_md(chunks)
             st.session_state[hist_key].append({"role": "assistant", "content": answer})
-
-            if st.button("↗ Ügy létrehozása ebből a beszélgetésből", key=f"mkcase_{channel}"):
-                return created_case_id
+            st.session_state[case_key] = created["case_id"]
         except api_client.ApiError as exc:
             st.error(str(exc))
+
+    # Az "Ügy létrehozása" gomb a prompt-blokkon KÍVÜL, hogy a kattintás utáni
+    # rerunban is megjelenjen és visszaadja a case_id-t.
+    if st.session_state.get(case_key):
+        if st.button("↗ Ügy létrehozása ebből a beszélgetésből", key=f"mkcase_{channel}"):
+            return st.session_state.pop(case_key)
 
     return None
