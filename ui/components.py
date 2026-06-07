@@ -150,3 +150,33 @@ def card(title: str | None = None):
             f"<div class='one-card__title'>{title}</div>", unsafe_allow_html=True
         )
     return container
+
+
+_NAV_ICONS: dict[str, str] = {
+    "Inbox": "📥",
+    "Új ügy": "✏️",
+    "Copilot": "💬",
+    "Evaluation": "📊",
+    "Supervisor": "🛡️",
+}
+
+
+def top_header(username: str, role: str, aszf_version: str, provider: str) -> None:
+    """One fejléc-sáv: logó, alkalmazásnév, ÁSZF-verzió, modell-profil, user."""
+    provider_label = "☁ Felhő" if provider == "cloud" else "🖥 On-prem"
+    st.markdown(
+        "<div class='one-header'>"
+        "<span class='one-logo'>one</span>"
+        "<b style='font-size:16px;color:var(--one-ink)'>ÁSZF Copilot</b>"
+        f"<span style='margin-left:auto;color:var(--one-grey);font-size:13px'>"
+        f"ÁSZF {aszf_version or '—'} · {provider_label} · 👤 {username} ({role})"
+        "</span></div>",
+        unsafe_allow_html=True,
+    )
+
+
+def icon_nav(items: list[str]) -> str:
+    """Függőleges ikonos navigáció a sidebarban; a kiválasztott menüpont neve."""
+    labels = [f"{_NAV_ICONS.get(item, '•')}  {item}" for item in items]
+    picked = st.sidebar.radio("Navigáció", labels, label_visibility="collapsed")
+    return items[labels.index(picked)]
