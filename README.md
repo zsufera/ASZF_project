@@ -16,8 +16,12 @@ Fejlesztés közben kötelező iránytű: [FEJLESZTESI_GUARDRAILS.md](FEJLESZTES
    - `pip install -r requirements.txt`
 2. Környezeti változók:
    - másold: `.env.example` -> `.env`
-3. Infrastruktúra:
-   - `docker compose up -d`
+3. Infrastruktúra (opcionális — Docker nélkül is indulhat a POC):
+   - **Docker nélkül (ajánlott első próbához):** ezt a lépést hagyd ki. A retrieval lokális fallbacket használ (`data/processed/chunks.jsonl`), Qdrant nem kell.
+   - **Dockerrel (opcionális Qdrant / Ollama / Langfuse):**
+     - telepítsd a [Docker Desktop for Windows](https://docs.docker.com/desktop/setup/install/windows-install/) alkalmazást, indítsd el, majd:
+     - `docker compose up -d`
+     - ha a `docker` parancs nem ismert: Docker Desktop nincs telepítve vagy nincs a PATH-ban — használd a Docker nélküli útvonalat fent.
 4. Adatbázis inicializálás:
    - `python -m backend.db`
 5. Backend indítás:

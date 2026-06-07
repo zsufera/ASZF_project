@@ -1,5 +1,13 @@
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+# Streamlit a script mappáját teszi sys.path elejére; a `ui` csomag a projektgyökérből importálható.
+_ROOT = Path(__file__).resolve().parent.parent
+if str(_ROOT) not in sys.path:
+    sys.path.insert(0, str(_ROOT))
+
 import os
 
 import streamlit as st
