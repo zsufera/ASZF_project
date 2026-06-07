@@ -1,6 +1,16 @@
 from dataclasses import dataclass
 import os
 
+try:
+    from dotenv import find_dotenv, load_dotenv
+
+    # Load .env (searched from the current working directory upward) into the
+    # process environment before the dataclass defaults below read it.
+    # Does not override variables already set in the environment.
+    load_dotenv(find_dotenv(usecwd=True))
+except ImportError:  # python-dotenv optional at runtime
+    pass
+
 
 @dataclass
 class Settings:

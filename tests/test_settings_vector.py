@@ -8,6 +8,28 @@ def test_settings_have_local_qdrant_defaults():
     assert s.openai_embed_dim is None
 
 
+def test_dotenv_file_is_loaded(tmp_path):
+    # Run in a clean subprocess so loading a temp .env does not pollute the
+    # parent test process (which may already have a real .env loaded).
+    import os
+    import subprocess
+    import sys
+
+    (tmp_path / ".env").write_text("OPENAI_MODEL=gpt-from-dotenv\n", encoding="utf-8")
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    env = {k: v for k, v in os.environ.items() if k != "OPENAI_MODEL"}
+    env["PYTHONPATH"] = repo_root
+
+    result = subprocess.run(
+        [sys.executable, "-c", "from config.settings import settings; print(settings.openai_model)"],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert result.stdout.strip() == "gpt-from-dotenv", result.stderr
+
+
 def test_openai_embed_dim_parsed_from_env(monkeypatch):
     monkeypatch.setenv("OPENAI_EMBED_DIM", "1024")
     # Settings reads env at instantiation via the field defaults; re-import fresh
