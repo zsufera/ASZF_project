@@ -16,12 +16,14 @@ Fejlesztés közben kötelező iránytű: [FEJLESZTESI_GUARDRAILS.md](FEJLESZTES
    - `pip install -r requirements.txt`
 2. Környezeti változók:
    - másold: `.env.example` -> `.env`
-3. Infrastruktúra (opcionális — Docker nélkül is indulhat a POC):
-   - **Docker nélkül (ajánlott első próbához):** ezt a lépést hagyd ki. A retrieval lokális fallbacket használ (`data/processed/chunks.jsonl`), Qdrant nem kell.
-   - **Dockerrel (opcionális Qdrant / Ollama / Langfuse):**
+   - **Vektortár:** alapból `QDRANT_MODE=local` (beágyazott, helyi fájl: `QDRANT_PATH=data/qdrant_local`) — **nem kell Docker**. Külső szerverhez: `QDRANT_MODE=server` + `QDRANT_URL`.
+   - **Embedding:** valódi szemantikus kereséshez állítsd be az `OPENAI_API_KEY`-t (modell: `OPENAI_EMBED_MODEL`, alap `text-embedding-3-large`; opcionális dimenzió-csökkentés: `OPENAI_EMBED_DIM`). Kulcs nélkül a rendszer determinisztikus hash-fallbackre vált — lásd lentebb az „Embedding mód" részt.
+3. Infrastruktúra (opcionális — Docker nélkül is fut a teljes RAG pipeline):
+   - **Docker nélkül (ajánlott):** nincs teendő. A vektor-indexelés beágyazott, helyi Qdrant-ba ír (`data/qdrant_local/`), a retrieval pedig vagy abból (OpenAI mód), vagy a lokális `data/processed/chunks.jsonl` fallbackből (kulcs nélkül) szolgál ki. Docker egyik úthoz sem kell.
+   - **Dockerrel (csak ha `QDRANT_MODE=server`, ill. opcionális Ollama / Langfuse):**
      - telepítsd a [Docker Desktop for Windows](https://docs.docker.com/desktop/setup/install/windows-install/) alkalmazást, indítsd el, majd:
-     - `docker compose up -d`
-     - ha a `docker` parancs nem ismert: Docker Desktop nincs telepítve vagy nincs a PATH-ban — használd a Docker nélküli útvonalat fent.
+     - `docker compose --profile server up -d` (Qdrant szerver), vagy `docker compose up -d` az alap szolgáltatásokhoz.
+     - ha a `docker` parancs nem ismert: Docker Desktop nincs telepítve vagy nincs a PATH-ban — használd a Docker nélküli (beágyazott) útvonalat fent.
 4. Adatbázis inicializálás:
    - `python -m backend.db`
 5. Backend indítás:
@@ -42,9 +44,10 @@ Másold a PDF-eket a `data/raw_pdfs/` mappába (POC elsődleges út).
    - kimenetek:
      - `data/processed/parsed_pages.jsonl`
      - `data/processed/chunks.jsonl`
-3. Indexelés:
-   - `python -m preprocessing.index --skip-qdrant` (lokális sparse fallback)
-   - `python -m preprocessing.index` (Qdrant, ha fut a compose)
+3. Indexelés (vektoradatbázis, Docker nélkül):
+   - `python -m preprocessing.index` — beágyazott helyi Qdrant-ba indexel (`data/qdrant_local/`), nem kell futó compose. OpenAI-kulccsal valódi embedding, kulcs nélkül determinisztikus hash.
+   - `python -m preprocessing.index --skip-qdrant` — csak a chunkokat tölti be, indexelés nélkül (gyors ellenőrzés).
+   - külső szerverhez: `QDRANT_MODE=server` az `.env`-ben, majd a fenti parancs a `QDRANT_URL`-re indexel.
 4. Dok-paraméterezés (Fázis 1b):
    - `python -m preprocessing.derive_params`
    - kimenetek: `config/policies.yaml`, `config/mandatory_refs.yaml`, `config/disclaimer.yaml`, `data/derived/derive_report.json`
@@ -70,7 +73,7 @@ Vertikális sorrend:
 2. `POST /classify` -> kategória + konfidencia + ismétlődés-jelzés
 3. `GET /history?address=` -> azonos feladó előzményei (SQLite)
 4. `GET /customer-lookup?address=` -> mock ügyféltörzs-jelöltek
-5. `POST /retrieve` -> hibrid (sparse+dense) retrieval, cross-ref bővítés, opcionális Qdrant
+5. `POST /retrieve` -> retrieval cross-ref bővítéssel: OpenAI módban szemantikus keresés a beágyazott Qdrant-ból (`qdrant_semantic`), kulcs/hiba esetén lokális hibrid fallback (`hybrid_local`)
 6. `POST /policy-map` -> szabályzat-térkép + kötelező hivatkozások
 7. `backend.escalation.decide_escalation()` -> eszkalációs helper
 8. `POST /draft` -> válaszjavaslat citationökkel
