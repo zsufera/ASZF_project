@@ -15,9 +15,9 @@ from preprocessing.manifest import DEFAULT_OUTPUT_PATH, build_manifest, write_ma
 DEFAULT_PAGES_OUTPUT = Path("data/processed/parsed_pages.jsonl")
 DEFAULT_CHUNKS_OUTPUT = Path("data/processed/chunks.jsonl")
 
-# text-embedding-3-large: 8192 token limit. Hungarian ≈ 4 chars/token → 25 000 chars
-# gives ~6250 tokens, leaving ~25% headroom.
-MAX_CHUNK_CHARS = 25_000
+# text-embedding-3-large uses cl100k_base; hard limit is 8192 tokens.
+# We target 7500 tokens (~8% headroom) so sub-chunks never hit the API limit.
+MAX_CHUNK_TOKENS = 7_500
 
 SECTION_PATTERN = re.compile(
     r"(?m)^\s*(?P<section>(?:\d+(?:\.\d+){0,4}|[IVXLCDM]+)\.?\s+.+|(?:\d+\.\s*)?[§]\s*\d+.*)$"
@@ -117,51 +117,63 @@ def extract_cross_refs(text: str) -> list[str]:
     return sorted(refs)
 
 
-def _split_text(text: str, max_chars: int) -> list[str]:
-    """Split text at natural boundaries (paragraphs → lines → chars) to stay under max_chars."""
-    if len(text) <= max_chars:
+def _tokenize(text: str) -> list[int]:
+    import tiktoken
+    return tiktoken.get_encoding("cl100k_base").encode(text)
+
+
+def _decode_tokens(tokens: list[int]) -> str:
+    import tiktoken
+    return tiktoken.get_encoding("cl100k_base").decode(tokens)
+
+
+def _split_text(text: str, max_tokens: int) -> list[str]:
+    """Split text at paragraph/line boundaries so each part stays under max_tokens tokens."""
+    tokens = _tokenize(text)
+    if len(tokens) <= max_tokens:
         return [text]
 
     parts: list[str] = []
-    current = ""
+    current_tokens: list[int] = []
 
-    def _flush(buf: str) -> str:
-        if buf.strip():
-            parts.append(buf)
-        return ""
+    def _flush() -> None:
+        if current_tokens:
+            parts.append(_decode_tokens(current_tokens))
 
     for para in re.split(r"\n\n+", text):
-        candidate = (current + "\n\n" + para).lstrip("\n") if current else para
-        if len(candidate) <= max_chars:
-            current = candidate
+        para_tokens = _tokenize(para)
+        if len(current_tokens) + len(para_tokens) <= max_tokens:
+            current_tokens.extend(para_tokens)
             continue
-        current = _flush(current)
-        if len(para) <= max_chars:
-            current = para
+        _flush()
+        current_tokens = []
+        if len(para_tokens) <= max_tokens:
+            current_tokens = para_tokens
             continue
-        # Para itself is too long — split at line boundaries
+        # Paragraph itself is too long — split at line boundaries
         for line in para.splitlines():
-            candidate = (current + "\n" + line).lstrip("\n") if current else line
-            if len(candidate) <= max_chars:
-                current = candidate
+            line_tokens = _tokenize(line)
+            if len(current_tokens) + len(line_tokens) <= max_tokens:
+                current_tokens.extend(line_tokens)
                 continue
-            current = _flush(current)
-            if len(line) <= max_chars:
-                current = line
+            _flush()
+            current_tokens = []
+            if len(line_tokens) <= max_tokens:
+                current_tokens = line_tokens
                 continue
-            # Single line is too long — hard split as last resort
-            for i in range(0, len(line), max_chars):
-                parts.append(line[i : i + max_chars])
+            # Single line still too long — hard-split on token boundary
+            for i in range(0, len(line_tokens), max_tokens):
+                parts.append(_decode_tokens(line_tokens[i : i + max_tokens]))
 
-    _flush(current)
+    _flush()
     return [p for p in parts if p.strip()]
 
 
-def _maybe_split_chunk(chunk: Chunk, max_chars: int = MAX_CHUNK_CHARS) -> list[Chunk]:
-    """Return chunk unchanged if short enough, otherwise sub-split preserving all metadata."""
-    if len(chunk.text) <= max_chars:
+def _maybe_split_chunk(chunk: Chunk, max_tokens: int = MAX_CHUNK_TOKENS) -> list[Chunk]:
+    """Return chunk unchanged if within token limit, otherwise sub-split preserving all metadata."""
+    if len(_tokenize(chunk.text)) <= max_tokens:
         return [chunk]
-    sub_texts = _split_text(chunk.text, max_chars)
+    sub_texts = _split_text(chunk.text, max_tokens)
     return [
         Chunk(
             chunk_id=f"{chunk.chunk_id}_sub{idx:03d}",
