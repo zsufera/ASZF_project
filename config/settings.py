@@ -7,6 +7,11 @@ class Settings:
     provider: str = os.getenv("PROVIDER", "cloud")
     sqlite_path: str = os.getenv("SQLITE_PATH", "data/app.db")
     qdrant_url: str = os.getenv("QDRANT_URL", "http://localhost:6333")
+    qdrant_mode: str = os.getenv("QDRANT_MODE", "local")
+    qdrant_path: str = os.getenv("QDRANT_PATH", "data/qdrant_local")
+    openai_embed_dim: int | None = (
+        int(os.environ["OPENAI_EMBED_DIM"]) if os.getenv("OPENAI_EMBED_DIM") else None
+    )
     ollama_url: str = os.getenv("OLLAMA_URL", "http://localhost:11434")
     confidence_threshold: float = float(os.getenv("CONFIDENCE_THRESHOLD", "0.75"))
     sla_fallback_days: int = int(os.getenv("SLA_FALLBACK_DAYS", "30"))
