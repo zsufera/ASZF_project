@@ -64,3 +64,20 @@ def test_inbox_view_renders_items():
         iv.render_inbox_view()
     at = AppTest.from_function(script).run()
     assert not at.exception
+
+
+def test_copilot_view_renders_empty_chat():
+    def script():
+        from unittest import mock
+        import ui.views.copilot_view as cv
+        cv.api_client = mock.MagicMock()
+        cv.api_client.ApiError = RuntimeError
+        cv.render_copilot_view("chat", "ui_demo", "hitl")
+    at = AppTest.from_function(script).run()
+    assert not at.exception
+
+
+def test_copilot_stream_lines_yields_talking_points():
+    import ui.views.copilot_view as cv
+    out = "".join(cv._stream_lines("• pont 1\n• pont 2"))
+    assert "pont 1" in out and "pont 2" in out
