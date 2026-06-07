@@ -98,3 +98,25 @@ def test_copilot_create_case_button_returns_case_id():
     assert any("Ügy létrehozása" in b.label for b in at.button)
     at.button(key="mkcase_chat").click().run()
     assert at.session_state["_result"] == "C9"
+
+
+def test_free_input_view_renders():
+    def script():
+        from unittest import mock
+        import ui.views.free_input_view as fv
+        fv.api_client = mock.MagicMock()
+        fv.api_client.ApiError = RuntimeError
+        fv.render_free_input_view()
+    at = AppTest.from_function(script).run()
+    assert not at.exception
+
+
+def test_postal_view_renders():
+    def script():
+        from unittest import mock
+        import ui.views.postal_view as pv
+        pv.api_client = mock.MagicMock()
+        pv.api_client.ApiError = RuntimeError
+        pv.render_postal_view("ui_demo", "hitl")
+    at = AppTest.from_function(script).run()
+    assert not at.exception

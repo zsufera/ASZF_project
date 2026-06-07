@@ -6,7 +6,7 @@ from ui import api_client
 
 
 def render_free_input_view(channel: str = "email") -> str | None:
-    st.subheader("Szabad bevitel")
+    st.subheader("✏️ Új ügy / szabad bevitel")
     text = st.text_area("Email beillesztése vagy szabad szöveges kérdés", height=220)
     sender = st.text_input("Feladó email (opcionális)")
     provider = st.selectbox("Szolgáltató", ["", "ONE", "helyi_kabeles", "AH_Media", "Invitech"])

@@ -6,7 +6,7 @@ from ui import api_client
 
 
 def render_postal_view(username: str, default_output_mode: str) -> str | None:
-    st.subheader("Postai levél import")
+    st.subheader("📮 Postai levél import")
     uploaded = st.file_uploader("PDF feltöltése", type=["pdf"])
     if not uploaded:
         st.info("Tölts fel egy PDF-et az OCR-előnézethez.")
