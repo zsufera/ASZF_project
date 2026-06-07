@@ -120,3 +120,42 @@ def test_postal_view_renders():
         pv.render_postal_view("ui_demo", "hitl")
     at = AppTest.from_function(script).run()
     assert not at.exception
+
+
+def test_evaluation_view_renders():
+    def script():
+        from unittest import mock
+        import streamlit as st
+        import ui.views.evaluation_view as ev
+        ev.api_client = mock.MagicMock()
+        ev.api_client.ApiError = RuntimeError
+        st.session_state["last_eval"] = {
+            "run_id": "r1", "aszf_version": "v3.2",
+            "kpis": {
+                "values": {"faithfulness": 0.9, "citation_support_rate": 0.85,
+                           "judge_score": 4.2, "coverage": 0.7,
+                           "escalation_appropriateness": 0.8, "retrieval_support": 0.75,
+                           "time_to_answer_ms_p95": 1200, "out_of_scope_answer_rate": 0.05},
+                "status": {"faithfulness": "green", "coverage": "yellow"},
+            },
+            "results": [], "baseline_diff": {"has_baseline": False},
+        }
+        ev.render_evaluation_view()
+    at = AppTest.from_function(script).run(timeout=10)
+    assert not at.exception
+
+
+def test_supervisor_view_renders():
+    def script():
+        from unittest import mock
+        import ui.views.supervisor_view as sv
+        sv.api_client = mock.MagicMock()
+        sv.api_client.ApiError = RuntimeError
+        sv.api_client.supervisor_queue.return_value = {"items": []}
+        sv.api_client.supervisor_stats.return_value = {
+            "total_cases": 5, "escalated_cases": 1, "closed_cases": 2,
+            "escalation_rate": 0.2, "by_operator": [],
+        }
+        sv.render_supervisor_view(role="supervisor", username="supervisor_demo")
+    at = AppTest.from_function(script).run()
+    assert not at.exception

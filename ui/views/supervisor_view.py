@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from ui import api_client
+from ui import api_client, components
 from ui.components import escalation_badge, priority_badge, sla_badge
 
 
@@ -15,11 +15,13 @@ def render_supervisor_view(role: str = "supervisor", username: str = "") -> None
         st.error(str(exc))
         return
 
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Összes ügy", stats.get("total_cases", 0))
-    c2.metric("Eszkalált", stats.get("escalated_cases", 0))
-    c3.metric("Lezárt", stats.get("closed_cases", 0))
-    c4.metric("Eszkalációs arány", f"{stats.get('escalation_rate', 0):.0%}")
+    grid = [
+        ("Összes ügy", str(stats.get("total_cases", 0)), "ok"),
+        ("Eszkalált", str(stats.get("escalated_cases", 0)), "warn" if stats.get("escalated_cases") else "ok"),
+        ("Lezárt", str(stats.get("closed_cases", 0)), "ok"),
+        ("Eszkalációs arány", f"{stats.get('escalation_rate', 0):.0%}", "ok"),
+    ]
+    components.render_kpi_grid(grid, per_row=4)
 
     st.markdown("**Ügyintézőnkénti feldolgozás**")
     for row in stats.get("by_operator") or []:

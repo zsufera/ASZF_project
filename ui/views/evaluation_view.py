@@ -4,11 +4,7 @@ import json
 
 import streamlit as st
 
-from ui import api_client
-
-
-def _status_emoji(status: str) -> str:
-    return {"green": "🟢", "yellow": "🟡", "red": "🔴"}.get(status, "⚪")
+from ui import api_client, components
 
 
 def render_evaluation_view() -> None:
@@ -52,39 +48,23 @@ def render_evaluation_view() -> None:
     kpis = result.get("kpis", {})
     values = kpis.get("values", {})
     status = kpis.get("status", {})
-    targets = kpis.get("targets", {})
 
     st.caption(f"Run: `{result.get('run_id')}` · ÁSZF: {result.get('aszf_version') or '—'}")
 
-    metric_cols = st.columns(4)
-    cards = [
-        ("faithfulness", "Faithfulness", "{:.0%}"),
-        ("citation_support_rate", "Citation support", "{:.0%}"),
-        ("judge_score", "Judge score", "{:.2f}"),
-        ("coverage", "Coverage", "{:.0%}"),
-    ]
-    for idx, (key, label, fmt) in enumerate(cards):
-        value = values.get(key, 0)
-        display = fmt.format(value) if "%" in fmt else fmt.format(value)
-        metric_cols[idx].metric(
-            label,
-            display,
-            help=f"Cél: {targets.get(key, '—')} {_status_emoji(status.get(key, ''))}",
-        )
+    def _kpi_status(key: str) -> str:
+        return {"green": "ok", "yellow": "warn", "red": "bad"}.get(status.get(key, ""), "ok")
 
-    more_cols = st.columns(4)
-    more_cards = [
-        ("escalation_appropriateness", "Eszkaláció", "{:.0%}"),
-        ("retrieval_support", "Retrieval support", "{:.0%}"),
-        ("time_to_answer_ms", "Idő p95 (ms)", "{}"),
-        ("out_of_scope_answer_rate", "Out-of-scope", "{:.0%}"),
+    grid = [
+        ("Faithfulness", f"{values.get('faithfulness', 0):.0%}", _kpi_status("faithfulness")),
+        ("Citation support", f"{values.get('citation_support_rate', 0):.0%}", _kpi_status("citation_support_rate")),
+        ("Judge score", f"{values.get('judge_score', 0):.2f}", _kpi_status("judge_score")),
+        ("Coverage", f"{values.get('coverage', 0):.0%}", _kpi_status("coverage")),
+        ("Eszkaláció", f"{values.get('escalation_appropriateness', 0):.0%}", _kpi_status("escalation_appropriateness")),
+        ("Retrieval support", f"{values.get('retrieval_support', 0):.0%}", _kpi_status("retrieval_support")),
+        ("Idő p95 (ms)", f"{values.get('time_to_answer_ms_p95', 0)}", _kpi_status("time_to_answer_ms")),
+        ("Out-of-scope", f"{values.get('out_of_scope_answer_rate', 0):.0%}", _kpi_status("out_of_scope_answer_rate")),
     ]
-    for idx, (key, label, fmt) in enumerate(more_cards):
-        value = values.get(key if key != "time_to_answer_ms" else "time_to_answer_ms_p95", 0)
-        if key == "time_to_answer_ms":
-            value = values.get("time_to_answer_ms_p95", 0)
-        display = fmt.format(value)
-        more_cols[idx].metric(label, display, help=f"Cél: {targets.get(key, '—')}")
+    components.render_kpi_grid(grid, per_row=4)
 
     baseline_diff = result.get("baseline_diff", {})
     if baseline_diff.get("has_baseline"):
