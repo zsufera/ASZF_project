@@ -13,6 +13,7 @@ import yaml
 
 DEFAULT_CONFIG_PATH = Path("config/doc_sources.yaml")
 DEFAULT_OUTPUT_PATH = Path("data/ingest_manifest.json")
+DEFAULT_DOWNLOAD_METADATA_PATH = Path("data/raw_pdfs/download_metadata.json")
 
 
 @dataclass
@@ -34,6 +35,13 @@ def load_doc_sources(config_path: Path = DEFAULT_CONFIG_PATH) -> dict[str, Any]:
         raise FileNotFoundError(f"Missing doc sources config: {config_path}")
     with config_path.open("r", encoding="utf-8") as file:
         return yaml.safe_load(file) or {}
+
+
+def load_download_metadata(path: Path = DEFAULT_DOWNLOAD_METADATA_PATH) -> dict[str, dict[str, Any]]:
+    if not path.exists():
+        return {}
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    return {item["file_name"]: item for item in payload.get("documents", []) if item.get("file_name")}
 
 
 def sha256_file(path: Path) -> str:
@@ -70,6 +78,7 @@ def build_manifest(config_path: Path = DEFAULT_CONFIG_PATH) -> list[DocumentMani
     metadata_by_file = {
         item.get("file_name"): item for item in config.get("local_pdf_metadata", []) if item.get("file_name")
     }
+    metadata_by_file.update(load_download_metadata())
     discovered_at = datetime.now(timezone.utc).isoformat()
 
     items: list[DocumentManifestItem] = []

@@ -1,7 +1,11 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from backend.classify import classify_message
 from backend.db import init_db
+from backend.draft import build_draft
+from backend.policy_map import build_policy_map
+from backend.verify import verify_draft
 from preprocessing.index import load_chunks, search_chunks
 
 
@@ -21,6 +25,27 @@ class RetrieveRequest(BaseModel):
     customer_id: str | None = None
 
 
+class PolicyMapRequest(BaseModel):
+    case_id: str
+    category: str
+    chunks: list[dict]
+
+
+class DraftRequest(BaseModel):
+    case_id: str
+    category: str
+    output_mode: str
+    policy_map: dict
+    actions: list[dict] = Field(default_factory=list)
+
+
+class VerifyRequest(BaseModel):
+    case_id: str
+    draft_body_masked: str
+    chunks: list[dict]
+    mandatory_refs: list[str]
+
+
 @app.on_event("startup")
 def on_startup() -> None:
     init_db()
@@ -33,13 +58,13 @@ def health() -> dict:
 
 @app.post("/classify")
 def classify(payload: ClassifyRequest) -> dict:
+    result = classify_message(
+        message_text_masked=payload.message_text_masked,
+        history_summary_masked=payload.history_summary_masked,
+    )
     return {
         "request_id": "stub",
-        "category": "egyeb",
-        "subtype": None,
-        "confidence": 0.5,
-        "candidates": [],
-        "is_repeated": False,
+        **result,
     }
 
 
@@ -58,18 +83,31 @@ def retrieve(payload: RetrieveRequest) -> dict:
 
 
 @app.post("/policy-map")
-def policy_map() -> dict:
-    return {"request_id": "stub", "policy_items": [], "mandatory_refs": [], "missing_mandatory": []}
+def policy_map(payload: PolicyMapRequest) -> dict:
+    result = build_policy_map(category=payload.category, chunks=payload.chunks)
+    return {"request_id": "stub", **result}
 
 
 @app.post("/draft")
-def draft() -> dict:
-    return {"request_id": "stub", "subject": "", "body_masked": "", "citations": [], "disclaimer_applied": False}
+def draft(payload: DraftRequest) -> dict:
+    result = build_draft(
+        case_id=payload.case_id,
+        category=payload.category,
+        output_mode=payload.output_mode,
+        policy_map=payload.policy_map,
+        actions=payload.actions,
+    )
+    return {"request_id": "stub", **result}
 
 
 @app.post("/verify")
-def verify() -> dict:
-    return {"request_id": "stub", "claims": [], "ungrounded_count": 0, "missing_mandatory": [], "warning": None}
+def verify(payload: VerifyRequest) -> dict:
+    result = verify_draft(
+        draft_body_masked=payload.draft_body_masked,
+        chunks=payload.chunks,
+        mandatory_refs=payload.mandatory_refs,
+    )
+    return {"request_id": "stub", **result}
 
 
 @app.get("/history")

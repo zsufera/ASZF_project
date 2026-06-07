@@ -27,22 +27,40 @@ Fejlesztés közben kötelező iránytű: [FEJLESZTESI_GUARDRAILS.md](FEJLESZTES
 
 WAF vagy manuális beszerzés esetén másold a PDF-eket a `data/raw_pdfs/` mappába.
 
-1. Manifest generálás:
+1. ONE ÁSZF PDF-ek letöltése:
+   - `python -m preprocessing.download`
+   - kimenet: `data/raw_pdfs/` és `data/raw_pdfs/download_metadata.json`
+2. Manifest generálás:
    - `python -m preprocessing.manifest`
    - kimenet: `data/ingest_manifest.json`
-2. PDF parse + hierarchikus chunkolás:
+3. PDF parse + hierarchikus chunkolás:
    - `python -m preprocessing.parse`
    - kimenetek:
      - `data/processed/parsed_pages.jsonl`
      - `data/processed/chunks.jsonl`
 
-3. Chunkok betöltésének ellenőrzése Qdrant nélkül:
+4. Chunkok betöltésének ellenőrzése Qdrant nélkül:
    - `python -m preprocessing.index --skip-qdrant`
-4. Qdrant indexelés:
+5. Qdrant indexelés:
    - `python -m preprocessing.index`
+6. Lokális retrieval smoke ellenőrzés:
+   - `python -m preprocessing.smoke_retrieve "számlázási kifogás" --service-provider ONE`
+7. Teljes lokális ingest smoke:
+   - `python -m preprocessing.smoke_ingest --query "számlázási kifogás" --service-provider ONE`
 
 Ha nincs PDF a `data/raw_pdfs/` alatt, a manifest üres dokumentumlistával jön létre.
 A `/retrieve` endpoint a `data/processed/chunks.jsonl` alapján lokális fallback keresést ad, így Qdrant nélkül is tesztelhető a forráshivatkozásos találat.
+
+## Backend minimál flow
+
+Az első vertikális backend sorrend:
+
+1. `/classify` -> determinisztikus fallback kategória + konfidencia
+2. `/retrieve` -> forrásos chunkok
+3. `/policy-map` -> ÜI-nak mutatható szabályzat-térkép
+4. `backend.escalation.decide_escalation()` -> eszkalációs döntési helper
+5. `/draft` -> válaszjavaslat citationökkel és automata módban disclaimerrel
+6. `/verify` -> groundedness és kötelező hivatkozás ellenőrzés
 
 ## Projektváz
 
