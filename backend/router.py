@@ -12,6 +12,8 @@ def get_model_profile() -> str:
 
 
 def get_embed_profile() -> str:
-    if settings.provider == "onprem":
-        return "onprem/deterministic-hash-v1"
-    return settings.openai_embed_model
+    from preprocessing.embedding import active_mode
+
+    if active_mode() == "openai":
+        return f"cloud/{settings.openai_embed_model}"
+    return "local/deterministic-hash-v1"

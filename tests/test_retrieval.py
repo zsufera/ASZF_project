@@ -65,6 +65,29 @@ def test_retrieve_uses_semantic_when_openai(tmp_path, monkeypatch):
     assert result["chunks"][0]["chunk_id"] == "one-bill"
 
 
+def test_reindex_reports_embedding_mode(monkeypatch, tmp_path):
+    import backend.reindex_service as reindex_service
+
+    monkeypatch.setattr(settings, "provider", "cloud")
+    monkeypatch.setattr(settings, "openai_api_key", "")  # deterministic
+
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text('{"document_count": 0, "documents": []}', encoding="utf-8")
+
+    # Avoid touching real PDFs / Qdrant: stub the heavy steps.
+    monkeypatch.setattr(reindex_service, "DEFAULT_OUTPUT_PATH", manifest_path)
+    monkeypatch.setattr(reindex_service, "build_manifest", lambda: [])
+    monkeypatch.setattr(reindex_service, "write_manifest", lambda items, path: None)
+    monkeypatch.setattr(reindex_service, "parse_and_chunk", lambda **kwargs: (0, 0))
+    monkeypatch.setattr(reindex_service, "load_chunks", lambda path: [])
+    monkeypatch.setattr(reindex_service, "index_chunks", lambda chunks: 0)
+    monkeypatch.setattr(reindex_service, "derive_all", lambda: {})
+
+    report = reindex_service.run_reindex()
+    assert report["embedding_mode"] == "deterministic"
+    assert report["embedding_dim"] == 64
+
+
 def test_hybrid_score_prefers_matching_tokens() -> None:
     high = hybrid_score("szamlazasi kifogas", "A szamlazasi kifogast az ugyfelszolgálat kivizsgálja.", "5.1")
     low = hybrid_score("szamlazasi kifogas", "Mobil internet csomagok leírása.", "2.1")
