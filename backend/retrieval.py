@@ -4,12 +4,14 @@ import math
 import re
 from typing import Any
 
+from preprocessing.embedding import active_mode, embed_query
 from preprocessing.index import (
     DEFAULT_CHUNKS_PATH,
     DEFAULT_COLLECTION,
     deterministic_embedding,
     fold_text,
     load_chunks,
+    make_client,
     quote_text,
     search_chunks,
     sparse_score,
@@ -136,33 +138,37 @@ def search_qdrant(
     service_provider: str | None,
     limit: int,
 ) -> list[dict[str, Any]]:
+    if active_mode() != "openai":
+        return []
     try:
-        from qdrant_client import QdrantClient
+        from qdrant_client.http import models
 
-        client = QdrantClient(url=settings.qdrant_url, timeout=2.0)
-        vector = deterministic_embedding(query)
-        must_conditions = []
-        if service_provider:
-            must_conditions.append(
-                {
-                    "key": "szolgaltato",
-                    "match": {"value": service_provider},
-                }
+        client = make_client()
+        try:
+            vector = embed_query(query)
+            query_filter = None
+            if service_provider:
+                query_filter = models.Filter(
+                    must=[
+                        models.FieldCondition(
+                            key="szolgaltato",
+                            match=models.MatchValue(value=service_provider),
+                        )
+                    ]
+                )
+            response = client.query_points(
+                collection_name=DEFAULT_COLLECTION,
+                query=vector,
+                query_filter=query_filter,
+                limit=limit,
             )
-        query_filter = {"must": must_conditions} if must_conditions else None
-        hits = client.search(
-            collection_name=DEFAULT_COLLECTION,
-            query_vector=vector,
-            query_filter=query_filter,
-            limit=limit,
-        )
-        results: list[dict[str, Any]] = []
-        for hit in hits:
-            payload = hit.payload or {}
-            results.append(
-                chunk_to_result(float(hit.score), payload) | {"retrieval_source": "qdrant_dense"}
-            )
-        return results
+        finally:
+            client.close()
+        return [
+            chunk_to_result(float(hit.score), hit.payload or {})
+            | {"retrieval_source": "qdrant_semantic"}
+            for hit in response.points
+        ]
     except Exception:
         return []
 
@@ -186,7 +192,7 @@ def retrieve(
     qdrant_results = search_qdrant(query, service_provider, limit) if prefer_qdrant else []
     if qdrant_results:
         primary = qdrant_results
-        retrieval_mode = "qdrant_hybrid"
+        retrieval_mode = "qdrant_semantic"
     elif filtered:
         sparse_results = search_chunks(
             query=query,
