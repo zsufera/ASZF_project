@@ -1,0 +1,11 @@
+{
+  "email_id": "email-006-eszkoz-one",
+  "targy": "Modemcsere költsége",
+  "torzs": "Tisztelt Ügyfélszolgálat!\n\nBalogh István, ügyfélszám 33091822.\nA technikus modemcserét javasolt, de nem tudom, ki fizeti az eszközt és a beüzemelést.\nKérem az ÁSZF szerinti díjakat és a garanciális feltételeket.\n\nBalogh István",
+  "felado_email": "balogh.istvan.poc@example.invalid",
+  "varht_kategoria": "eszkoz_keszulek",
+  "szolgaltato": "ONE",
+  "varhato_eszkalacio": false,
+  "edge_case": null,
+  "catalog_version": "2026.06.07"
+}

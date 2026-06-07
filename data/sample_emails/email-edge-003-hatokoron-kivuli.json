@@ -1,0 +1,11 @@
+{
+  "email_id": "email-edge-003-hatokoron-kivuli",
+  "targy": "Munkaerő-kölcsönzés panasz",
+  "torzs": "Tisztelt One!\n\nJuhász Katalin vagyok.\nA munkahelyemen a One szerződéses kapcsolattartója rossz bánásmódot alkalmazott.\nKérem a munkaügyi panaszom továbbítását a HR részlegnek.\n\nJuhász Katalin",
+  "felado_email": "juhász.katalin.poc@example.invalid",
+  "varht_kategoria": "egyeb",
+  "szolgaltato": "ONE",
+  "varhato_eszkalacio": true,
+  "edge_case": "hatokoron_kivuli",
+  "catalog_version": "2026.06.07"
+}

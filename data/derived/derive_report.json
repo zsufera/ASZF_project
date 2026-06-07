@@ -1,0 +1,136 @@
+{
+  "generated_at": "2026-06-07T10:20:47.244830+00:00",
+  "chunk_count": 51035,
+  "mandatory_ref_categories": 7,
+  "escalation_trigger_count": 5,
+  "mandatory_by_category": {
+    "szamlazas": [
+      {
+        "label": "5.5.1 — ASZF_0_torzs_hatalyos_20260605 (szamlazas)",
+        "chunk_id": "doc_b74e87e45de13120_p0058_s002",
+        "paragrafus": "5.5.1",
+        "idezet": "5.5.1. Mobil szolgáltatás és a Szolgáltató által használt hálózatokon nyújtott Helyhez kötött és Műsorterjesztés előfizetői szolgáltatás A Szolgáltató általi számlázás a Szolgáltatónál vezetett Előfizetői nyilvántartás, az Előfizető által igénybe vett szolgáltatás alapján történik. A Szolgáltató kizárólag az Előfizetői Szerződésben szereplő, illetve az Előfizetőnek biztosított és a jelen ÁSZF-nek megfelelő Szolgáltatást jogosult kiszámlázni, az Előfizetői Szerződésben és az ÁSZF 2. számú Díjszab",
+        "dok_cim": "ASZF_0_torzs_hatalyos_20260605",
+        "oldalszam": 58,
+        "szolgaltato": "ONE"
+      }
+    ],
+    "dijemeles": [
+      {
+        "label": "1.1.2 — ESzSzF_hatalyos_20260522 (dijemeles)",
+        "chunk_id": "doc_0d7ed3b3e68216f4_p0007_s004",
+        "paragrafus": "1.1.2",
+        "idezet": "1.1.2. Az ESzSzF módosítása A Szolgáltató jogosult az ESzSzF alapján kötött szerződést az egyedi szerződésre is kiterjedően egyoldalúan módosítani és/vagy a jelen ESzSzF tartalmát egyoldalúan megváltoztatni, amely változtatásról a változás hatályba lépését megelőzően 15 naptári nappal a Szolgáltató honlapján történő közzététel útján értesíti az ügyfeleit, illetve a felhasználókat a már létező szolgáltatáshoz kapcsolódó módosítás esetén. Az előbbi módosítási szabályok alól kivételt képeznek, az E",
+        "dok_cim": "ESzSzF_hatalyos_20260522",
+        "oldalszam": 7,
+        "szolgaltato": "ONE"
+      }
+    ],
+    "hibabejelentes_szolgaltataskieses": [
+      {
+        "label": "46 — ASZF_7_melleklet_hatalyos_20260605 (1) (hibabejelentes_szolgaltataskieses)",
+        "chunk_id": "doc_bddcfcfb4358bf1c_p0046_s001",
+        "paragrafus": "46",
+        "idezet": "46 Internet Pro csomagajánlatok esetében a Wifi pótló opció belföldön 72 óra erejéig az alább felsorolt speciális körülmények fennállása esetén adatkorlátozás nélkül használható. Ilyen speciális körülmények: a helyhez kötött internet-hozzáférés szolgáltatás Szolgáltató érdekkörében felmerült okból történő szüneteltetése, a helyhez kötött internet-hozzáférés szolgáltatás tervezett (rendszeres), vagy alkalmi hálózati karbantartása, a helyhez kötött internet-hozzáférés szolgáltatás költöztetése, il",
+        "dok_cim": "ASZF_7_melleklet_hatalyos_20260605 (1)",
+        "oldalszam": 46,
+        "szolgaltato": "ONE"
+      }
+    ],
+    "szerzodesfelmondas_modositas": [
+      {
+        "label": "7.3.1 — ASZF_0_torzs_hatalyos_20260605 (szerzodesfelmondas_modositas)",
+        "chunk_id": "doc_b74e87e45de13120_p0090_s002",
+        "paragrafus": "7.3.1",
+        "idezet": "7.3.1. Az Előfizető értesítése az Előfizetői Szerződés és az ÁSZF módosítása esetén Közzététel Az ÁSZF-et – ideértve annak módosításait – a Szolgáltató az Ügyfélszolgálatán és Internetes honlapján: www.one.hu/aszf teszi elérhetővé. A nyilvánosságra hozott ÁSZF-et a Szolgáltató ingyenesen teszi elérhetővé. Az ÁSZF minden módosulása esetén a módosulás hatálybalépését 30 nappal megelőzően egységes szerkezetben közzéteszi a Szolgáltató az Ügyfélszolgálati helyiségben, internetes honlapján, továbbá a",
+        "dok_cim": "ASZF_0_torzs_hatalyos_20260605",
+        "oldalszam": 90,
+        "szolgaltato": "ONE"
+      }
+    ],
+    "lefedettseg": [
+      {
+        "label": "8 — ASZF_0_torzs_hatalyos_20260605 (lefedettseg)",
+        "chunk_id": "doc_b74e87e45de13120_p0008_s001",
+        "paragrafus": "8",
+        "idezet": "8 A Mobil telefonszolgáltatás vagy hangszolgáltatás olyan mobil rádiótelefon-hálózaton megvalósított telefonszolgáltatás vagy hangszolgáltatás, ahol a szolgáltatás a szolgáltatási területen belül a nagy területen mozgó igénybe vevő számára lehetővé teszi a kétirányú kommunikációt. A Mobil telefonszolgáltatás vagy hangszolgáltatás a Szolgáltató mobil hálózata által lefedett területen érhető el. A lefedettség adatok a www.one.hu/lefedettsegi-terkep oldalon érhetőek el. A Mobil telefonszolgáltatásr",
+        "dok_cim": "ASZF_0_torzs_hatalyos_20260605",
+        "oldalszam": 8,
+        "szolgaltato": "ONE"
+      }
+    ],
+    "eszkoz_keszulek": [
+      {
+        "label": "2.3.1 — ASZF_0_torzs_hatalyos_20260605 (eszkoz_keszulek)",
+        "chunk_id": "doc_b74e87e45de13120_p0022_s002",
+        "paragrafus": "2.3.1",
+        "idezet": "2.3.1. Mobil szolgáltatásokra vonatkozó rendelkezések A Mobil Szolgáltatás igénybevételének előfeltétele a megfelelő hálózati kapcsolat megléte, amely az Előfizetői SIM kártya aktiválásával valósul meg. Az Előfizetőtől jogtalanul eltulajdonított vagy az elvesztett Eszközt (mobil rádiótelefon készüléket, USB modem, wifi router stb.) az Előfizető írásbeli kérelmére a Szolgáltató legfeljebb egy éves időtartamra tiltó listára helyezi. Ehhez – az írásbeli kérelem benyújtása mellett – az Előfizetőnek ",
+        "dok_cim": "ASZF_0_torzs_hatalyos_20260605",
+        "oldalszam": 22,
+        "szolgaltato": "ONE"
+      }
+    ],
+    "adatvedelem": [
+      {
+        "label": "4 — ASZF_3_melleklet_hatalyos_20260605 (adatvedelem)",
+        "chunk_id": "doc_e6cf7ed30d845433_p0004_s001",
+        "paragrafus": "4",
+        "idezet": "4 2. Fogalmak Szolgáltató egyedi adatkezelési tájékoztatóiban foglalt fogalmak megegyeznek a GDPR 4. cikkében foglalt fogalmakkal. A legfontosabb fogalmakat azonban köznapi szóhasználattal a közérthetőség céljából Szolgáltató elmagyarázza: • érintett: az az azonosított vagy azonosítható a természetes személy, akire a személyes adat vonatkozik • természetes személy: az élő ember • személyes adat: bármely információ, amely egy érintettre vonatkozik • adatkezelés: személyes adaton végzett bármilyen",
+        "dok_cim": "ASZF_3_melleklet_hatalyos_20260605",
+        "oldalszam": 4,
+        "szolgaltato": "ONE"
+      }
+    ]
+  },
+  "escalation_trigger_details": [
+    {
+      "nev": "egyedi_szerzodes_gyanu",
+      "leiras": "A forrás alapján eszkalációt indokolhat: egyedi szerzodes gyanu",
+      "chunk_id": "doc_b74e87e45de13120_p0081_s002",
+      "idezet": "7.2.3. Az Előfizetői Szerződés Szolgáltató általi egyoldalú módosítására vonatkozó szabályok A Szolgáltató jogosult arra, hogy az Előfizetői Szerződés részét képező jelen ÁSZF-et vagy az Előfizetői Szerződést - az Egyedi Előfizetői Szerződésre kiterjedően - egyoldalúan módosítsa. Az Előfizető az egyoldalú szerződésmódosításról szóló értesítés kézhezvételétől számított 45 (negyvenöt) napon belül azonnali hatállyal, minden további jogkövetkezmények nélkül jogosult felmondani az Előfizetői Szerződé",
+      "paragrafus": "7.2.3",
+      "dok_cim": "ASZF_0_torzs_hatalyos_20260605"
+    },
+    {
+      "nev": "vitatott_osszeg",
+      "leiras": "A forrás alapján eszkalációt indokolhat: vitatott osszeg",
+      "chunk_id": "doc_b74e87e45de13120_p0065_s001",
+      "idezet": "65 befizetést követően az átvételt igazoló pénztári, nem adóügyi bizonylatot állít ki. A tranzakcióért a Szolgáltató és a díjbeszedő partner külön díjat nem számol fel, azonban ezen díjfizetési mód nem tesz eleget az egyes díjcsomagok igénybevétele esetén vállalt e-Pack fizetési módoknak, mely maga után vonhatja az e-Pack feltételek nem teljesítése miatti díj kiszámlázását. A számla kiegyenlítésének napja: • postai átutalás esetén az a nap, amikor a Szolgáltató bankszámlájára megérkezik a befize",
+      "paragrafus": "65",
+      "dok_cim": "ASZF_0_torzs_hatalyos_20260605"
+    },
+    {
+      "nev": "ismetlodo_panasz",
+      "leiras": "A forrás alapján eszkalációt indokolhat: ismetlodo panasz",
+      "chunk_id": "doc_b74e87e45de13120_p0111_s003",
+      "idezet": "9.1.1. Előfizetői bejelentésnek minősül az előfizetői panasz Előfizetői panasz: Előfizetői Szerződés alapján igénybe vett Szolgáltatás nyújtásával összefüggésben az Előfizető által tett olyan bejelentés, amely az Előfizetőt érintő egyéni jogsérelem vagy érdeksérelem megszüntetésére irányul és nem minősül hibabejelentésnek.",
+      "paragrafus": "9.1.1",
+      "dok_cim": "ASZF_0_torzs_hatalyos_20260605"
+    },
+    {
+      "nev": "jogi_hatosagi_media",
+      "leiras": "A forrás alapján eszkalációt indokolhat: jogi hatosagi media",
+      "chunk_id": "doc_0d7ed3b3e68216f4_p0087_s003",
+      "idezet": "12.6.3. Elektronikus adat ideiglenes vagy végleges hozzáférhetetlenné tétele A Szolgáltató az Ekertv. 12/A. §-ban foglaltak szerint, amennyiben a büntetőeljárás során a bíróság az elektronikus adat ideiglenes vagy végleges hozzáférhetetlenné tételét rendelte el, a Szolgáltató az elrendelésről szóló határozat kézhezvételétől számított 1 (egy) munkanapon belül intézkedik az elektronikus úton közzétett jogellenes adat végleges vagy visszaállítható módon történő eltávolításáról. Ha a bíróság az idei",
+      "paragrafus": "12.6.3",
+      "dok_cim": "ESzSzF_hatalyos_20260522"
+    },
+    {
+      "nev": "sla_kozel_lejarat",
+      "leiras": "A forrás alapján eszkalációt indokolhat: sla kozel lejarat",
+      "chunk_id": "doc_0d7ed3b3e68216f4_p0117_s002",
+      "idezet": "12.16.2. Kötbér a szolgáltatásnyújtás megkezdésének késedelme miatt A Szerződésben meghatározott határidő elmulasztása esetén a Szolgáltató kötbért köteles fizetni, amelynek összege informatikai és egyéb szolgáltatás esetén a havidíjnak megfelelő összeg 1/30 (egyharmincad) részének négyszerese, minden megkezdett naptári nap után, de legfeljebb az érintett Szolgáltatás 1 (egy) havi díjának összege. A Szolgáltatót nem terheli kötbérfizetési kötelezettség, ha a késedelemét kimenti, vagy olyan késed",
+      "paragrafus": "12.16.2",
+      "dok_cim": "ESzSzF_hatalyos_20260522"
+    }
+  ],
+  "disclaimer": {
+    "disclaimer_draft": "Ez a valasz AI-tamogatassal keszult tajekoztato jellegu draft. A vegleges ugyintezoi allasfoglalast es az egyedi ugyre vonatkozo dontest emberi felulvizsgalat utan lehet ervenyesnek tekinteni.",
+    "provenance": {
+      "chunk_id": "doc_d1d8e0e9a87301ca_p0073_s003",
+      "idezet": "12.1 Szolgáltató által kezdeményezett szerződésmódosítás esetei, feltételei, a Szolgáltató jogosultsága az egyoldalú szerződésmódosításra, a Megrendelő erről történő tájékoztatásának módja, az egyoldalú szerződésmódosítással kapcsolatban a Megrendelőt megillető jogok Szolgáltató egyoldalú szerződésmódosítása (1) A Szolgáltató a Szerződést az Egyedi szerződésre és a Keretszerződésre is kiterjedően az jelen pontban rögzített feltételeknek megfelelően jogosult egyoldalúan módosítani, azzal, hogy az",
+      "paragrafus": "12.1",
+      "dok_cim": "InvitechASZF_Torzsszoveg20260101"
+    }
+  }
+}

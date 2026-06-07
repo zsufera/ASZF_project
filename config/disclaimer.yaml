@@ -1,0 +1,17 @@
+automata_required: true
+text_hu: Ez a valasz AI-tamogatassal keszult tajekoztato jellegu draft. A vegleges
+  ugyintezoi allasfoglalast es az egyedi ugyre vonatkozo dontest emberi felulvizsgalat
+  utan lehet ervenyesnek tekinteni.
+provenance:
+  chunk_id: doc_d1d8e0e9a87301ca_p0073_s003
+  idezet: 12.1 Szolgáltató által kezdeményezett szerződésmódosítás esetei, feltételei,
+    a Szolgáltató jogosultsága az egyoldalú szerződésmódosításra, a Megrendelő erről
+    történő tájékoztatásának módja, az egyoldalú szerződésmódosítással kapcsolatban
+    a Megrendelőt megillető jogok Szolgáltató egyoldalú szerződésmódosítása (1) A
+    Szolgáltató a Szerződést az Egyedi szerződésre és a Keretszerződésre is kiterjedően
+    az jelen pontban rögzített feltételeknek megfelelően jogosult egyoldalúan módosítani,
+    azzal, hogy az
+  paragrafus: '12.1'
+  dok_cim: InvitechASZF_Torzsszoveg20260101
+derived_at: '2026-06-07T10:20:47.244830+00:00'
+source_chunks: data/processed/chunks.jsonl

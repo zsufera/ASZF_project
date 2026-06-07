@@ -1,0 +1,11 @@
+{
+  "email_id": "email-001-szamlazas-one",
+  "targy": "Számlázási kifogás - téves tétel",
+  "torzs": "Tisztelt Ügyfélszolgálat!\n\nKovács Anna vagyok, ügyfélszám: 48192037, SIM: 36201234567.\nA májusi számlán 4 990 Ft mobilnet opció szerepel, amit nem rendeltem.\nKérem a téves tétel javítását és a helyes számla elküldését.\n\nÜdvözlettel,\nKovács Anna\nBudapest, 1111 Fő utca 12.",
+  "felado_email": "kovacs.anna.poc@example.invalid",
+  "varht_kategoria": "szamlazas",
+  "szolgaltato": "ONE",
+  "varhato_eszkalacio": false,
+  "edge_case": null,
+  "catalog_version": "2026.06.07"
+}

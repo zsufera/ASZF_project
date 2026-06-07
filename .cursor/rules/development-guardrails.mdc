@@ -1,0 +1,15 @@
+---
+description: Always use the project development guardrails before implementation work
+alwaysApply: true
+---
+
+# Development Guardrails
+
+Before implementation, refactoring, testing, or planning code changes in this project:
+
+1. Read `FEJLESZTESI_GUARDRAILS.md`.
+2. Apply its product, architecture, ingest, agent, UI, testing, terminology, and quality guardrails.
+3. Keep terminology consistent: use `eszkaláció`, not `emelés`, except for `díjemelés` and `kiemelés/kiemelt`.
+4. Prefer changes that improve source-grounding, auditability, PII safety, or testability.
+5. If a request conflicts with `FEJLESZTESI_GUARDRAILS.md`, call out the conflict before implementing.
+

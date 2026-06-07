@@ -1,0 +1,5 @@
+# A POC ingest elsődleges forrása: kézzel bemásolt PDF-ek a local_pdf_dir alatt.
+# Opcionális: source_pages + manual_pdf_urls a preprocessing.download modulhoz.
+source_pages: []
+manual_pdf_urls: []
+local_pdf_dir: data/raw_pdfs

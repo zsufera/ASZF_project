@@ -1,0 +1,11 @@
+{
+  "email_id": "email-edge-002-idegen-nyelv",
+  "targy": "Billing dispute",
+  "torzs": "Dear Customer Service,\n\nMy name is John Miller, customer ID 44120987.\nI received an invoice I do not understand. Please explain the charges in English.\n\nJohn Miller",
+  "felado_email": "john.miller.poc@example.invalid",
+  "varht_kategoria": "szamlazas",
+  "szolgaltato": "ONE",
+  "varhato_eszkalacio": false,
+  "edge_case": "idegen_nyelv",
+  "catalog_version": "2026.06.07"
+}

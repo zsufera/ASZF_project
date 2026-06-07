@@ -1,0 +1,68 @@
+confidence_threshold: 0.75
+sla_fallback_days: 30
+escalation_triggers:
+- egyedi_szerzodes_gyanu
+- vitatott_osszeg
+- ismetlodo_panasz
+- jogi_hatosagi_media
+- sla_kozel_lejarat
+escalation_trigger_details:
+- nev: egyedi_szerzodes_gyanu
+  leiras: 'A forrás alapján eszkalációt indokolhat: egyedi szerzodes gyanu'
+  chunk_id: doc_b74e87e45de13120_p0081_s002
+  idezet: 7.2.3. Az Előfizetői Szerződés Szolgáltató általi egyoldalú módosítására
+    vonatkozó szabályok A Szolgáltató jogosult arra, hogy az Előfizetői Szerződés
+    részét képező jelen ÁSZF-et vagy az Előfizetői Szerződést - az Egyedi Előfizetői
+    Szerződésre kiterjedően - egyoldalúan módosítsa. Az Előfizető az egyoldalú szerződésmódosításról
+    szóló értesítés kézhezvételétől számított 45 (negyvenöt) napon belül azonnali
+    hatállyal, minden további jogkövetkezmények nélkül jogosult felmondani az Előfizetői
+    Szerződé
+  paragrafus: 7.2.3
+  dok_cim: ASZF_0_torzs_hatalyos_20260605
+- nev: vitatott_osszeg
+  leiras: 'A forrás alapján eszkalációt indokolhat: vitatott osszeg'
+  chunk_id: doc_b74e87e45de13120_p0065_s001
+  idezet: '65 befizetést követően az átvételt igazoló pénztári, nem adóügyi bizonylatot
+    állít ki. A tranzakcióért a Szolgáltató és a díjbeszedő partner külön díjat nem
+    számol fel, azonban ezen díjfizetési mód nem tesz eleget az egyes díjcsomagok
+    igénybevétele esetén vállalt e-Pack fizetési módoknak, mely maga után vonhatja
+    az e-Pack feltételek nem teljesítése miatti díj kiszámlázását. A számla kiegyenlítésének
+    napja: • postai átutalás esetén az a nap, amikor a Szolgáltató bankszámlájára
+    megérkezik a befize'
+  paragrafus: '65'
+  dok_cim: ASZF_0_torzs_hatalyos_20260605
+- nev: ismetlodo_panasz
+  leiras: 'A forrás alapján eszkalációt indokolhat: ismetlodo panasz'
+  chunk_id: doc_b74e87e45de13120_p0111_s003
+  idezet: '9.1.1. Előfizetői bejelentésnek minősül az előfizetői panasz Előfizetői
+    panasz: Előfizetői Szerződés alapján igénybe vett Szolgáltatás nyújtásával összefüggésben
+    az Előfizető által tett olyan bejelentés, amely az Előfizetőt érintő egyéni jogsérelem
+    vagy érdeksérelem megszüntetésére irányul és nem minősül hibabejelentésnek.'
+  paragrafus: 9.1.1
+  dok_cim: ASZF_0_torzs_hatalyos_20260605
+- nev: jogi_hatosagi_media
+  leiras: 'A forrás alapján eszkalációt indokolhat: jogi hatosagi media'
+  chunk_id: doc_0d7ed3b3e68216f4_p0087_s003
+  idezet: 12.6.3. Elektronikus adat ideiglenes vagy végleges hozzáférhetetlenné tétele
+    A Szolgáltató az Ekertv. 12/A. §-ban foglaltak szerint, amennyiben a büntetőeljárás
+    során a bíróság az elektronikus adat ideiglenes vagy végleges hozzáférhetetlenné
+    tételét rendelte el, a Szolgáltató az elrendelésről szóló határozat kézhezvételétől
+    számított 1 (egy) munkanapon belül intézkedik az elektronikus úton közzétett jogellenes
+    adat végleges vagy visszaállítható módon történő eltávolításáról. Ha a bíróság
+    az idei
+  paragrafus: 12.6.3
+  dok_cim: ESzSzF_hatalyos_20260522
+- nev: sla_kozel_lejarat
+  leiras: 'A forrás alapján eszkalációt indokolhat: sla kozel lejarat'
+  chunk_id: doc_0d7ed3b3e68216f4_p0117_s002
+  idezet: 12.16.2. Kötbér a szolgáltatásnyújtás megkezdésének késedelme miatt A Szerződésben
+    meghatározott határidő elmulasztása esetén a Szolgáltató kötbért köteles fizetni,
+    amelynek összege informatikai és egyéb szolgáltatás esetén a havidíjnak megfelelő
+    összeg 1/30 (egyharmincad) részének négyszerese, minden megkezdett naptári nap
+    után, de legfeljebb az érintett Szolgáltatás 1 (egy) havi díjának összege. A Szolgáltatót
+    nem terheli kötbérfizetési kötelezettség, ha a késedelemét kimenti, vagy olyan
+    késed
+  paragrafus: 12.16.2
+  dok_cim: ESzSzF_hatalyos_20260522
+derived_at: '2026-06-07T10:20:47.244830+00:00'
+source_chunks: data/processed/chunks.jsonl

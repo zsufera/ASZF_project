@@ -1,0 +1,100 @@
+mandatory_by_category:
+  szamlazas:
+  - label: 5.5.1 — ASZF_0_torzs_hatalyos_20260605 (szamlazas)
+    chunk_id: doc_b74e87e45de13120_p0058_s002
+    paragrafus: 5.5.1
+    idezet: 5.5.1. Mobil szolgáltatás és a Szolgáltató által használt hálózatokon
+      nyújtott Helyhez kötött és Műsorterjesztés előfizetői szolgáltatás A Szolgáltató
+      általi számlázás a Szolgáltatónál vezetett Előfizetői nyilvántartás, az Előfizető
+      által igénybe vett szolgáltatás alapján történik. A Szolgáltató kizárólag az
+      Előfizetői Szerződésben szereplő, illetve az Előfizetőnek biztosított és a jelen
+      ÁSZF-nek megfelelő Szolgáltatást jogosult kiszámlázni, az Előfizetői Szerződésben
+      és az ÁSZF 2. számú Díjszab
+    dok_cim: ASZF_0_torzs_hatalyos_20260605
+    oldalszam: 58
+    szolgaltato: ONE
+  dijemeles:
+  - label: 1.1.2 — ESzSzF_hatalyos_20260522 (dijemeles)
+    chunk_id: doc_0d7ed3b3e68216f4_p0007_s004
+    paragrafus: 1.1.2
+    idezet: 1.1.2. Az ESzSzF módosítása A Szolgáltató jogosult az ESzSzF alapján kötött
+      szerződést az egyedi szerződésre is kiterjedően egyoldalúan módosítani és/vagy
+      a jelen ESzSzF tartalmát egyoldalúan megváltoztatni, amely változtatásról a
+      változás hatályba lépését megelőzően 15 naptári nappal a Szolgáltató honlapján
+      történő közzététel útján értesíti az ügyfeleit, illetve a felhasználókat a már
+      létező szolgáltatáshoz kapcsolódó módosítás esetén. Az előbbi módosítási szabályok
+      alól kivételt képeznek, az E
+    dok_cim: ESzSzF_hatalyos_20260522
+    oldalszam: 7
+    szolgaltato: ONE
+  hibabejelentes_szolgaltataskieses:
+  - label: 46 — ASZF_7_melleklet_hatalyos_20260605 (1) (hibabejelentes_szolgaltataskieses)
+    chunk_id: doc_bddcfcfb4358bf1c_p0046_s001
+    paragrafus: '46'
+    idezet: '46 Internet Pro csomagajánlatok esetében a Wifi pótló opció belföldön
+      72 óra erejéig az alább felsorolt speciális körülmények fennállása esetén adatkorlátozás
+      nélkül használható. Ilyen speciális körülmények: a helyhez kötött internet-hozzáférés
+      szolgáltatás Szolgáltató érdekkörében felmerült okból történő szüneteltetése,
+      a helyhez kötött internet-hozzáférés szolgáltatás tervezett (rendszeres), vagy
+      alkalmi hálózati karbantartása, a helyhez kötött internet-hozzáférés szolgáltatás
+      költöztetése, il'
+    dok_cim: ASZF_7_melleklet_hatalyos_20260605 (1)
+    oldalszam: 46
+    szolgaltato: ONE
+  szerzodesfelmondas_modositas:
+  - label: 7.3.1 — ASZF_0_torzs_hatalyos_20260605 (szerzodesfelmondas_modositas)
+    chunk_id: doc_b74e87e45de13120_p0090_s002
+    paragrafus: 7.3.1
+    idezet: '7.3.1. Az Előfizető értesítése az Előfizetői Szerződés és az ÁSZF módosítása
+      esetén Közzététel Az ÁSZF-et – ideértve annak módosításait – a Szolgáltató az
+      Ügyfélszolgálatán és Internetes honlapján: www.one.hu/aszf teszi elérhetővé.
+      A nyilvánosságra hozott ÁSZF-et a Szolgáltató ingyenesen teszi elérhetővé. Az
+      ÁSZF minden módosulása esetén a módosulás hatálybalépését 30 nappal megelőzően
+      egységes szerkezetben közzéteszi a Szolgáltató az Ügyfélszolgálati helyiségben,
+      internetes honlapján, továbbá a'
+    dok_cim: ASZF_0_torzs_hatalyos_20260605
+    oldalszam: 90
+    szolgaltato: ONE
+  lefedettseg:
+  - label: 8 — ASZF_0_torzs_hatalyos_20260605 (lefedettseg)
+    chunk_id: doc_b74e87e45de13120_p0008_s001
+    paragrafus: '8'
+    idezet: 8 A Mobil telefonszolgáltatás vagy hangszolgáltatás olyan mobil rádiótelefon-hálózaton
+      megvalósított telefonszolgáltatás vagy hangszolgáltatás, ahol a szolgáltatás
+      a szolgáltatási területen belül a nagy területen mozgó igénybe vevő számára
+      lehetővé teszi a kétirányú kommunikációt. A Mobil telefonszolgáltatás vagy hangszolgáltatás
+      a Szolgáltató mobil hálózata által lefedett területen érhető el. A lefedettség
+      adatok a www.one.hu/lefedettsegi-terkep oldalon érhetőek el. A Mobil telefonszolgáltatásr
+    dok_cim: ASZF_0_torzs_hatalyos_20260605
+    oldalszam: 8
+    szolgaltato: ONE
+  eszkoz_keszulek:
+  - label: 2.3.1 — ASZF_0_torzs_hatalyos_20260605 (eszkoz_keszulek)
+    chunk_id: doc_b74e87e45de13120_p0022_s002
+    paragrafus: 2.3.1
+    idezet: '2.3.1. Mobil szolgáltatásokra vonatkozó rendelkezések A Mobil Szolgáltatás
+      igénybevételének előfeltétele a megfelelő hálózati kapcsolat megléte, amely
+      az Előfizetői SIM kártya aktiválásával valósul meg. Az Előfizetőtől jogtalanul
+      eltulajdonított vagy az elvesztett Eszközt (mobil rádiótelefon készüléket, USB
+      modem, wifi router stb.) az Előfizető írásbeli kérelmére a Szolgáltató legfeljebb
+      egy éves időtartamra tiltó listára helyezi. Ehhez – az írásbeli kérelem benyújtása
+      mellett – az Előfizetőnek '
+    dok_cim: ASZF_0_torzs_hatalyos_20260605
+    oldalszam: 22
+    szolgaltato: ONE
+  adatvedelem:
+  - label: 4 — ASZF_3_melleklet_hatalyos_20260605 (adatvedelem)
+    chunk_id: doc_e6cf7ed30d845433_p0004_s001
+    paragrafus: '4'
+    idezet: '4 2. Fogalmak Szolgáltató egyedi adatkezelési tájékoztatóiban foglalt
+      fogalmak megegyeznek a GDPR 4. cikkében foglalt fogalmakkal. A legfontosabb
+      fogalmakat azonban köznapi szóhasználattal a közérthetőség céljából Szolgáltató
+      elmagyarázza: • érintett: az az azonosított vagy azonosítható a természetes
+      személy, akire a személyes adat vonatkozik • természetes személy: az élő ember
+      • személyes adat: bármely információ, amely egy érintettre vonatkozik • adatkezelés:
+      személyes adaton végzett bármilyen'
+    dok_cim: ASZF_3_melleklet_hatalyos_20260605
+    oldalszam: 4
+    szolgaltato: ONE
+derived_at: '2026-06-07T10:20:47.244830+00:00'
+source_chunks: data/processed/chunks.jsonl

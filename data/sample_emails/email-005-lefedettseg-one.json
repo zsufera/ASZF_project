@@ -1,0 +1,11 @@
+{
+  "email_id": "email-005-lefedettseg-one",
+  "targy": "Szolgáltatás elérhetőség ellenőrzése",
+  "torzs": "Jó napot!\n\nHorváth Zsuzsanna, 9024 Győr, Baross utca 3.\nA honlapon nem egyértelmű, hogy FTTH internet elérhető-e a címemen.\nKérem pontosítani a lefedettséget és a csatlakozás feltételeit.\n\nHorváth Zsuzsanna",
+  "felado_email": "horvath.zsuzsanna.poc@example.invalid",
+  "varht_kategoria": "lefedettseg",
+  "szolgaltato": "ONE",
+  "varhato_eszkalacio": false,
+  "edge_case": null,
+  "catalog_version": "2026.06.07"
+}

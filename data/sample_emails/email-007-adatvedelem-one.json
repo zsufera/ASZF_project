@@ -1,0 +1,11 @@
+{
+  "email_id": "email-007-adatvedelem-one",
+  "targy": "Személyes adatok törlése",
+  "torzs": "Tisztelt Adatvédelmi Ügyfélszolgálat!\n\nVarga Emese vagyok, emese.varga.poc@example.invalid.\nKérem személyes adataim törlését a felmondott előfizetésemhez kapcsolódóan,\nés tájékoztatást az adatkezelési tájékoztató szerinti határidőkről.\n\nVarga Emese",
+  "felado_email": "emese.varga.poc@example.invalid",
+  "varht_kategoria": "adatvedelem",
+  "szolgaltato": "ONE",
+  "varhato_eszkalacio": false,
+  "edge_case": null,
+  "catalog_version": "2026.06.07"
+}
