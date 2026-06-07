@@ -45,3 +45,28 @@ def test_icon_nav_returns_first_when_no_selection():
     at = AppTest.from_function(script).run()
     assert not at.exception
     assert at.session_state["_choice"] == "Inbox"
+
+
+def test_render_timeline_collapsible_default_open_no_error():
+    def script():
+        from ui import components
+        timeline = [
+            {"step": "classify", "output": {"category": "szamlazas"}},
+            {"step": "escalation", "output": {"required": True, "reasons": ["ismétlődő"]}},
+        ]
+        components.render_timeline_one(timeline, expanded=True)
+    at = AppTest.from_function(script).run()
+    assert not at.exception
+
+
+def test_render_kpi_grid_no_error():
+    def script():
+        from ui import components, theme
+        theme.inject_theme()
+        components.render_kpi_grid([
+            ("Citation rate", "0.94", "ok"),
+            ("Hallucináció", "0.02", "ok"),
+            ("Coverage", "0.71", "warn"),
+        ])
+    at = AppTest.from_function(script).run()
+    assert not at.exception

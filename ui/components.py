@@ -180,3 +180,47 @@ def icon_nav(items: list[str]) -> str:
     labels = [f"{_NAV_ICONS.get(item, '•')}  {item}" for item in items]
     picked = st.sidebar.radio("Navigáció", labels, label_visibility="collapsed")
     return items[labels.index(picked)]
+
+
+_STEP_LABELS: dict[str, str] = {
+    "language": "Nyelv / típus",
+    "mask": "Maszkolás",
+    "classify": "Osztályozás",
+    "priority": "Prioritás",
+    "policy_map": "Szabályzat-térkép",
+    "escalation": "Eszkaláció",
+    "draft": "Draft",
+    "verify": "Ellenőrzés",
+}
+
+
+def _step_state_icon(step: str, output: dict[str, Any]) -> str:
+    if step == "escalation" and output.get("required"):
+        return "⚠"
+    if step == "verify" and output.get("ungrounded_count", 0) > 0:
+        return "⚠"
+    return "✓"
+
+
+def render_timeline_one(timeline: list[dict[str, Any]], expanded: bool = True) -> None:
+    """Becsukható (alapból nyitott) One agent-idővonal, kattintható lépésekkel."""
+    with st.expander("⚙️ Agent-idővonal", expanded=expanded):
+        if not timeline:
+            st.info("Az agent még nem futott le.")
+            return
+        for entry in timeline:
+            step = entry.get("step", "—")
+            output = entry.get("output", {}) or {}
+            icon = _step_state_icon(step, output)
+            label = _STEP_LABELS.get(step, step)
+            with st.expander(f"{icon}  {label}", expanded=icon == "⚠"):
+                st.json(output)
+
+
+def render_kpi_grid(items: list[tuple[str, str, str]], per_row: int = 3) -> None:
+    """KPI-kártyák rácsban. Minden elem: (label, value, status[ok|warn|bad])."""
+    for start in range(0, len(items), per_row):
+        row = items[start : start + per_row]
+        cols = st.columns(per_row)
+        for col, (label, value, status) in zip(cols, row):
+            col.markdown(theme.kpi_card_html(label, value, status), unsafe_allow_html=True)
