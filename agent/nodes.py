@@ -306,6 +306,7 @@ def verify_node(state: AgentState) -> AgentState:
         draft_body_masked=draft.get("body_masked", ""),
         chunks=chunks,
         mandatory_refs=mandatory_refs,
+        citations=[str(c) for c in draft.get("citations", []) if c],
     )
     return {
         "verify": result,
