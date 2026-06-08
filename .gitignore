@@ -8,3 +8,9 @@ data/qdrant_local/
 data/processed/embedding_cache.db
 data/ollama/
 .superpowers/
+
+# Claude Code — user-specifikus lokális beállítások (a megosztott CLAUDE.md / skillek / parancsok verziózva vannak)
+.claude/settings.local.json
+
+# Frontend build/dev cache
+frontend/.vite/
