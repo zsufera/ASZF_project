@@ -17,12 +17,8 @@ export function Login() {
     setLoading(true);
     try {
       const res = await api.login(username, password);
-      if (res.error) {
-        setError(res.error);
-      } else {
-        login({ username: res.username, role: res.role });
-        navigate("/inbox");
-      }
+      login({ username: res.username, role: res.role });
+      navigate("/inbox");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bejelentkezési hiba");
     } finally {

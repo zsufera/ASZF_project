@@ -16,9 +16,14 @@ async function req<T>(method: string, path: string, body?: unknown, formData?: F
   const res = await fetch(`${BASE}${path}`, opts);
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error ?? res.statusText);
+    throw new Error(err.error ?? err.detail ?? res.statusText);
   }
-  return res.json() as Promise<T>;
+  const data = await res.json() as T & { error?: string };
+  // A backend egyes végpontjai HTTP 200-zal adnak vissza { error: "..." }-t (pl. nem talált ügy)
+  if ((data as { error?: string }).error) {
+    throw new Error((data as { error?: string }).error);
+  }
+  return data;
 }
 
 export const api = {

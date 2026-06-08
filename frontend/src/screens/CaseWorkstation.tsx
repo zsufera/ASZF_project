@@ -95,10 +95,10 @@ export function CaseWorkstation() {
   if (error) return <div className="text-status-urgent-fg p-8">{error}</div>;
   if (!caseData) return null;
 
-  const draft = caseData.agent_state.draft ?? { subject: "", body_masked: "", citations: [] };
-  const hasTimeline = caseData.agent_state.timeline.length > 0;
-  const escalation = caseData.agent_state.escalation;
-  const chunks = caseData.agent_state.retrieval.chunks;
+  const draft = caseData.agent_state?.draft ?? { subject: "", body_masked: "", citations: [] };
+  const hasTimeline = (caseData.agent_state?.timeline ?? []).length > 0;
+  const escalation = caseData.agent_state?.escalation ?? null;
+  const chunks = caseData.agent_state?.retrieval?.chunks ?? [];
 
   return (
     <div>
@@ -202,7 +202,7 @@ export function CaseWorkstation() {
             </div>
           ) : (
             <AgentTimeline
-              steps={caseData.agent_state.timeline}
+              steps={caseData.agent_state?.timeline ?? []}
               defaultOpen={true}
               onToggle={setTimelineOpen}
             />

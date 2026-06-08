@@ -41,6 +41,8 @@ export function Copilot() {
   const [createdCaseId, setCreatedCaseId] = useState<string | null>(() => {
     return sessionStorage.getItem("copilot.caseId");
   });
+  // Ideiglenes case_id a chat-munkamenethez (az /agent/run kötelező mezője)
+  const [sessionCaseId] = useState(() => `CHAT-${crypto.randomUUID()}`);
   const [transcript, setTranscript] = useState("");
   const [streamTrigger, setStreamTrigger] = useState(0);
   const [lastAssistantFull, setLastAssistantFull] = useState("");
@@ -60,10 +62,10 @@ export function Copilot() {
     setLoading(true);
     try {
       const res = await api.agentRun({
+        case_id: sessionCaseId,
         channel: "chat",
         input_text: text,
         output_mode: outputMode,
-        username: user?.username,
       }) as { draft?: { body_masked?: string; citations?: string[] }; timeline?: unknown[] };
 
       const body = res.draft?.body_masked ?? "Nincs válasz.";
