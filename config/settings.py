@@ -29,6 +29,9 @@ class Settings:
     openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4.1")
     openai_embed_model: str = os.getenv("OPENAI_EMBED_MODEL", "text-embedding-3-large")
     llm_enabled: bool = os.getenv("LLM_ENABLED", "true").lower() == "true"
+    # LLM-alapú groundedness-ellenőrzés (faithfulness judge) a verify lépésben.
+    # +1 LLM-hívás/futás; kikapcsolható, ha a latencia fontosabb a pontos verify-jelzésnél.
+    llm_verify_enabled: bool = os.getenv("LLM_VERIFY_ENABLED", "true").lower() == "true"
     openai_temperature: float = float(os.getenv("OPENAI_TEMPERATURE", "0.2"))
     langfuse_enabled: bool = os.getenv("LANGFUSE_ENABLED", "false").lower() == "true"
     langfuse_host: str = os.getenv("LANGFUSE_HOST", "http://localhost:3000")
