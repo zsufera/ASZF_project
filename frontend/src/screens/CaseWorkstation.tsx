@@ -6,7 +6,9 @@ import { useSession } from "../state/session";
 import { useToast } from "../state/toast";
 import { Badge } from "../components/Badge";
 import { Card } from "../components/Card";
-import { SourceCard } from "../components/SourceCard";
+import { SourceCard, RichSourceCard } from "../components/SourceCard";
+import { InlineAnswer } from "../components/InlineAnswer";
+import { ProcessingIndicator } from "../components/ProcessingIndicator";
 import { HistoryCard } from "../components/HistoryCard";
 import { CustomerCandidateList } from "../components/CustomerCandidate";
 import { AgentTimeline } from "../components/AgentTimeline";
@@ -99,6 +101,8 @@ export function CaseWorkstation() {
   const hasTimeline = (caseData.agent_state?.timeline ?? []).length > 0;
   const escalation = caseData.agent_state?.escalation ?? null;
   const chunks = caseData.agent_state?.retrieval?.chunks ?? [];
+  const sources = caseData.agent_state?.draft?.sources ?? [];
+  const generationMode = caseData.agent_state?.draft?.generation_mode;
 
   return (
     <div>
@@ -128,7 +132,15 @@ export function CaseWorkstation() {
         {/* LEFT: Context */}
         <div className="flex flex-col gap-3 min-w-0">
           <Card title="📚 Források">
-            {chunks.length === 0 ? <p className="text-one-grey text-[11px]">Nincs forrás.</p> : (
+            {sources.length > 0 ? (
+              sources.map((s) => (
+                <div key={s.ref} ref={(el) => { sourceRefs.current[s.ref] = el; }}>
+                  <RichSourceCard source={s} id={`source-${s.ref}`} />
+                </div>
+              ))
+            ) : chunks.length === 0 ? (
+              <p className="text-one-grey text-[11px]">Nincs forrás.</p>
+            ) : (
               chunks.map((c) => (
                 <div key={c.chunk_id} ref={(el) => { sourceRefs.current[c.chunk_id] = el; }}>
                   <SourceCard chunk={c} id={`source-${c.chunk_id}`} />
@@ -162,12 +174,34 @@ export function CaseWorkstation() {
           </Card>
 
           <Card title="✏️ Draft">
+            {hasTimeline && (
+              <div className="flex justify-end mb-2">
+                <button
+                  onClick={handleProcess}
+                  disabled={processing}
+                  className="text-[10px] text-one-turq-d border border-one-turq rounded-pill px-3 py-1 hover:bg-one-turq-l transition-colors disabled:opacity-50"
+                  aria-label="Agent feldolgozás újrafuttatása"
+                >
+                  {processing ? "⟳ Feldolgozás…" : "🔄 Feldolgozás újra"}
+                </button>
+              </div>
+            )}
+
             {escalation?.required && (
               <div className="mb-3 bg-status-esc-bg border border-status-esc-fg rounded-md p-2 text-[11px] text-status-esc-fg">
                 ⚠ Eszkaláció supervisorhoz szükséges: {escalation.reasons.join(", ")}
               </div>
             )}
-            {!hasTimeline ? (
+
+            {generationMode === "insufficient" && !processing && (
+              <div className="mb-3 bg-status-esc-bg border border-status-esc-fg rounded-md p-2 text-[11px] text-status-esc-fg">
+                ⚠ Nincs elég ÁSZF-fedezet automatikus válaszhoz — emberi ellenőrzés / eszkaláció javasolt.
+              </div>
+            )}
+
+            {processing ? (
+              <ProcessingIndicator active={processing} />
+            ) : !hasTimeline ? (
               <div className="text-center py-6">
                 <p className="text-one-grey text-[12px] mb-3">Az agent még nem futott.</p>
                 <button
@@ -175,21 +209,40 @@ export function CaseWorkstation() {
                   disabled={processing}
                   className="bg-one-turq text-[#04201f] font-bold text-[12px] px-5 py-2 rounded-pill hover:bg-one-turq-d transition-colors disabled:opacity-50"
                 >
-                  {processing ? "⟳ Feldolgozás…" : "▶ Agent feldolgozás indítása"}
+                  ▶ Agent feldolgozás indítása
                 </button>
               </div>
             ) : (
-              <DraftEditor
-                draft={draft}
-                versions={caseData.draft_versions}
-                outputMode={outputMode}
-                caseId={caseData.case_id}
-                onModeChange={(m: OutputMode) => setOutputMode(m)}
-                onSave={handleSave}
-                onApprove={handleApprove}
-                onFeedback={handleFeedback}
-                onCitationClick={handleCitationClick}
-              />
+              <>
+                {draft.body_masked && (
+                  <div className="mb-3 bg-[#FbFdfd] border border-one-line rounded-md p-2">
+                    <div className="text-[9px] uppercase text-one-grey tracking-wider mb-1">Fedezet-előnézet (kattintható forrás-jelölők)</div>
+                    <InlineAnswer
+                      body={draft.body_masked}
+                      sources={sources}
+                      onCite={(ref) => {
+                        const el = sourceRefs.current[ref];
+                        if (el) {
+                          el.scrollIntoView({ behavior: "smooth", block: "center" });
+                          el.classList.add("ring-2", "ring-one-turq");
+                          setTimeout(() => el.classList.remove("ring-2", "ring-one-turq"), 1500);
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+                <DraftEditor
+                  draft={draft}
+                  versions={caseData.draft_versions}
+                  outputMode={outputMode}
+                  caseId={caseData.case_id}
+                  onModeChange={(m: OutputMode) => setOutputMode(m)}
+                  onSave={handleSave}
+                  onApprove={handleApprove}
+                  onFeedback={handleFeedback}
+                  onCitationClick={handleCitationClick}
+                />
+              </>
             )}
           </Card>
         </div>
