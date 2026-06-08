@@ -121,5 +121,6 @@ export function formatFieldValue(key: string, value: unknown): string {
   if (key === "confidence" && typeof value === "number") return `${Math.round(value * 100)}%`;
   const map = VALUE_MAPS[key];
   if (map && typeof value === "string" && map[value]) return map[value];
+  if (typeof value === "object") return JSON.stringify(value);  // védő-fallback (ne legyen "[object Object]")
   return String(value);
 }
