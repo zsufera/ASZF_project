@@ -39,6 +39,21 @@ export interface ChunkItem {
   kozertheto_magyarazat?: string;
 }
 
+export interface SourceRef {
+  ref: string;            // "S1", "S2", ...
+  chunk_id: string;
+  dok_cim?: string;
+  dok_tipus?: string;
+  paragrafus?: string;
+  oldalszam?: number;
+  idezet: string;
+  magyarazat?: string;
+  score?: number;
+  used: boolean;
+}
+
+export type GenerationMode = "llm" | "insufficient";
+
 export interface TimelineStep {
   step: string;
   output: Record<string, unknown>;
@@ -53,7 +68,14 @@ export interface AgentState {
   retrieval: { chunks: ChunkItem[] };
   policy_map: { policy_items: unknown[] };
   timeline: TimelineStep[];
-  draft: { subject: string; body_masked: string; citations: string[] };
+  draft: {
+    subject: string;
+    body_masked: string;
+    citations: string[];
+    sources?: SourceRef[];
+    generation_mode?: GenerationMode;
+    format?: "email" | "copilot";
+  };
   escalation: EscalationState;
 }
 
