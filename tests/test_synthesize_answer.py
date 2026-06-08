@@ -150,3 +150,9 @@ def test_synthesize_insufficient_on_llm_exception(monkeypatch):
         output_mode="hitl", policy_map=_PMAP, actions=[],
     )
     assert result["generation_mode"] == "insufficient"
+
+
+def test_clean_outbound_text_strips_markers():
+    import backend.case_service as cs
+    assert cs._clean_outbound_text("A felmondás 60 napos [S1] határidővel.") == "A felmondás 60 napos határidővel."
+    assert cs._clean_outbound_text("Nincs jelölő itt.") == "Nincs jelölő itt."

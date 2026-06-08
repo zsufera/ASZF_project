@@ -10,7 +10,7 @@ import yaml
 
 from agent.runner import run_agent
 from backend.audit_service import record_audit_event, record_iteration_audit, record_pii_access
-from backend.draft import ensure_disclaimer
+from backend.draft import ensure_disclaimer, strip_source_markers
 from backend.history import get_history
 from backend.masking import mask_text, unmask_text
 from backend.metadata import load_manifest_summary
@@ -327,6 +327,11 @@ def _get_case_db_id(case_code: str) -> int | None:
     return int(row[0]) if row else None
 
 
+def _clean_outbound_text(text: str) -> str:
+    """Az ügyfélhez kimenő szövegből eltávolítja a belső [Sn] forrás-jelölőket."""
+    return strip_source_markers(text)
+
+
 def create_ad_hoc_case(
     channel: str,
     input_text: str,
@@ -608,8 +613,8 @@ def approve_draft(
         role=actor_role,
         details={"draft_version_id": draft_version_id},
     )
-    subject_unmasked = unmask_text(case_code, subject_masked or "")
-    body_unmasked = unmask_text(case_code, body_masked or "")
+    subject_unmasked = _clean_outbound_text(unmask_text(case_code, subject_masked or ""))
+    body_unmasked = _clean_outbound_text(unmask_text(case_code, body_masked or ""))
 
     with sqlite3.connect(settings.sqlite_path) as conn:
         current_status = conn.execute("SELECT status FROM cases WHERE id = ?", (case_id,)).fetchone()[0]
