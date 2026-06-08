@@ -13,10 +13,13 @@ MARKER_RE = re.compile(r"\[S\d+\]")
 
 
 def strip_source_markers(text: str | None) -> str:
-    """Eltávolítja a [Sn] forrás-jelölőket és normalizálja a felesleges szóközöket."""
+    """Eltávolítja a [Sn] forrás-jelölőket és normalizálja a felesleges szóközöket
+    (többsoros ügyfél-levélnél is: nincs sor eleji/végi szóköz, nincs jelölő-maradék)."""
     cleaned = MARKER_RE.sub("", text or "")
-    cleaned = re.sub(r"[ \t]+([.,;:!?])", r"\1", cleaned)
-    cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
+    cleaned = re.sub(r"[ \t]+([.,;:!?])", r"\1", cleaned)   # szóköz írásjel előtt
+    cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)            # többszörös szóköz
+    cleaned = re.sub(r"[ \t]+(\n)", r"\1", cleaned)          # sor végi szóköz
+    cleaned = re.sub(r"(\n)[ \t]+", r"\1", cleaned)          # sor eleji szóköz
     return cleaned.strip()
 
 

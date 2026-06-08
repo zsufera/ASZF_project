@@ -29,3 +29,15 @@ def test_build_sources_skips_items_without_chunk_id():
     sources = _build_sources([{"idezet": "x"}, {"chunk_id": "c1", "idezet": "y"}])
     assert [s["ref"] for s in sources] == ["S1"]
     assert sources[0]["chunk_id"] == "c1"
+
+
+def test_strip_source_markers_multiline_no_orphan_whitespace():
+    text = "Tisztelt Ügyfelünk!\n\nA felmondás 60 napos [S1]\nhatáridővel lehetséges.\n\nÜdvözlettel"
+    out = strip_source_markers(text)
+    # nincs sor eleji/sor végi szóköz, és nincs jelölő
+    assert "[S1]" not in out
+    for line in out.split("\n"):
+        assert line == line.strip()
+    # az értelmes tartalom megmarad
+    assert "A felmondás 60 napos" in out
+    assert "határidővel lehetséges." in out
