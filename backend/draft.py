@@ -126,6 +126,124 @@ def build_draft_template(
     }
 
 
+SYNTH_SYSTEM = (
+    "Készíts az ügyintézőnek koherens, magyar nyelvű választ KIZÁRÓLAG a megadott ÁSZF-források alapján.\n"
+    "Szabályok:\n"
+    "- Minden tartalmi állítás mögé tedd a forrás jelölőjét szögletes zárójelben, pl. [S1]. Csak létező jelölőt használj.\n"
+    "- Ha valamire nincs fedezet a forrásokban, NE találd ki.\n"
+    "- Ha a források együtt sem elegendők érdemi válaszhoz, az elegtelen_fedezet mező legyen true.\n"
+    "- A maszkolt PII-t (pl. [NÉV_1]) hagyd érintetlenül.\n"
+    'Válasz JSON: {"targy": "...", "valasz": "... [S1] ...", '
+    '"felhasznalt_forrasok": ["S1"], "elegtelen_fedezet": false}'
+)
+
+_EMAIL_INSTRUCTION = (
+    "Formátum: hivatalos magyar ügyfél-válaszlevél (megszólítás, törzs, "
+    "javasolt intézkedés, elköszönés)."
+)
+_COPILOT_INSTRUCTION = (
+    "Formátum: tömör, az ügyintézőnek szóló beszédpont-összegzés "
+    "(NEM közvetlen ügyfélnek címzett levél)."
+)
+_INSUFFICIENT_EMAIL = (
+    "Nincs elegendő ÁSZF-fedezet automatikus válaszjavaslathoz. "
+    "Emberi ellenőrzés és szükség esetén eszkaláció javasolt."
+)
+_INSUFFICIENT_COPILOT = (
+    "Nincs elegendő ÁSZF-fedezet a kérdés megválaszolásához. "
+    "Javasolt: emberi ellenőrzés / eszkaláció."
+)
+
+
+def _insufficient_result(fmt: str, category: str, sources: list[dict[str, Any]]) -> dict[str, Any]:
+    subject = (
+        f"Válaszjavaslat {category} ügyben" if fmt == "email" else f"Copilot jegyzet – {category}"
+    )
+    body = _INSUFFICIENT_COPILOT if fmt == "copilot" else _INSUFFICIENT_EMAIL
+    return {
+        "subject": subject,
+        "body_masked": body,
+        "sources": sources,
+        "citations": [s["chunk_id"] for s in sources],
+        "generation_mode": "insufficient",
+        "format": fmt,
+        "disclaimer_applied": False,
+    }
+
+
+def synthesize_answer(
+    case_id: str,
+    category: str,
+    channel: str,
+    output_mode: str,
+    policy_map: dict[str, Any],
+    actions: list[dict[str, Any]],
+    disclaimer_text: str | None = None,
+) -> dict[str, Any]:
+    fmt = "copilot" if channel in {"chat", "phone"} else "email"
+    sources = _build_sources(policy_map.get("policy_items", []))
+
+    if not llm_available() or not sources:
+        return _insufficient_result(fmt, category, sources)
+
+    try:
+        sources_block = "\n".join(
+            f'- [{s["ref"]}] "{s["idezet"]}" '
+            f'({s.get("dok_cim") or s.get("dok_tipus") or ""} §{s.get("paragrafus") or ""})'
+            for s in sources
+        )
+        action_block = "\n".join(
+            f'- {a.get("tipus")}: {a.get("indok", "")}' for a in actions if a.get("tipus")
+        ) or "- (nincs)"
+        instruction = _EMAIL_INSTRUCTION if fmt == "email" else _COPILOT_INSTRUCTION
+        user = (
+            f"{instruction}\n"
+            f"Kategória: {category}\n"
+            f"Kimeneti mód: {output_mode}\n"
+            f"Források:\n{sources_block}\n"
+            f"Javasolt intézkedés:\n{action_block}"
+        )
+        data = chat_json(SYNTH_SYSTEM, user)
+        if data.get("elegtelen_fedezet"):
+            return _insufficient_result(fmt, category, sources)
+        body = str(data.get("valasz", "")).strip()
+        if not body:
+            return _insufficient_result(fmt, category, sources)
+
+        valid_refs = {s["ref"] for s in sources}
+        # Csak a ténylegesen létező [Sn] jelölők maradnak; az érvénytelent töröljük.
+        body = re.sub(
+            r"\[S(\d+)\]",
+            lambda m: m.group(0) if f"S{m.group(1)}" in valid_refs else "",
+            body,
+        )
+        used_refs = {r for r in (data.get("felhasznalt_forrasok") or []) if r in valid_refs}
+        for s in sources:
+            s["used"] = s["ref"] in used_refs or f'[{s["ref"]}]' in body
+
+        subject = str(
+            data.get("targy")
+            or (f"Válaszjavaslat {category} ügyben" if fmt == "email" else f"Copilot jegyzet – {category}")
+        )
+
+        disclaimer_applied = False
+        if fmt == "email":
+            body, disclaimer_applied = ensure_disclaimer(body, output_mode)
+
+        cited = [s["chunk_id"] for s in sources if s["used"]]
+        return {
+            "subject": subject,
+            "body_masked": body,
+            "sources": sources,
+            "citations": cited or [s["chunk_id"] for s in sources],
+            "generation_mode": "llm",
+            "format": fmt,
+            "disclaimer_applied": disclaimer_applied,
+        }
+    except Exception:
+        return _insufficient_result(fmt, category, sources)
+
+
 def build_draft(
     case_id: str,
     category: str,
