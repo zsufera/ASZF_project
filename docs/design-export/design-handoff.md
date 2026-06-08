@@ -50,7 +50,7 @@ Keskeny **ikon-sáv** (bal, `--rail-w` 70px) + **fejléc** (felül, `--header-h`
 ```
 
 - **Ikon-sáv menü (szerepkör-függő):** Inbox · Új ügy · Copilot · Evaluation · *(Supervisor — csak `role==="supervisor"`)*. Aktív elem türkiz háttérrel/szöveggel.
-- **Fejléc:** „one" logó + „ÁSZF Copilot"; globális kereső (ügy-azonosító/feladó); ÁSZF-verzió chip; modell-profil kapcsoló (Felhő/On-prem); bejelentkezett user + szerepkör; (Kijelentkezés, Újraindexelés a fejlécben vagy a sávban).
+- **Fejléc:** „one" logó + „ÁSZF Copilot"; globális kereső (ügy-azonosító/feladó); ÁSZF-verzió chip; modell-profil kapcsoló (Felhő/On-prem); bejelentkezett user + szerepkör; (Kijelentkezés).
 - **Nézet-mód (state):** lista → ügy kiválasztása → `viewMode="case"` + `activeCaseId`; **„← Vissza"** → `viewMode="list"`. Az ügy a lista helyett teljes szélességben jelenik meg (nem alatta).
 - Makett: [`mockups/nav-shell.html`](mockups/nav-shell.html) (A = Munkaállomás a választott irány).
 
