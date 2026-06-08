@@ -1,0 +1,131 @@
+<style>
+  :root{ --turq:#16C7C0; --turq-d:#0FA39D; --turq-l:#E3FAF8; --ink:#16201F; --grey:#6B7A79; --line:#E2EAE9; }
+  .ws{ font-family:"Segoe UI",system-ui,sans-serif; border:1px solid var(--line); border-radius:14px; overflow:hidden; background:#F7FAF9; color:var(--ink); }
+  .top{ display:flex; align-items:center; gap:10px; padding:9px 14px; background:#fff; border-bottom:1px solid var(--line); font-size:12px; }
+  .logo-one{ display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; border:2px solid var(--turq); color:var(--turq); font-style:italic; font-weight:700; font-size:12px; }
+  .back{ color:var(--turq-d); font-weight:600; }
+  /* case header */
+  .chead{ background:linear-gradient(90deg,var(--turq-l),#fff); border:1px solid var(--line); border-radius:12px; margin:12px; padding:11px 14px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12px; }
+  .chead .id{ font-weight:700; font-size:14px; }
+  .spacer{ flex:1; }
+  .sla{ background:#fff; border:1px solid var(--line); border-radius:10px; padding:3px 10px; font-weight:600; }
+  .badge{ display:inline-block; font-size:10px; padding:2px 9px; border-radius:12px; font-weight:700; }
+  .b-cat{ background:var(--turq-l); color:var(--turq-d); }
+  .b-urg{ background:#fde2e1; color:#b42318; }
+  .b-esc{ background:#fff0db; color:#b96a00; }
+  .b-conf{ background:#fef7d6; color:#8a6d00; }
+  /* three columns */
+  .cols{ display:flex; gap:12px; padding:0 12px 12px; }
+  .c-ctx{ width:25%; } .c-mid{ flex:1; } .c-tl{ width:24%; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:12px; padding:11px; margin-bottom:10px; font-size:11px; }
+  .card h5{ margin:0 0 8px; font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--grey); display:flex; align-items:center; gap:6px; }
+  .src{ border-left:3px solid var(--turq); background:#FbFdfd; border-radius:0 8px 8px 0; padding:7px 9px; margin-bottom:7px; }
+  .src .sec{ font-weight:700; color:var(--turq-d); }
+  .src .q{ color:#33403f; font-style:italic; }
+  .toggle{ font-size:9px; color:var(--turq-d); border:1px solid var(--turq); border-radius:10px; padding:1px 7px; }
+  .hist,.cust{ display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px dashed var(--line); }
+  .lk{ color:var(--turq-d); }
+  /* middle */
+  .incoming{ background:#FbFdfd; border:1px solid var(--line); border-radius:8px; padding:9px; line-height:1.5; }
+  .hl{ background:#FFF3B0; border-radius:3px; padding:0 2px; }
+  .draftbar{ display:flex; align-items:center; gap:8px; margin:10px 0 6px; }
+  .seg{ display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; font-size:10px; }
+  .seg span{ padding:4px 10px; } .seg .on{ background:var(--turq); color:#04201f; font-weight:700; }
+  .vers{ font-size:10px; border:1px solid var(--line); border-radius:8px; padding:4px 8px; color:var(--grey); }
+  .editor{ background:#fff; border:1px solid var(--line); border-radius:8px; padding:10px; line-height:1.6; min-height:90px; }
+  .cit{ background:var(--turq-l); color:var(--turq-d); border-radius:4px; padding:0 4px; font-weight:600; font-size:10px; }
+  .actions{ display:flex; align-items:center; gap:8px; margin-top:10px; }
+  .btn{ background:var(--turq); color:#04201f; border:none; border-radius:20px; padding:8px 16px; font-weight:700; font-size:11px; }
+  .btn-ghost{ background:#fff; border:1px solid var(--line); color:var(--ink); border-radius:20px; padding:8px 14px; font-size:11px; }
+  .fb{ margin-left:auto; color:var(--grey); font-size:13px; }
+  /* timeline */
+  .step{ display:flex; gap:9px; align-items:flex-start; padding:7px 0; }
+  .stepline{ position:relative; }
+  .dot{ width:18px; height:18px; border-radius:50%; background:var(--turq); color:#04201f; font-size:10px; display:flex; align-items:center; justify-content:center; font-weight:700; flex:none; }
+  .dot.warn{ background:#f5a623; color:#3a2400; } .dot.run{ background:#cfeeec; color:var(--turq-d); }
+  .step .lbl{ font-weight:600; } .step .sub{ color:var(--grey); font-size:10px; }
+  .esc-cta{ background:#fff7ec; border:1px solid #f3d8a8; border-radius:8px; padding:8px; margin-top:6px; font-size:10px; }
+</style>
+
+<h2>Ügy-munkaállomás — a fő munkafelület</h2>
+<p class="subtitle">Háromhasábos: <b>balra kontextus</b> · <b>középen tartalom + draft</b> · <b>jobbra agent-idővonal</b>. Validáljuk az elrendezést és az interakciókat.</p>
+
+<div class="ws">
+  <div class="top"><span class="logo-one">one</span><b>ÁSZF Copilot</b> &nbsp;<span class="back">← Vissza az inboxhoz</span><span class="spacer"></span><span style="color:var(--grey)">👤 ui_demo · ÁSZF v3.2 · ☁ Felhő</span></div>
+
+  <div class="chead">
+    <span class="id">Ügy #1234</span>
+    <span class="badge b-cat">Számlázás</span>
+    <span class="badge b-urg">● SÜRGŐS</span>
+    <span class="badge b-conf">Konf 0.82</span>
+    <span class="badge b-esc">⚠ Eszkaláció</span>
+    <span class="spacer"></span>
+    <span style="color:var(--grey)">📧 [NÉV_1] &lt;maszkolt@…&gt;</span>
+    <span class="sla">⏱ SLA: 12 nap</span>
+  </div>
+
+  <div class="cols">
+    <!-- LEFT -->
+    <div class="c-ctx">
+      <div class="card">
+        <h5>📚 Források</h5>
+        <div class="src"><div class="sec">§12.3 ÁSZF <span style="float:right" class="lk">⤴</span></div><div class="q">„…a díj módosítását 30 nappal előre…"</div><span class="toggle">Közérthető magyarázat</span></div>
+        <div class="src"><div class="sec">2. melléklet <span style="float:right" class="lk">⤴</span></div><div class="q">„…díjcsomag-váltás feltételei…"</div><span class="toggle">Közérthető magyarázat</span></div>
+      </div>
+      <div class="card">
+        <h5>🕓 Előzmények</h5>
+        <div class="hist"><span>2024-11 · Számlapanasz</span><span class="lk">⤴</span></div>
+        <div class="hist" style="border:0"><span>2024-08 · Díjkérdés</span><span class="lk">⤴</span></div>
+        <div style="color:#b96a00;font-size:10px;margin-top:6px">⚠ Ismétlődő panasz jelzés</div>
+      </div>
+      <div class="card">
+        <h5>👥 Ügyféltörzs-jelölt</h5>
+        <div class="cust"><span>☐ Kovács J. · ID 9981</span><span class="lk">⤴</span></div>
+        <div class="cust" style="border:0"><span>☐ Kovács J. · ID 7742</span><span class="lk">⤴</span></div>
+      </div>
+    </div>
+
+    <!-- MIDDLE -->
+    <div class="c-mid">
+      <div class="card">
+        <h5>✉️ Bejövő üzenet</h5>
+        <div class="incoming">Tisztelt Ügyfélszolgálat! A legutóbbi számlámon <span class="hl">téves díjtételt</span> találtam, a <span class="hl">díjcsomagom módosítását</span> nem kértem. Kérem a kivizsgálást és a többletösszeg jóváírását…</div>
+
+        <div class="draftbar">
+          <div class="seg"><span class="on">Szabad szöveg</span><span>Sablonblokkok</span></div>
+          <span class="vers">Verzió: v3 ▾</span>
+          <span style="margin-left:auto"></span>
+          <div class="seg"><span class="on">HITL</span><span>Automata</span></div>
+        </div>
+
+        <div class="editor">Tisztelt Ügyfelünk!<br>Köszönjük megkeresését. A díjcsomag módosítására vonatkozóan az <span class="cit">§12.3 ÁSZF</span> szerint a díjmódosítást 30 nappal előre jelezzük. A kifogásolt tételt kivizsgáljuk, és a jogos többletet <span class="cit">2. melléklet</span> alapján jóváírjuk…</div>
+
+        <div class="actions">
+          <button class="btn">✓ Jóváhagyom kiküldésre</button>
+          <button class="btn-ghost">+ Forrás hozzáadása</button>
+          <span class="fb">Visszajelzés: 👍 &nbsp; 👎 &nbsp; <span style="font-size:10px">rossz forrás</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="c-tl">
+      <div class="card">
+        <h5>⚙️ Agent-idővonal</h5>
+        <div class="stepline">
+          <div class="step"><span class="dot">✓</span><div><div class="lbl">Nyelv / típus</div><div class="sub">HU · panasz</div></div></div>
+          <div class="step"><span class="dot">✓</span><div><div class="lbl">Maszkolás</div><div class="sub">3 PII token</div></div></div>
+          <div class="step"><span class="dot">✓</span><div><div class="lbl">Osztályozás</div><div class="sub">Számlázás · 0.82</div></div></div>
+          <div class="step"><span class="dot">✓</span><div><div class="lbl">Prioritás</div><div class="sub">SÜRGŐS</div></div></div>
+          <div class="step"><span class="dot">✓</span><div><div class="lbl">Szabályzat-térkép</div><div class="sub">§12.3 · 2. mell.</div></div></div>
+          <div class="step"><span class="dot warn">!</span><div><div class="lbl">Eszkaláció</div><div class="sub">ok: ismétlődő panasz</div></div></div>
+          <div class="step"><span class="dot">✓</span><div><div class="lbl">Draft</div><div class="sub">v3 · 2 citation</div></div></div>
+          <div class="step"><span class="dot run">⟳</span><div><div class="lbl">Ellenőrzés</div><div class="sub">groundedness fut…</div></div></div>
+        </div>
+        <div class="esc-cta">⚠ Kattints a lépésre a részletekért. <br><b>Eszkaláció supervisorhoz →</b></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:14px">Az <b>idővonal lépései kattinthatók</b> → kibomlik a node kimenete (osztályozás-jelöltek, szabályzat-elemek, eszkaláció oka, nem-megalapozott állítások). A források <b>⤴</b>-vel a teljes §-ra ugranak, a draftban a <span style="color:var(--turq-d)">citationök</span> kattinthatók. Mit igazítsunk? Egy lehetséges finomítás: az idővonal lehet <b>összecsukható jobb fiók</b>, hogy a draft szélesebb legyen.</p>

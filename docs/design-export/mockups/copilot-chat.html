@@ -1,0 +1,78 @@
+<style>
+  :root{ --turq:#16C7C0; --turq-d:#0FA39D; --turq-l:#E3FAF8; --ink:#16201F; --grey:#6B7A79; --line:#E2EAE9; }
+  .ws{ font-family:"Segoe UI",system-ui,sans-serif; border:1px solid var(--line); border-radius:14px; overflow:hidden; background:#F7FAF9; color:var(--ink); }
+  .top{ display:flex; align-items:center; gap:10px; padding:9px 14px; background:#fff; border-bottom:1px solid var(--line); font-size:12px; }
+  .logo-one{ display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; border:2px solid var(--turq); color:var(--turq); font-style:italic; font-weight:700; font-size:12px; }
+  .tabs{ display:flex; gap:6px; padding:10px 12px 0; }
+  .tab{ font-size:11px; padding:6px 12px; border-radius:10px 10px 0 0; background:#eef3f2; color:var(--grey); }
+  .tab.on{ background:#fff; color:var(--turq-d); font-weight:700; border:1px solid var(--line); border-bottom:0; }
+  .chatwrap{ display:flex; gap:12px; padding:12px; }
+  .chat{ flex:1; background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px; min-height:300px; display:flex; flex-direction:column; }
+  .msg{ display:flex; gap:8px; margin-bottom:12px; font-size:11px; }
+  .av{ width:26px; height:26px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-size:11px; }
+  .av.ui{ background:#eef3f2; } .av.bot{ background:var(--turq-l); }
+  .bub{ border-radius:12px; padding:9px 11px; line-height:1.5; max-width:80%; }
+  .bub.ui{ background:#F2F6F5; }
+  .bub.bot{ background:var(--turq-l); }
+  .tp{ margin:4px 0; }
+  .chip{ display:inline-block; font-size:9px; background:#fff; border:1px solid var(--turq); color:var(--turq-d); border-radius:10px; padding:1px 7px; margin-left:4px; font-weight:600; }
+  .inbar{ margin-top:auto; display:flex; gap:8px; padding-top:10px; border-top:1px solid var(--line); }
+  .inp{ flex:1; background:#F4F8F7; border:1px solid var(--line); border-radius:20px; padding:8px 12px; color:#8a9897; font-size:11px; }
+  .send{ background:var(--turq); color:#04201f; border:none; border-radius:20px; padding:8px 16px; font-weight:700; font-size:11px; }
+  .side{ width:230px; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:12px; padding:11px; font-size:10px; margin-bottom:10px; }
+  .card h5{ margin:0 0 8px; font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--grey); }
+  .src{ border-left:3px solid var(--turq); padding:5px 8px; margin-bottom:6px; background:#FbFdfd; border-radius:0 6px 6px 0; }
+  .runrow{ display:flex; align-items:center; gap:6px; color:var(--grey); font-size:10px; margin-top:4px; }
+  .dot{ width:7px; height:7px; border-radius:50%; background:var(--turq); display:inline-block; }
+</style>
+
+<h2>Beszélgetős copilot (chat / telefon)</h2>
+<p class="subtitle">Az ÜI kérdez vagy beilleszt egy átiratot → az agent <b>beszédpontokkal + forráshivatkozással</b> válaszol (nem szó szerinti script), streamelve.</p>
+
+<div class="ws">
+  <div class="top"><span class="logo-one">one</span><b>ÁSZF Copilot</b><span style="color:var(--grey);margin-left:auto">👤 ui_demo</span></div>
+  <div class="tabs"><div class="tab">Email</div><div class="tab on">💬 Chat-copilot</div><div class="tab">📞 Telefon-copilot</div><div class="tab">📮 Postai</div></div>
+  <div class="chatwrap">
+    <div class="chat">
+      <div class="msg"><div class="av ui">🧑</div><div class="bub ui">Az ügyfél vitatja a díjemelést, mondja hogy nem kapott értesítést. Mit mondjak neki?</div></div>
+      <div class="msg"><div class="av bot">◎</div><div class="bub bot">
+        <b>Javasolt beszédpontok:</b>
+        <div class="tp">• A díjmódosítást az ÁSZF szerint 30 nappal előre jelezni kell <span class="chip">§12.3 ⤴</span></div>
+        <div class="tp">• Ellenőrizd a kiértesítés módját (email/levél) az ügyfél profilján</div>
+        <div class="tp">• Jogos kifogás esetén a többlet jóváírható <span class="chip">2. melléklet ⤴</span></div>
+        <div class="tp">• Ismétlődő panasz → eszkaláció mérlegelendő <span class="chip">⚠</span></div>
+        <div class="runrow"><span class="dot"></span> forrásellenőrzött · groundedness 0.91</div>
+      </div></div>
+      <div class="inbar"><div class="inp">Írj üzenetet, vagy illeszd be a hívásátiratot…</div><button class="send">Küldés ➤</button></div>
+    </div>
+    <div class="side">
+      <div class="card"><h5>📚 Hivatkozott források</h5>
+        <div class="src"><b style="color:var(--turq-d)">§12.3 ÁSZF</b><br><span style="font-style:italic;color:#33403f">„…30 nappal előre…"</span></div>
+        <div class="src"><b style="color:var(--turq-d)">2. melléklet</b><br><span style="font-style:italic;color:#33403f">„…jóváírás feltételei…"</span></div>
+      </div>
+      <div class="card"><h5>📞 Telefon mód</h5>Élő átirat beillesztése (szimulált feliratozás) → azonnali beszédpontok.</div>
+      <div class="card"><h5>↗ Ügy létrehozása</h5>A beszélgetésből egy kattintással teljes ügy nyitható (átkerül az ügy-munkaállomásra).</div>
+    </div>
+  </div>
+</div>
+
+<h3 style="margin-top:18px">Technológia a chathez — melyik legyen?</h3>
+<div class="options">
+  <div class="option" data-choice="streamlit" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Streamlit-natív chat <span style="font-size:11px;color:#0FA39D">(ajánlott)</span></h3>
+      <p><code>st.chat_message</code> + <code>st.chat_input</code> + <code>st.write_stream</code> streameléshez. <b>Egy app, egy téma</b>, újrahasznosítja az <code>api_client</code>-et, semmi külön folyamat. Bőven elég a beszédpont+forrás élményhez.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="chainlit" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Chainlit dedikált chat-app</h3>
+      <p>Gazdagabb beszélgetés-élmény (beépített „steps", streaming, elemek). De <b>külön folyamat és külön témázás</b>, kétfelé válik a UI. Akkor éri meg, ha a chat valóban a termék fő felülete lesz.</p>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:12px"><b>Javaslatom: A (Streamlit-natív).</b> Egységes marad a felület és a One-téma, kevesebb mozgó alkatrész. A Chainlit-et meghagyjuk opcióként, ha később a beszélgetős rész önálló, gazdagabb terméket igényel.</p>

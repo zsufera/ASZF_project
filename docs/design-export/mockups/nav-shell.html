@@ -1,0 +1,120 @@
+<style>
+  .wf { font-family: system-ui, sans-serif; border:1px solid #d8dee9; border-radius:10px; overflow:hidden; background:#fff; }
+  .wf-top { display:flex; align-items:center; gap:10px; padding:8px 12px; background:#0b1f3a; color:#fff; font-size:12px; }
+  .wf-top .logo { font-weight:700; }
+  .wf-top .search { flex:1; background:#1c3554; border-radius:6px; padding:4px 8px; color:#9db4d0; }
+  .wf-top .chip { background:#1c3554; border-radius:12px; padding:3px 8px; }
+  .wf-body { display:flex; min-height:300px; }
+  .rail { width:64px; background:#11294a; color:#cdd9ea; display:flex; flex-direction:column; gap:4px; padding:8px 0; align-items:center; font-size:9px; }
+  .rail .ic { width:44px; height:40px; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; }
+  .rail .ic.active { background:#2563eb; color:#fff; }
+  .rail .glyph { font-size:16px; }
+  .col { padding:10px; }
+  .listcol { width:38%; border-right:1px solid #e5e9f0; background:#f7f9fc; }
+  .detailcol { flex:1; }
+  .maincol { flex:1; }
+  .row { background:#fff; border:1px solid #e5e9f0; border-radius:8px; padding:8px; margin-bottom:6px; font-size:11px; }
+  .row.sel { border-color:#2563eb; box-shadow:0 0 0 2px #dbe7ff; }
+  .badge { display:inline-block; font-size:9px; padding:1px 6px; border-radius:10px; margin-right:4px; font-weight:600; }
+  .b-urg { background:#fde2e1; color:#b42318; }
+  .b-cat { background:#e0eaff; color:#1e40af; }
+  .b-esc { background:#ffedd5; color:#c2410c; }
+  .panels { display:flex; gap:8px; }
+  .panel { flex:1; border:1px solid #e5e9f0; border-radius:8px; padding:8px; font-size:10px; background:#fff; min-height:170px; }
+  .panel h5 { margin:0 0 6px; font-size:10px; text-transform:uppercase; letter-spacing:.04em; color:#64748b; }
+  .ph { background:#eef2f7; border-radius:5px; height:12px; margin:4px 0; }
+  .ph.lg { height:46px; }
+  .step { display:flex; gap:6px; align-items:center; margin:3px 0; }
+  .dot { width:14px; height:14px; border-radius:50%; background:#22c55e; color:#fff; font-size:9px; display:flex; align-items:center; justify-content:center; }
+  .dot.warn { background:#f59e0b; }
+  .pagehdr { font-size:13px; font-weight:700; color:#0b1f3a; margin-bottom:8px; }
+  .crumbs { font-size:10px; color:#64748b; margin-bottom:8px; }
+  .casehdr { background:#f0f5ff; border:1px solid #d6e2ff; border-radius:8px; padding:8px; margin-bottom:8px; font-size:11px; }
+</style>
+
+<h2>Hogyan épüljön fel a felület váza (navigáció / IA)?</h2>
+<p class="subtitle">Mindkettő Streamlit-ben megvalósítható (ikon-sáv = option-menu, fejléc = custom CSS). Kattints a kedvencedre.</p>
+
+<div class="split">
+  <div>
+    <div class="cards"><div class="card" data-choice="a" onclick="toggleSelect(this)" style="cursor:pointer">
+    <div class="card-body">
+    <h3>A · Munkaállomás (helpdesk-workspace)</h3>
+    <p class="subtitle" style="margin-top:0">Ikon-sáv + főterület. Az ügy kiválasztása teljes képernyős „ügy-munkaállomást" nyit.</p>
+
+    <div class="wf">
+      <div class="wf-top"><span class="logo">📨 ÁSZF Copilot</span><span class="search">🔍 Ügy-azonosító / feladó keresése…</span><span class="chip">ÁSZF v3.2</span><span class="chip">☁ Felhő</span><span class="chip">👤 ui_demo</span></div>
+      <div class="wf-body">
+        <div class="rail">
+          <div class="ic active"><span class="glyph">📥</span>Inbox</div>
+          <div class="ic"><span class="glyph">✏️</span>Új ügy</div>
+          <div class="ic"><span class="glyph">💬</span>Copilot</div>
+          <div class="ic"><span class="glyph">📊</span>Eval</div>
+          <div class="ic"><span class="glyph">🛡️</span>Superv.</div>
+        </div>
+        <div class="col maincol">
+          <div class="pagehdr">Inbox — bejövő ügyek</div>
+          <div class="row sel"><span class="badge b-urg">● SÜRGŐS</span><span class="badge b-cat">Számlázás</span> Téves számla… <span style="float:right;color:#94a3b8">2 ó</span></div>
+          <div class="row"><span class="badge b-cat">Díjemelés</span> Díjemelés kifogás… <span style="float:right;color:#94a3b8">1 nap</span></div>
+          <div class="row"><span class="badge b-esc">⚠ ESZKALÁLT</span><span class="badge b-cat">Felmondás</span> Szerződés… <span style="float:right;color:#94a3b8">3 nap</span></div>
+          <div class="ph"></div><div class="ph"></div>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:11px;color:#475569">Kattintás után → <b>külön ügy-képernyő</b> a teljes szélességben (lásd alább), a lista helyett.</p>
+    <div class="wf" style="margin-top:6px">
+      <div class="wf-top"><span style="font-size:11px">← Vissza az inboxhoz</span></div>
+      <div class="col">
+        <div class="casehdr"><b>Ügy #1234</b> · <span class="badge b-cat">Számlázás</span><span class="badge b-urg">● SÜRGŐS</span> Konf 0.82 · SLA 12 nap</div>
+        <div class="panels">
+          <div class="panel"><h5>Források</h5><div class="ph lg"></div><div class="ph"></div></div>
+          <div class="panel"><h5>Bejövő + Draft</h5><div class="ph lg"></div><div class="ph"></div><div class="ph"></div></div>
+          <div class="panel"><h5>Agent-idővonal</h5>
+            <div class="step"><span class="dot">✓</span>Osztályozás</div>
+            <div class="step"><span class="dot warn">!</span>Eszkaláció</div>
+            <div class="step"><span class="dot">✓</span>Draft</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div></div></div>
+  </div>
+
+  <div>
+    <div class="cards"><div class="card" data-choice="b" onclick="toggleSelect(this)" style="cursor:pointer">
+    <div class="card-body">
+    <h3>B · Master-detail (levelezőkliens-stílus)</h3>
+    <p class="subtitle" style="margin-top:0">Lista bal oldalon végig látszik, az ügy a jobb panelen nyílik — gyors lapozás ügyek között.</p>
+
+    <div class="wf">
+      <div class="wf-top"><span class="logo">📨 ÁSZF Copilot</span><span class="search">🔍 Keresés…</span><span class="chip">ÁSZF v3.2</span><span class="chip">👤 ui_demo</span></div>
+      <div class="wf-body">
+        <div class="rail">
+          <div class="ic active"><span class="glyph">📥</span>Inbox</div>
+          <div class="ic"><span class="glyph">💬</span>Copilot</div>
+          <div class="ic"><span class="glyph">📊</span>Eval</div>
+          <div class="ic"><span class="glyph">🛡️</span>Superv.</div>
+        </div>
+        <div class="col listcol">
+          <div style="font-size:10px;color:#64748b;margin-bottom:6px">Szűrők ▾ · Rendezés ▾</div>
+          <div class="row sel"><span class="badge b-urg">●</span><span class="badge b-cat">Számlázás</span><br>Téves számla…</div>
+          <div class="row"><span class="badge b-cat">Díjemelés</span><br>Díjemelés kifogás…</div>
+          <div class="row"><span class="badge b-esc">⚠</span><span class="badge b-cat">Felmondás</span><br>Szerződés…</div>
+          <div class="ph"></div>
+        </div>
+        <div class="col detailcol">
+          <div class="casehdr"><b>Ügy #1234</b> · <span class="badge b-cat">Számlázás</span><span class="badge b-urg">● SÜRGŐS</span></div>
+          <div class="panels">
+            <div class="panel"><h5>Források / Idővonal</h5><div class="ph"></div><div class="step"><span class="dot">✓</span>Osztály.</div><div class="step"><span class="dot warn">!</span>Eszkal.</div></div>
+            <div class="panel"><h5>Bejövő + Draft</h5><div class="ph lg"></div><div class="ph"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:11px;color:#475569">Új ügy / csatornák (email, chat, postai) egy <b>„+ Új"</b> gombból, drawer/modal felugróban.</p>
+    <p style="font-size:11px;color:#475569">Kevesebb kattintás az ügyek közti váltáshoz, de szűkebb a három panel helye.</p>
+    </div></div></div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:14px"><b>Javaslatom: A (Munkaállomás).</b> Az ügy-munkaállomásnak így jut a legtöbb hely a három hasábra (források / draft / idővonal), ami a copilot szíve — és tisztán elkülönül a böngészés (inbox) a fókuszált munkától. A B gyorsabb lapozást ad, de összenyomja a paneleket. (Egy C, „chat-központú" irány is létezik — szólj, ha azt is lássuk.)</p>

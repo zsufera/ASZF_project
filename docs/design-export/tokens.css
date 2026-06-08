@@ -1,0 +1,51 @@
+/* ============================================================
+   ÁSZF Q&A Copilot — One Magyarország design tokens
+   Framework-agnostic CSS custom properties.
+   Drop into :root (global stylesheet). Tailwind users: see
+   tailwind.tokens.js, which maps these same values.
+   NOTE: #16C7C0 is an APPROXIMATION of the One turquoise.
+   Replace with the official brand hex when available — change
+   it here AND in tailwind.tokens.js in one place each.
+   ============================================================ */
+:root {
+  /* --- Brand: turquoise / black / white --- */
+  --one-turq: #16C7C0;      /* primary accent: active nav, buttons, links, focus, timeline dots */
+  --one-turq-d: #0FA39D;    /* hover / darker turquoise text */
+  --one-turq-l: #E3FAF8;    /* faint turquoise background: badges, gradient header */
+  --one-black: #0E1212;     /* login / strong brand moment background */
+  --one-ink: #16201F;       /* primary text */
+  --one-grey: #6B7A79;      /* secondary text, labels */
+  --one-line: #E2EAE9;      /* borders, dividers */
+  --one-canvas: #F7FAF9;    /* app background */
+  --one-surface: #FFFFFF;   /* cards, panels */
+
+  /* --- Semantic status --- */
+  --status-urgent-fg: #B42318;  --status-urgent-bg: #FDE2E1;   /* priority: SÜRGŐS */
+  --status-esc-fg: #B96A00;     --status-esc-bg: #FFF0DB;      /* escalation */
+  --status-conf-fg: #8A6D00;    --status-conf-bg: #FEF7D6;     /* low confidence */
+  --kpi-ok: #22A06B;            /* KPI green */
+  --kpi-warn: #E0A400;          /* KPI yellow */
+  --kpi-bad: #D64545;           /* KPI red */
+  --highlight: #FFF3B0;         /* inbound text <mark> highlight */
+
+  /* --- Typography --- */
+  --font-sans: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  --fs-xs: 10px; --fs-sm: 11px; --fs-md: 12px; --fs-base: 14px;
+  --fs-lg: 16px; --fs-xl: 18px; --fs-2xl: 22px;
+  --fw-regular: 400; --fw-semibold: 600; --fw-bold: 700; --fw-extrabold: 800;
+
+  /* --- Spacing (4px scale) --- */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 24px;
+
+  /* --- Radius --- */
+  --r-sm: 6px; --r-md: 8px; --r-lg: 12px; --r-xl: 14px; --r-pill: 20px; --r-full: 9999px;
+
+  /* --- Elevation --- */
+  --shadow-card: 0 1px 2px rgba(14, 18, 18, 0.04);
+  --shadow-focus: 0 0 0 2px var(--one-turq-l);
+
+  /* --- Layout --- */
+  --rail-w: 70px;          /* icon nav rail width */
+  --header-h: 52px;        /* top header height */
+  --case-cols: 1fr 2fr 1fr;/* case workstation 3-column grid (context / content / timeline) */
+}

@@ -1,0 +1,102 @@
+<style>
+  :root{
+    --one-turq:#16C7C0; --one-turq-d:#0FA39D; --one-turq-l:#E3FAF8;
+    --one-black:#0E1212; --one-ink:#16201F; --one-grey:#6B7A79; --one-line:#E2EAE9;
+  }
+  .wf { font-family: "Segoe UI", system-ui, sans-serif; border:1px solid var(--one-line); border-radius:14px; overflow:hidden; background:#fff; }
+  .logo-one{ display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:50%; border:2px solid var(--one-turq); color:var(--one-turq); font-style:italic; font-weight:700; font-size:13px; }
+  /* ---- Variant 1: light ---- */
+  .v1 .wf-top{ display:flex; align-items:center; gap:10px; padding:10px 14px; background:#fff; border-bottom:1px solid var(--one-line); color:var(--one-ink); font-size:12px; }
+  .v1 .wf-top .search{ flex:1; background:#F4F8F7; border:1px solid var(--one-line); border-radius:20px; padding:6px 12px; color:#8a9897; }
+  .v1 .chip{ background:#F4F8F7; border:1px solid var(--one-line); border-radius:14px; padding:4px 10px; }
+  .v1 .rail{ background:#fff; border-right:1px solid var(--one-line); color:var(--one-grey); }
+  .v1 .rail .ic.active{ background:var(--one-turq-l); color:var(--one-turq-d); }
+  /* ---- Variant 2: bold ---- */
+  .v2 .wf-top{ display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--one-black); color:#fff; font-size:12px; }
+  .v2 .logo-one{ border-color:var(--one-turq); color:var(--one-turq); }
+  .v2 .wf-top .search{ flex:1; background:#1d2726; border-radius:20px; padding:6px 12px; color:#8fa3a1; }
+  .v2 .chip{ background:#1d2726; border-radius:14px; padding:4px 10px; }
+  .v2 .rail{ background:var(--one-black); color:#9fb1af; }
+  .v2 .rail .ic.active{ background:var(--one-turq); color:#04201f; }
+
+  .wf-body{ display:flex; min-height:280px; }
+  .rail{ width:70px; display:flex; flex-direction:column; gap:6px; padding:10px 0; align-items:center; font-size:9px; }
+  .rail .ic{ width:50px; height:44px; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; }
+  .rail .glyph{ font-size:17px; }
+  .maincol{ flex:1; padding:14px; }
+  .pagehdr{ font-size:14px; font-weight:700; color:var(--one-ink); margin-bottom:10px; }
+  .casehdr{ background:linear-gradient(90deg,var(--one-turq-l),#fff); border:1px solid var(--one-line); border-radius:12px; padding:10px 12px; margin-bottom:12px; font-size:12px; color:var(--one-ink); }
+  .badge{ display:inline-block; font-size:9px; padding:2px 8px; border-radius:12px; margin-right:5px; font-weight:700; }
+  .b-cat{ background:var(--one-turq-l); color:var(--one-turq-d); }
+  .b-urg{ background:#fde2e1; color:#b42318; }
+  .b-esc{ background:#fff0db; color:#b96a00; }
+  .panels{ display:flex; gap:10px; }
+  .panel{ flex:1; border:1px solid var(--one-line); border-radius:12px; padding:10px; font-size:10px; background:#fff; min-height:150px; }
+  .panel h5{ margin:0 0 8px; font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--one-grey); }
+  .ph{ background:#F1F6F5; border-radius:6px; height:12px; margin:5px 0; }
+  .ph.lg{ height:44px; }
+  .btn{ background:var(--one-turq); color:#04201f; border:none; border-radius:20px; padding:6px 14px; font-size:10px; font-weight:700; }
+  .step{ display:flex; gap:7px; align-items:center; margin:5px 0; }
+  .dot{ width:16px; height:16px; border-radius:50%; background:var(--one-turq); color:#04201f; font-size:9px; display:flex; align-items:center; justify-content:center; font-weight:700; }
+  .dot.warn{ background:#f5a623; color:#3a2400; }
+  .swatches{ display:flex; gap:8px; margin:6px 0 0; }
+  .sw{ width:42px; height:24px; border-radius:6px; border:1px solid var(--one-line); }
+</style>
+
+<h2>Hogyan vigyük a felületre a One arculatát?</h2>
+<p class="subtitle">Mindkettő <b>türkiz + fekete + fehér</b>, kör alakú „one" logó, lekerekített/flat. Türkiz: <code>#16C7C0</code> (cserélhető a pontos márkakódra). Kattints a kedvencedre.</p>
+<div class="swatches">
+  <div class="sw" style="background:#16C7C0"></div><div class="sw" style="background:#0FA39D"></div><div class="sw" style="background:#0E1212"></div><div class="sw" style="background:#E3FAF8"></div><div class="sw" style="background:#fff"></div>
+</div>
+
+<div class="split" style="margin-top:14px">
+  <div class="cards"><div class="card" data-choice="light" onclick="toggleSelect(this)" style="cursor:pointer"><div class="card-body">
+    <h3>1 · Világos &amp; letisztult</h3>
+    <p class="subtitle" style="margin-top:0">Fehér vászon, fekete szöveg, a türkiz csak <b>kiemelés</b> (aktív menü, gombok, linkek). Visszafogott, hivatalos.</p>
+    <div class="wf v1">
+      <div class="wf-top"><span class="logo-one">one</span><b style="color:var(--one-ink)">ÁSZF Copilot</b><span class="search">🔍 Ügy / feladó keresése…</span><span class="chip">ÁSZF v3.2</span><span class="chip">👤 ui_demo</span></div>
+      <div class="wf-body">
+        <div class="rail">
+          <div class="ic active"><span class="glyph">📥</span>Inbox</div>
+          <div class="ic"><span class="glyph">✏️</span>Új ügy</div>
+          <div class="ic"><span class="glyph">💬</span>Copilot</div>
+          <div class="ic"><span class="glyph">📊</span>Eval</div>
+        </div>
+        <div class="maincol">
+          <div class="casehdr"><b>Ügy #1234</b> &nbsp;<span class="badge b-cat">Számlázás</span><span class="badge b-urg">● SÜRGŐS</span> &nbsp;Konf 0.82 · SLA 12 nap</div>
+          <div class="panels">
+            <div class="panel"><h5>Források</h5><div class="ph lg"></div><div class="ph"></div></div>
+            <div class="panel"><h5>Bejövő + Draft</h5><div class="ph lg"></div><div class="ph"></div><button class="btn">Jóváhagyom ✓</button></div>
+            <div class="panel"><h5>Idővonal</h5><div class="step"><span class="dot">✓</span>Osztályozás</div><div class="step"><span class="dot warn">!</span>Eszkaláció</div><div class="step"><span class="dot">✓</span>Draft</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div></div>
+
+  <div class="cards"><div class="card" data-choice="bold" onclick="toggleSelect(this)" style="cursor:pointer"><div class="card-body">
+    <h3>2 · Markáns (fekete sáv + türkiz)</h3>
+    <p class="subtitle" style="margin-top:0">Fekete fejléc és ikon-sáv, a türkiz <b>kontrasztosan világít</b> a feketén. Erősebb márkajelenlét.</p>
+    <div class="wf v2">
+      <div class="wf-top"><span class="logo-one">one</span><b>ÁSZF Copilot</b><span class="search">🔍 Ügy / feladó keresése…</span><span class="chip">ÁSZF v3.2</span><span class="chip">👤 ui_demo</span></div>
+      <div class="wf-body">
+        <div class="rail">
+          <div class="ic active"><span class="glyph">📥</span>Inbox</div>
+          <div class="ic"><span class="glyph">✏️</span>Új ügy</div>
+          <div class="ic"><span class="glyph">💬</span>Copilot</div>
+          <div class="ic"><span class="glyph">📊</span>Eval</div>
+        </div>
+        <div class="maincol">
+          <div class="casehdr"><b>Ügy #1234</b> &nbsp;<span class="badge b-cat">Számlázás</span><span class="badge b-urg">● SÜRGŐS</span> &nbsp;Konf 0.82 · SLA 12 nap</div>
+          <div class="panels">
+            <div class="panel"><h5>Források</h5><div class="ph lg"></div><div class="ph"></div></div>
+            <div class="panel"><h5>Bejövő + Draft</h5><div class="ph lg"></div><div class="ph"></div><button class="btn">Jóváhagyom ✓</button></div>
+            <div class="panel"><h5>Idővonal</h5><div class="step"><span class="dot">✓</span>Osztályozás</div><div class="step"><span class="dot warn">!</span>Eszkaláció</div><div class="step"><span class="dot">✓</span>Draft</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div></div>
+</div>
+
+<p class="subtitle" style="margin-top:14px"><b>Javaslatom: 1 (Világos &amp; letisztult)</b> a fő munkafelülethez — egy ügyintéző órákig nézi, a fehér vászon + szelektív türkiz kíméletesebb és „hivatalosabb". A fekete sávot (2) megtarthatjuk a <b>bejelentkező képernyőn / fejlécben</b> mint erős márkamomentum. Ha van pontos One türkiz hex-kódod, küldd, és arra cserélem.</p>
