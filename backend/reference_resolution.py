@@ -106,3 +106,40 @@ def resolve_reference(
         if doc_id == target_doc and para.startswith(paragraph + "."):
             return chunk
     return None
+
+
+def reference_closure(
+    seed_chunks: list[dict[str, Any]],
+    all_chunks: list[dict[str, Any]],
+    max_hops: int = 1,
+    max_extra: int = 5,
+) -> tuple[list[tuple[dict[str, Any], float]], list[dict[str, Any]]]:
+    """1-hop referencia-lezárás: a seed chunkok hivatkozásait feloldja és behúzza.
+
+    Visszatérés: (added, unresolved), ahol added = [(chunk, score), ...] (max_extra-ig),
+    unresolved = a fel nem oldott hivatkozás-dictek. A behúzott score a seed score-ja - 0.05.
+    """
+    doc_name_index = build_doc_name_index(all_chunks)
+    paragraph_index = build_paragraph_index(all_chunks)
+    by_id = {str(c.get("chunk_id")): c for c in all_chunks if c.get("chunk_id")}
+    seen = {str(c.get("chunk_id")) for c in seed_chunks if c.get("chunk_id")}
+
+    added: list[tuple[dict[str, Any], float]] = []
+    unresolved: list[dict[str, Any]] = []
+
+    for seed in seed_chunks:
+        source_chunk = by_id.get(str(seed.get("chunk_id")), seed)
+        base_score = max(float(seed.get("score", 0.0)) - 0.05, 0.01)
+        for ref in (source_chunk.get("cross_refs") or []):
+            if len(added) >= max_extra:
+                return added, unresolved
+            target = resolve_reference(ref, source_chunk, doc_name_index, paragraph_index)
+            if target is None:
+                unresolved.append(ref)
+                continue
+            tid = str(target.get("chunk_id"))
+            if tid in seen:
+                continue
+            seen.add(tid)
+            added.append((target, base_score))
+    return added, unresolved

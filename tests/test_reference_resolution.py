@@ -55,3 +55,53 @@ def test_resolve_does_not_cross_provider():
     di = build_doc_name_index(CHUNKS); pi = build_paragraph_index(CHUNKS)
     # ONE-nál nincs "1 melleklet" → nem oldja fel az Invitech dokumentumát
     assert resolve_reference(ref, src, di, pi) is None
+
+
+from backend.reference_resolution import reference_closure
+
+
+def _corpus():
+    return [
+        {"chunk_id": "a1", "doc_id": "d", "szolgaltato": "ONE", "paragrafus_szam": "5.1",
+         "source_file": "x.pdf", "text": "A 5.2 pont szerint.",
+         "cross_refs": [{"raw": "5.2 pont", "doc_hint": None, "paragraph": "5.2"}]},
+        {"chunk_id": "a2", "doc_id": "d", "szolgaltato": "ONE", "paragrafus_szam": "5.2",
+         "source_file": "x.pdf", "text": "A határidő 30 nap.", "cross_refs": []},
+    ]
+
+
+def test_closure_pulls_linked_chunk():
+    corpus = _corpus()
+    seed = [dict(corpus[0], score=0.8)]
+    added, unresolved = reference_closure(seed, corpus)
+    assert len(added) == 1
+    chunk, score = added[0]
+    assert chunk["chunk_id"] == "a2"
+    assert round(score, 2) == 0.75
+    assert unresolved == []
+
+
+def test_closure_collects_unresolved():
+    corpus = _corpus()
+    corpus[0]["cross_refs"] = [{"raw": "9.9 pont", "doc_hint": None, "paragraph": "9.9"}]
+    seed = [dict(corpus[0], score=0.8)]
+    added, unresolved = reference_closure(seed, corpus)
+    assert added == []
+    assert unresolved and unresolved[0]["paragraph"] == "9.9"
+
+
+def test_closure_respects_max_extra():
+    corpus = _corpus()
+    extra = [{"chunk_id": f"e{i}", "doc_id": "d", "szolgaltato": "ONE", "paragrafus_szam": f"7.{i}",
+              "source_file": "x.pdf", "text": "t", "cross_refs": []} for i in range(6)]
+    corpus[0]["cross_refs"] = [{"raw": f"7.{i} pont", "doc_hint": None, "paragraph": f"7.{i}"} for i in range(6)]
+    seed = [dict(corpus[0], score=0.8)]
+    added, _ = reference_closure(seed, corpus + extra, max_extra=5)
+    assert len(added) == 5
+
+
+def test_closure_skips_chunk_already_in_seed():
+    corpus = _corpus()
+    seed = [dict(corpus[0], score=0.8), dict(corpus[1], score=0.7)]
+    added, _ = reference_closure(seed, corpus)
+    assert added == []
