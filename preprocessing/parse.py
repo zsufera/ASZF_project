@@ -25,6 +25,14 @@ SECTION_PATTERN = re.compile(
 CROSS_REF_PATTERN = re.compile(
     r"(?i)(?:\d+(?:\.\d+){1,4}\s*(?:pont|bekezdés|bekezdes)|\d+\s*§|[IVXLCDM]+\.\s*(?:fejezet|pont))"
 )
+DOC_REF_PATTERN = re.compile(
+    r"(?i)(?P<doc>\d+\s*[ab]?(?:/[ab])?\.?\s*sz[áa]m[úu]?\s*(?:mell[ée]klet|f[üu]ggel[ée]k))"
+    r"(?:e?\s*(?P<para>\d+(?:\.\d+){0,4})\s*(?:pont|bekezd[ée]s))?"
+)
+LOCAL_REF_PATTERN = re.compile(
+    r"(?i)(?P<p1>\d+(?:\.\d+){1,4})\s*(?:pont|bekezd[ée]s)|(?P<p2>\d+)\s*§|"
+    r"(?P<rom>[IVXLCDM]+)\.\s*(?:fejezet|pont)"
+)
 
 
 @dataclass
@@ -44,7 +52,7 @@ class Chunk:
     paragrafus_szam: str | None
     szulo_szakasz: str | None
     oldalszam: int
-    cross_refs: list[str]
+    cross_refs: list[dict]
     source_file: str
     text: str
 
@@ -112,9 +120,35 @@ def split_page_to_sections(page_text: str) -> list[tuple[str | None, str]]:
     return sections
 
 
-def extract_cross_refs(text: str) -> list[str]:
-    refs = {match.group(0).strip() for match in CROSS_REF_PATTERN.finditer(text)}
-    return sorted(refs)
+def extract_references(text: str) -> list[dict]:
+    """Strukturált hivatkozások a szövegből: lokális §/pont és kereszt-dok melléklet/függelék.
+
+    Visszatérés elemei: {"raw": str, "doc_hint": str|None, "paragraph": str|None}.
+    A doc_hint None, ha a hivatkozás a saját dokumentumra mutat.
+    """
+    refs: list[dict] = []
+    seen: set[tuple] = set()
+
+    def _add(doc_hint: str | None, paragraph: str | None, raw: str) -> None:
+        key = (doc_hint, paragraph)
+        if key in seen or (doc_hint is None and paragraph is None):
+            return
+        seen.add(key)
+        refs.append({"raw": " ".join(raw.split()), "doc_hint": doc_hint, "paragraph": paragraph})
+
+    for match in DOC_REF_PATTERN.finditer(text):
+        doc = " ".join(match.group("doc").split())
+        _add(doc, match.group("para"), match.group(0))
+    for match in LOCAL_REF_PATTERN.finditer(text):
+        paragraph = match.group("p1") or match.group("p2")
+        if paragraph:
+            _add(None, paragraph, match.group(0))
+    return refs
+
+
+# Visszafelé-kompatibilis alias (régi hívók / smoke).
+def extract_cross_refs(text: str) -> list[dict]:
+    return extract_references(text)
 
 
 def _tokenize(text: str) -> list[int]:
