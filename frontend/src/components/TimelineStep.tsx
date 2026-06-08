@@ -1,16 +1,6 @@
 import { useState } from "react";
 import type { TimelineStep as TStep } from "../lib/types";
-
-const STEP_LABELS: Record<string, string> = {
-  language: "Nyelv / típus",
-  mask: "Maszkolás",
-  classify: "Osztályozás",
-  priority: "Prioritás",
-  policy_map: "Szabályzat-térkép",
-  escalation: "Eszkaláció",
-  draft: "Draft",
-  verify: "Ellenőrzés",
-};
+import { STEP_META, stepLabel, fieldLabel, formatFieldValue } from "../lib/agentSteps";
 
 function stepStatus(step: TStep): "ok" | "warn" | "run" | "error" {
   const out = step.output as Record<string, unknown>;
@@ -30,16 +20,19 @@ function DotIcon({ status }: { status: "ok" | "warn" | "run" | "error" }) {
 export function TimelineStepItem({ step }: { step: TStep }) {
   const [open, setOpen] = useState(false);
   const status = stepStatus(step);
-  const label = STEP_LABELS[step.step] ?? step.step;
+  const label = stepLabel(step.step);
+
+  const out = step.output as Record<string, unknown>;
+  const meta = STEP_META[step.step];
 
   const summary = (() => {
-    const out = step.output as Record<string, unknown>;
-    if (step.step === "language") return `${out.language ?? "—"} · ${out.type ?? "—"}`;
-    if (step.step === "mask") return `${out.pii_count ?? 0} PII token`;
-    if (step.step === "classify") return `${out.category ?? "—"} · ${out.confidence ?? "—"}`;
-    if (step.step === "priority") return String(out.priority ?? "—");
-    if (step.step === "escalation") return out.required ? `ok: ${(out.reasons as string[])?.join(", ")}` : "nem szükséges";
-    if (step.step === "verify") return `${out.ungrounded_count ?? 0} nem megalapozott`;
+    if (step.step === "classify") return `${formatFieldValue("category", out.category)} · ${formatFieldValue("confidence", out.confidence)}`;
+    if (step.step === "escalation") return out.required ? `ok: ${formatFieldValue("reasons", out.reasons)}` : "nem szükséges";
+    if (step.step === "retrieve") return `${formatFieldValue("result_count", out.result_count)} találat`;
+    if (step.step === "draft") return `${formatFieldValue("generation_mode", out.generation_mode)} · ${formatFieldValue("source_count", out.source_count)} forrás`;
+    if (step.step === "verify") return `${formatFieldValue("ungrounded_count", out.ungrounded_count)} nem megalapozott`;
+    if (step.step === "priority_triage") return formatFieldValue("value", out.value);
+    if (meta && meta.fields.length) { const k = meta.fields[0]; return `${fieldLabel(k)}: ${formatFieldValue(k, out[k])}`; }
     return "";
   })();
 
@@ -58,9 +51,17 @@ export function TimelineStepItem({ step }: { step: TStep }) {
         </div>
       </button>
       {open && (
-        <pre className="mt-1 ml-6 text-[9px] bg-one-canvas border border-one-line rounded p-2 overflow-auto max-h-40 whitespace-pre-wrap break-all animate-fade-in">
-          {JSON.stringify(step.output, null, 2)}
-        </pre>
+        <div className="mt-1 ml-6 text-[10px] bg-one-canvas border border-one-line rounded p-2 animate-fade-in">
+          {meta?.explain && <p className="text-one-grey mb-2">{meta.explain}</p>}
+          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+            {(meta ? meta.fields.filter((k) => out[k] !== undefined) : Object.keys(out)).map((k) => (
+              <div key={k} className="contents">
+                <dt className="text-one-grey">{fieldLabel(k)}</dt>
+                <dd className="text-one-ink font-medium break-words">{formatFieldValue(k, out[k])}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
       )}
     </div>
   );
