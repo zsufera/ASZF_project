@@ -1,11 +1,44 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
 import yaml
 
 from backend.llm import chat_json, llm_available
+
+
+MARKER_RE = re.compile(r"\[S\d+\]")
+
+
+def strip_source_markers(text: str | None) -> str:
+    """Eltávolítja a [Sn] forrás-jelölőket és normalizálja a felesleges szóközöket."""
+    cleaned = MARKER_RE.sub("", text or "")
+    cleaned = re.sub(r"[ \t]+([.,;:!?])", r"\1", cleaned)
+    cleaned = re.sub(r"[ \t]{2,}", " ", cleaned)
+    return cleaned.strip()
+
+
+def _build_sources(policy_items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """policy_items -> rendezett, ref-indexelt gazdag forrás-objektumok."""
+    sources: list[dict[str, Any]] = []
+    for item in policy_items:
+        if not item.get("chunk_id"):
+            continue
+        sources.append({
+            "ref": f"S{len(sources) + 1}",
+            "chunk_id": item.get("chunk_id"),
+            "dok_cim": item.get("dok_cim"),
+            "dok_tipus": item.get("dok_tipus"),
+            "paragrafus": item.get("paragrafus"),
+            "oldalszam": item.get("oldalszam"),
+            "idezet": item.get("idezet", ""),
+            "magyarazat": item.get("kozertheto_magyarazat"),
+            "score": item.get("score"),
+            "used": False,
+        })
+    return sources
 
 
 DEFAULT_DISCLAIMER_PATH = Path("config/disclaimer.yaml")
