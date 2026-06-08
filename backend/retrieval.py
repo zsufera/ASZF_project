@@ -19,13 +19,12 @@ from preprocessing.index import (
     tokenize,
 )
 
+from backend.reference_resolution import reference_closure
 from config.settings import settings
 
 
-REF_NUMBER_PATTERN = re.compile(r"\d+(?:\.\d+){0,4}")
 HYBRID_SPARSE_WEIGHT = 0.55
 HYBRID_DENSE_WEIGHT = 0.45
-CROSS_REF_LIMIT = 3
 
 # ---------------------------------------------------------------------------
 # In-memory chunk cache — a 28,5 MB-os chunks.jsonl beolvasása és 51 049 JSON
@@ -109,59 +108,8 @@ def rerank_chunks(query: str, chunks: list[dict[str, Any]], limit: int = 5) -> l
     return [chunk_to_result(score, chunk) for score, chunk in scored[:limit]]
 
 
-def _normalize_ref(value: str) -> str:
-    match = REF_NUMBER_PATTERN.search(value)
-    return match.group(0) if match else fold_text(value)
-
-
 def _chunk_index(chunks: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     return {str(chunk.get("chunk_id")): chunk for chunk in chunks if chunk.get("chunk_id")}
-
-
-def _chunks_by_doc(chunks: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
-    grouped: dict[str, list[dict[str, Any]]] = {}
-    for chunk in chunks:
-        doc_id = str(chunk.get("doc_id") or "")
-        grouped.setdefault(doc_id, []).append(chunk)
-    return grouped
-
-
-def resolve_cross_refs(
-    results: list[dict[str, Any]],
-    all_chunks: list[dict[str, Any]],
-    max_extra: int = CROSS_REF_LIMIT,
-) -> list[dict[str, Any]]:
-    if not results:
-        return results
-
-    by_id = _chunk_index(all_chunks)
-    by_doc = _chunks_by_doc(all_chunks)
-    seen = {item["chunk_id"] for item in results if item.get("chunk_id")}
-    expanded = list(results)
-
-    for result in results:
-        source_chunk = by_id.get(str(result.get("chunk_id")))
-        if not source_chunk:
-            continue
-        doc_id = str(source_chunk.get("doc_id") or "")
-        doc_chunks = by_doc.get(doc_id, [])
-        for ref in source_chunk.get("cross_refs", []):
-            if len(expanded) >= len(results) + max_extra:
-                return expanded
-            ref_key = _normalize_ref(ref)
-            for candidate in doc_chunks:
-                chunk_id = candidate.get("chunk_id")
-                if not chunk_id or chunk_id in seen:
-                    continue
-                paragraph = str(candidate.get("paragrafus_szam") or "")
-                if ref_key and (paragraph.startswith(ref_key) or ref_key in fold_text(paragraph)):
-                    expanded.append(
-                        chunk_to_result(max(result.get("score", 0.0) - 0.05, 0.01), candidate)
-                        | {"retrieval_source": "cross_ref"}
-                    )
-                    seen.add(chunk_id)
-                    break
-    return expanded
 
 
 def search_qdrant(
@@ -251,9 +199,13 @@ def retrieve(
         primary = []
         retrieval_mode = "empty"
 
-    expanded = resolve_cross_refs(primary, all_chunks)
+    added, unresolved = reference_closure(primary, all_chunks)
+    expanded = list(primary)
+    for chunk, score in added:
+        expanded.append(chunk_to_result(score, chunk) | {"retrieval_source": "reference_closure"})
     return {
         "chunks": expanded,
         "retrieval_mode": retrieval_mode,
         "result_count": len(expanded),
+        "unresolved_refs": unresolved,
     }
