@@ -167,7 +167,10 @@ def test_draft_node_uses_synthesize_for_chat(monkeypatch):
 
 
 def test_draft_node_uses_synthesize_for_email(monkeypatch):
+    captured = {}
+
     def fake_synth(**kwargs):
+        captured.update(kwargs)
         return {"subject": "s", "body_masked": "Levél [S1].",
                 "sources": [], "citations": [], "generation_mode": "llm",
                 "format": "email", "disclaimer_applied": False}
@@ -180,5 +183,6 @@ def test_draft_node_uses_synthesize_for_email(monkeypatch):
         "actions": [], "timeline": [],
     }
     out = nodes.draft_node(state)
+    assert captured["channel"] == "email"
     assert out["draft"]["format"] == "email"
     assert out["timeline"][-1]["output"]["generation_mode"] == "llm"

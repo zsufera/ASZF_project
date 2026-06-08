@@ -8,7 +8,7 @@ import yaml
 
 from agent.state import AgentState
 from backend.classify import classify_message
-from backend.draft import build_draft, synthesize_answer  # build_draft: legacy letter builder, tesztek fedik
+from backend.draft import synthesize_answer
 from backend.escalation import decide_escalation, llm_escalation_suggestion, merge_escalation
 from backend.llm import llm_available
 from backend.history import get_history
