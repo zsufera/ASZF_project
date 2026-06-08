@@ -80,7 +80,7 @@ A jelenlegi kód két külön úton készít „választ", és mindkettő nyers 
     }
   ],
   "citations": ["doc_b74e87e45de13120_p0094_s004"],   // visszafelé-kompatibilis lapos lista
-  "generation_mode": "llm",        // "llm" | "template" | "insufficient"  (ÚJ)
+  "generation_mode": "llm",        // "llm" | "insufficient"  (ÚJ)
   "format": "email",               // "email" | "copilot"
   "disclaimer_applied": false
 }
@@ -89,10 +89,9 @@ A jelenlegi kód két külön úton készít „választ", és mindkettő nyers 
 **Megjegyzések:**
 - A `sources[]` **rendezett**; a `ref` (`S1`, `S2`, …) a `body_masked` jelölőivel egyezik. A `used` jelzi, hogy az LLM ténylegesen hivatkozott-e rá (a nem-hivatkozott, de megtalált források is megjelennek, halványabban).
 - A `citations` (lapos chunk_id-lista) megmarad a meglévő `verify_node` és a régi UI-mezők kompatibilitása miatt.
-- `generation_mode`:
+- `generation_mode` (a 3. döntéssel összhangban **nincs idézet-dump fallback**):
   - `llm` — valódi szintézis.
-  - `template` — LLM elérhető volt, de strukturált sablon készült (pl. üres LLM-válasz); jelölve.
-  - `insufficient` — nincs LLM / nincs forrás / LLM-hiba → őszinte jelzés, nincs ál-válasz.
+  - `insufficient` — nincs LLM / nincs forrás / LLM-hiba / üres vagy elégtelen-fedezetű LLM-válasz → őszinte jelzés, nincs ál-válasz. A megtalált források ettől függetlenül megjelennek.
 
 ## 4. Agentic réteg — részletek
 
@@ -102,7 +101,7 @@ Folyamat:
 1. **`sources[]` összeállítása** a `policy_items`-ből: minden elemhez `ref = f"S{i+1}"`, és a meglévő mezők (`chunk_id`, `dok_cim`, `dok_tipus`, `paragrafus`, `oldalszam`, `idezet`, `magyarazat`, `score`). Kezdetben `used=False`.
 2. **Fallback-kapu:** ha `not llm_available()` **vagy** `not sources` → `generation_mode="insufficient"`, `body_masked` = rögzített, őszinte üzenet (csatorna-specifikus), `sources` változatlanul visszaadva (ha volt találat). **Nincs idézet-dump.**
 3. **LLM-hívás** (`chat_json`): a prompt forrás-blokkja `[S1] "idézet" (dok_cim §paragrafus)` formátumú; az utasítás: koherens válasz, minden tartalmi állítás mögé `[Sn]` jelölő, csak a megadott forrásokra alapozva. JSON-séma: `{ "targy", "valasz", "felhasznalt_forrasok": ["S1", ...], "elegtelen_fedezet": bool }`.
-4. **Utófeldolgozás:** a `valasz` üres → `template` fallback (a meglévő `build_draft_template`-szerű, de jelölve). Ha `elegtelen_fedezet=true` → `insufficient`. Egyébként: a `used_sources` alapján a `sources[].used` beállítása; csak a ténylegesen létező `Sn` jelölők maradnak (érvénytelen jelölő törlése).
+4. **Utófeldolgozás:** a `valasz` üres VAGY `elegtelen_fedezet=true` → `insufficient` (őszinte jelzés, **nem** idézet-dump). Egyébként: a `used_sources` alapján a `sources[].used` beállítása; csak a ténylegesen létező `Sn` jelölők maradnak (érvénytelen jelölő törlése).
 5. **Csatorna-specifikus utasítás:**
    - `email`: hivatalos magyar válaszlevél (megszólítás, törzs, javasolt intézkedés, aláírás), maszkolt PII megtartva.
    - `chat`/`phone`: tömör, ügyintézőnek szóló koherens válasz/beszédpont-narratíva (nem közvetlen ügyfél-levél).
@@ -130,7 +129,7 @@ A `strip_source_markers(text)` regex `\[S\d+\]` mintát töröl (a környező fe
 
 ### 5.1 Típusok (`frontend/src/lib/types.ts`)
 - `SourceRef` (ÚJ): `ref, chunk_id, dok_cim, dok_tipus, paragrafus, oldalszam?, idezet, magyarazat?, score?, used`.
-- `AgentDraft` bővítve: `sources?: SourceRef[]`, `generation_mode?: "llm" | "template" | "insufficient"`, `format?: "email" | "copilot"`.
+- `AgentDraft` bővítve: `sources?: SourceRef[]`, `generation_mode?: "llm" | "insufficient"`, `format?: "email" | "copilot"`.
 
 ### 5.2 `InlineAnswer` (ÚJ komponens)
 - Bemenet: `body` (string `[Sn]` jelölőkkel), `sources`, `onCite(ref)`.
@@ -148,7 +147,7 @@ A `strip_source_markers(text)` regex `\[S\d+\]` mintát töröl (a környező fe
 - **Fallback banner:** `generation_mode==="insufficient"` → türkiz helyett figyelmeztető (status-esc) sáv: *„Nincs elég ÁSZF-fedezet automatikus válaszhoz — emberi ellenőrzés / eszkaláció javasolt."*
 
 ## 6. Hibakezelés
-- LLM-timeout/kivétel → `synthesize_answer` elkapja → `insufficient` (vagy `template`, ha van forrás és értelmes sablon), soha nem propagál 500-at.
+- LLM-timeout/kivétel → `synthesize_answer` elkapja → `insufficient`, soha nem propagál 500-at.
 - Üres `sources` + LLM elérhető → `insufficient` (nincs miből alapozni).
 - Frontend: hiányzó `sources`/`generation_mode` (régi snapshot) → biztonságos default (`[]`, `"llm"` feltételezés nélkül a banner nem jelenik meg); az `InlineAnswer` jelölő nélkül is helyesen renderel.
 
