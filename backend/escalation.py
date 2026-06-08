@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from backend.llm import chat_json, llm_available
+
+logger = logging.getLogger(__name__)
 
 ESCALATION_SYSTEM = (
     "Döntsd el, javasolsz-e eszkalációt supervisorhoz. Triggerek: egyedi szerződés gyanúja, "
@@ -53,6 +56,7 @@ def llm_escalation_suggestion(
         data = chat_json(ESCALATION_SYSTEM, user)
         return {"suggested": bool(data.get("eszkalacio", False)), "okok": list(data.get("okok", []))}
     except Exception:
+        logger.exception("llm_escalation_suggestion failed; ignoring LLM suggestion")
         return {"suggested": False, "okok": []}
 
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import re
+import threading
 from typing import Any
 
 from preprocessing.embedding import active_mode, embed_query
@@ -33,14 +34,21 @@ CROSS_REF_LIMIT = 3
 # ---------------------------------------------------------------------------
 _chunk_cache: list[dict] | None = None
 _chunk_cache_path: Path | None = None
+_chunk_cache_lock = threading.Lock()
 
 
 def _get_chunks(chunks_path: Path = DEFAULT_CHUNKS_PATH) -> list[dict]:
-    """Return cached chunks; reload only if path changed or cache is empty."""
+    """Return cached chunks; reload only if path changed or cache is empty.
+
+    Thread-safe double-checked locking: több worker/szál egyszerre nem tölti be
+    párhuzamosan a nagy chunks.jsonl-t.
+    """
     global _chunk_cache, _chunk_cache_path
     if _chunk_cache is None or _chunk_cache_path != chunks_path:
-        _chunk_cache = load_chunks(chunks_path)
-        _chunk_cache_path = chunks_path
+        with _chunk_cache_lock:
+            if _chunk_cache is None or _chunk_cache_path != chunks_path:
+                _chunk_cache = load_chunks(chunks_path)
+                _chunk_cache_path = chunks_path
     return _chunk_cache
 
 
