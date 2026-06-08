@@ -78,17 +78,24 @@ export function CaseWorkstation() {
     show(rating === "jo" ? "Köszönjük a visszajelzést! 👍" : "Visszajelzés elküldve");
   };
 
-  const handleCitationClick = (citation: string) => {
-    const chunks = caseData?.agent_state.retrieval.chunks ?? [];
-    const match = chunks.find((c) => c.paragrafus.includes(citation) || citation.includes(c.paragrafus));
-    if (match) {
-      const ref = sourceRefs.current[match.chunk_id];
-      if (ref) {
-        ref.scrollIntoView({ behavior: "smooth", block: "center" });
-        ref.classList.add("ring-2", "ring-one-turq");
-        setTimeout(() => ref.classList.remove("ring-2", "ring-one-turq"), 1500);
-      }
+  const scrollToSourceKey = (key: string) => {
+    const el = sourceRefs.current[key];
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("ring-2", "ring-one-turq");
+      setTimeout(() => el.classList.remove("ring-2", "ring-one-turq"), 1500);
     }
+  };
+
+  const handleCitationClick = (citation: string) => {
+    // Gazdag források: a citation lehet chunk_id vagy ref → a rich-kártyák kulcsa s.ref ("S1").
+    const richSources = caseData?.agent_state?.draft?.sources ?? [];
+    const srcMatch = richSources.find((s) => s.chunk_id === citation || s.ref === citation);
+    if (srcMatch) { scrollToSourceKey(srcMatch.ref); return; }
+    // Visszafelé-kompatibilis út: chunks paragrafus szerint → chunk_id kulcs.
+    const chunks = caseData?.agent_state?.retrieval?.chunks ?? [];
+    const match = chunks.find((c) => c.paragrafus.includes(citation) || citation.includes(c.paragrafus));
+    if (match) scrollToSourceKey(match.chunk_id);
   };
 
   const cols = timelineOpen ? "grid-cols-case-open" : "grid-cols-case-closed";
