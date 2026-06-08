@@ -49,8 +49,8 @@ Keskeny **ikon-sáv** (bal, `--rail-w` 70px) + **fejléc** (felül, `--header-h`
 └──────┴───────────────────────────────────────────────────────┘
 ```
 
-- **Ikon-sáv menü (szerepkör-függő):** Inbox · Új ügy · Copilot · Evaluation · *(Supervisor — csak `role==="supervisor"`)*. Aktív elem türkiz háttérrel/szöveggel.
-- **Fejléc:** „one" logó + „ÁSZF Copilot"; globális kereső (ügy-azonosító/feladó); ÁSZF-verzió chip; modell-profil kapcsoló (Felhő/On-prem); bejelentkezett user + szerepkör; (Kijelentkezés, Újraindexelés a fejlécben vagy a sávban).
+- **Ikon-sáv menü (szerepkör-függő):** Inbox · Új ügy · Copilot · Postai levél · Evaluation · *(Supervisor — csak `role==="supervisor"`)*. Aktív elem türkiz háttérrel/szöveggel.
+- **Fejléc:** „one" logó + „ÁSZF Copilot"; globális kereső (ügy-azonosító/feladó); ÁSZF-verzió chip; modell-profil kapcsoló (Felhő/On-prem); bejelentkezett user + szerepkör; (Kijelentkezés).
 - **Nézet-mód (state):** lista → ügy kiválasztása → `viewMode="case"` + `activeCaseId`; **„← Vissza"** → `viewMode="list"`. Az ügy a lista helyett teljes szélességben jelenik meg (nem alatta).
 - Makett: [`mockups/nav-shell.html`](mockups/nav-shell.html) (A = Munkaállomás a választott irány).
 
@@ -68,7 +68,7 @@ Keskeny **ikon-sáv** (bal, `--rail-w` 70px) + **fejléc** (felül, `--header-h`
 
 ### 3.2 Inbox (lista)
 - Szűrő-sor: **Kategória · Prioritás · Státusz · Csatorna · Rendezés** (select-ek) + **keresőmező**.
-- Lista: minden ügy **kártyán** — bal: badge-sor (kategória, SÜRGŐS, konfidencia, ⚠ eszkaláció, csatorna, státusz) + tárgy + SLA-hátralévő; jobb: **„Megnyitás"** primary gomb → ügy-munkaállomás.
+- Lista: minden ügy **kártyán** — bal: badge-sor (email szöveg rövid nézete, kategória, SÜRGŐS, konfidencia, ⚠ eszkaláció, csatorna, státusz) + tárgy + SLA-hátralévő; jobb: **„Megnyitás"** primary gomb → ügy-munkaállomás.
 - Rendezés: prioritás / SLA / beérkezés. Üres állapot: „Nincs megjeleníthető üzenet."
 - Adat: `GET /inbox` → `items[]` (lásd api-contract).
 
@@ -93,7 +93,6 @@ A fő munkafelület. Felül **ügyfejléc** (halvány türkiz gradiens kártya):
 **Agent még nem futott:** a az első két hasáb él **„Agent feldolgozás indítása"** primary gomb → agent idővonalon követhető a folyamat állása
 
 ### 3.4 Copilot (chat / telefon) — natív beszélgetés
-- Csatorna-fülek: **Chat-copilot · Telefon-copilot · Postai levél**.
 - **Chat:** user/agent buborékok; beviteli mező alul; **streamelő** agent-válasz. Az agent **beszédpontokat + forrás-chipeket** ad (⤴), nem szó szerinti scriptet; groundedness-jelzés.
 - **Telefon mód:** hívásátirat beilleszthető (szimulált feliratozás) → azonnali beszédpontok.
 - **„↗ Ügy létrehozása ebből a beszélgetésből"** → ügy-munkaállomásra vált (perzisztáld a `case_id`-t, hogy a gomb a rerun/újrarender után is működjön).

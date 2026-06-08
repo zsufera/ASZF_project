@@ -50,8 +50,8 @@ def _assert_copilot(result: dict[str, Any]) -> list[str]:
     draft = result.get("draft", {})
     if draft.get("format") != "copilot":
         failures.append("várt copilot formátum")
-    if "Beszédpontok" not in draft.get("body_masked", ""):
-        failures.append("hiányzó beszédpontok")
+    if not draft.get("body_masked"):
+        failures.append("üres copilot válasz")
     return failures
 
 

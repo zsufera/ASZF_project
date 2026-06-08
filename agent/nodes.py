@@ -8,7 +8,7 @@ import yaml
 
 from agent.state import AgentState
 from backend.classify import classify_message
-from backend.draft import build_draft
+from backend.draft import synthesize_answer
 from backend.escalation import decide_escalation, llm_escalation_suggestion, merge_escalation
 from backend.llm import llm_available
 from backend.history import get_history
@@ -264,33 +264,23 @@ def draft_node(state: AgentState) -> AgentState:
     actions = state.get("actions", [])
     output_mode = state.get("output_mode", "hitl")
 
-    if channel in {"chat", "phone"}:
-        policy_items = policy_map.get("policy_items", [])
-        talking_points = [
-            f"• {item.get('idezet', '')[:180]} (forrás: {item.get('chunk_id')})"
-            for item in policy_items[:3]
-            if item.get("idezet")
-        ] or ["• Nincs elegendő forrás – eszkaláció javasolt."]
-        result = {
-            "subject": f"Copilot jegyzet – {category}",
-            "body_masked": "Beszédpontok:\n" + "\n".join(talking_points),
-            "citations": [item.get("chunk_id") for item in policy_items if item.get("chunk_id")],
-            "disclaimer_applied": False,
-            "format": "copilot",
-        }
-    else:
-        result = build_draft(
-            case_id=state["case_id"],
-            category=category,
-            output_mode=output_mode,
-            policy_map=policy_map,
-            actions=actions,
-        )
-        result["format"] = "email"
+    result = synthesize_answer(
+        case_id=state["case_id"],
+        category=category,
+        channel=channel,
+        output_mode=output_mode,
+        policy_map=policy_map,
+        actions=actions,
+    )
 
     return {
         "draft": result,
-        "timeline": _append_timeline(state, "draft", {"format": result.get("format"), "citation_count": len(result.get("citations", []))}),
+        "timeline": _append_timeline(state, "draft", {
+            "format": result.get("format"),
+            "citation_count": len(result.get("citations", [])),
+            "source_count": len(result.get("sources", [])),
+            "generation_mode": result.get("generation_mode"),
+        }),
     }
 
 

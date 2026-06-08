@@ -110,7 +110,10 @@ def test_agent_run_copilot_channel(monkeypatch) -> None:
     )
 
     assert result["draft"]["format"] == "copilot"
-    assert "Beszédpontok" in result["draft"]["body_masked"]
+    assert result["draft"]["body_masked"]  # nem üres
+    assert "sources" in result["draft"]
+    assert result["draft"]["generation_mode"] in {"llm", "insufficient"}
+    assert "Beszédpontok" not in result["draft"]["body_masked"]  # régi viselkedés megszűnt
 
 
 def test_agent_run_endpoint(monkeypatch) -> None:
@@ -138,3 +141,48 @@ def test_agent_run_endpoint(monkeypatch) -> None:
 
     assert response["case_id"] == "CASE-API"
     assert response["draft"]["body_masked"] == "test"
+
+
+def test_draft_node_uses_synthesize_for_chat(monkeypatch):
+    captured = {}
+
+    def fake_synth(**kwargs):
+        captured.update(kwargs)
+        return {"subject": "s", "body_masked": "Válasz [S1].",
+                "sources": [{"ref": "S1", "chunk_id": "c1", "used": True}],
+                "citations": ["c1"], "generation_mode": "llm", "format": "copilot",
+                "disclaimer_applied": False}
+
+    monkeypatch.setattr(nodes, "synthesize_answer", fake_synth)
+    state = {
+        "case_id": "c", "channel": "chat",
+        "classification": {"category": "felmondas"},
+        "policy_map": {"policy_items": [{"chunk_id": "c1"}]},
+        "actions": [], "timeline": [],
+    }
+    out = nodes.draft_node(state)
+    assert captured["channel"] == "chat"
+    assert out["draft"]["format"] == "copilot"
+    assert not out["draft"]["body_masked"].startswith("Beszédpontok:")
+
+
+def test_draft_node_uses_synthesize_for_email(monkeypatch):
+    captured = {}
+
+    def fake_synth(**kwargs):
+        captured.update(kwargs)
+        return {"subject": "s", "body_masked": "Levél [S1].",
+                "sources": [], "citations": [], "generation_mode": "llm",
+                "format": "email", "disclaimer_applied": False}
+
+    monkeypatch.setattr(nodes, "synthesize_answer", fake_synth)
+    state = {
+        "case_id": "c", "channel": "email",
+        "classification": {"category": "szamlazas"},
+        "policy_map": {"policy_items": []},
+        "actions": [], "timeline": [],
+    }
+    out = nodes.draft_node(state)
+    assert captured["channel"] == "email"
+    assert out["draft"]["format"] == "email"
+    assert out["timeline"][-1]["output"]["generation_mode"] == "llm"
