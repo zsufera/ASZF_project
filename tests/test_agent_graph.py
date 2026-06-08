@@ -25,17 +25,19 @@ def test_retrieve_node_allows_semantic_path(monkeypatch):
 
 
 def _fake_retrieve(**kwargs):
+    # A szamlazas kötelező hivatkozása (chunk_id/paragrafus a config/mandatory_refs.yaml-ből),
+    # hogy a megalapozottság teljesüljön és a happy-path NE eszkaláljon.
     return {
         "chunks": [
             {
-                "chunk_id": "one-5-1",
+                "chunk_id": "doc_b74e87e45de13120_p0058_s002",
                 "quote": "A szamlazasi kifogast az ugyfelszolgalat kivizsgalja.",
                 "score": 0.9,
                 "dok_tipus": "ÁSZF",
-                "paragrafus": "5.1",
+                "paragrafus": "5.5.1",
                 "szolgaltato": "ONE",
-                "dok_cim": "ONE ÁSZF",
-                "oldalszam": 12,
+                "dok_cim": "ASZF_0_torzs_hatalyos_20260605",
+                "oldalszam": 58,
                 "cross_refs": [],
                 "source_file": "one.pdf",
                 "retrieval_source": "hybrid_local",

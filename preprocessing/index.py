@@ -5,6 +5,7 @@ import hashlib
 import json
 import math
 import re
+import threading
 import unicodedata
 import uuid
 from pathlib import Path
@@ -125,6 +126,7 @@ def make_client() -> QdrantClient:
 # nyitja meg és folyamatosan életben tartja a backend folyamat alatt.
 # ---------------------------------------------------------------------------
 _shared_client: QdrantClient | None = None
+_shared_client_lock = threading.Lock()
 
 
 def get_shared_client() -> QdrantClient:
@@ -132,10 +134,13 @@ def get_shared_client() -> QdrantClient:
 
     Local mode: avoids reloading the HNSW index on every retrieval call.
     Server mode: reuses the HTTP connection pool.
+    Thread-safe double-checked locking a párhuzamos inicializálás ellen.
     """
     global _shared_client
     if _shared_client is None:
-        _shared_client = make_client()
+        with _shared_client_lock:
+            if _shared_client is None:
+                _shared_client = make_client()
     return _shared_client
 
 

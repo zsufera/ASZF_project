@@ -180,7 +180,6 @@ def synthesize_answer(
     output_mode: str,
     policy_map: dict[str, Any],
     actions: list[dict[str, Any]],
-    disclaimer_text: str | None = None,
 ) -> dict[str, Any]:
     fmt = "copilot" if channel in {"chat", "phone"} else "email"
     sources = _build_sources(policy_map.get("policy_items", []))

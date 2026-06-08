@@ -8,7 +8,7 @@ import yaml
 
 from agent.state import AgentState
 from backend.classify import classify_message
-from backend.draft import synthesize_answer
+from backend.draft import strip_source_markers, synthesize_answer
 from backend.escalation import decide_escalation, llm_escalation_suggestion, merge_escalation
 from backend.llm import llm_available
 from backend.history import get_history
@@ -87,7 +87,10 @@ def detect_trigger_hits(text: str) -> list[str]:
 
 def detect_lang_type(state: AgentState) -> AgentState:
     text = _active_text(state).lower()
-    nyelv = "en" if any(hint in text for hint in ENGLISH_HINTS) else "hu"
+    # Egy magyar e-mail is tartalmazhat angol szót ("please", "invoice"); a magyar
+    # ékezetes karakterek jelenléte felülírja az angol jelet (fals pozitív elkerülése).
+    has_hu_accents = any(ch in "áéíóöőúüű" for ch in text)
+    nyelv = "en" if (any(hint in text for hint in ENGLISH_HINTS) and not has_hu_accents) else "hu"
     if any(hint in text for hint in NEM_PANASZ_HINTS):
         tipus = "nem_panasz"
     elif any(hint in text for hint in HATOKORON_KIVULI_HINTS):
@@ -207,8 +210,8 @@ def escalation_node(state: AgentState) -> AgentState:
     policy_map = state.get("policy_map", {})
     text = _active_text(state)
     trigger_hits = detect_trigger_hits(text)
-    if classification.get("is_repeated"):
-        trigger_hits.append("ismetlodo_panasz")
+    # Az ismétlődő panaszt a decide_escalation kezeli (is_repeated → "ismetlod_panasz");
+    # itt NEM duplikáljuk külön elnevezéssel.
     if state.get("lang_type", {}).get("tipus") == "hatokoron_kivuli":
         trigger_hits.append("hatokoron_kivuli")
 
@@ -308,8 +311,8 @@ def prepare_unmask(state: AgentState) -> AgentState:
     draft = state.get("draft", {})
     case_id = state["case_id"]
     preview = {
-        "subject_unmasked": unmask_text(case_id, draft.get("subject", "")),
-        "body_unmasked": unmask_text(case_id, draft.get("body_masked", "")),
+        "subject_unmasked": strip_source_markers(unmask_text(case_id, draft.get("subject", ""))),
+        "body_unmasked": strip_source_markers(unmask_text(case_id, draft.get("body_masked", ""))),
         "ready_for_approval": True,
     }
     manifest = load_manifest_summary()
