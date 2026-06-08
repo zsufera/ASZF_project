@@ -7,6 +7,7 @@ import { ChatTurn } from "../components/ChatTurn";
 import type { SourceRef } from "../lib/types";
 import { InlineAnswer } from "../components/InlineAnswer";
 import { RichSourceCard } from "../components/SourceCard";
+import { ProcessingIndicator } from "../components/ProcessingIndicator";
 
 interface Message {
   role: "user" | "assistant";
@@ -166,7 +167,9 @@ export function Copilot() {
                 );
               })}
               {loading && messages[messages.length - 1]?.role === "user" && (
-                <ChatTurn role="assistant" content="⟳ Feldolgozás…" />
+                <div className="mb-3 animate-fade-up">
+                  <ProcessingIndicator active={loading} />
+                </div>
               )}
               <div ref={bottomRef} />
             </div>
