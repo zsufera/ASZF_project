@@ -21,30 +21,39 @@
 - [x] **eval-harness** — Teljes harness: KPI-k, judge, baseline diff, human score, export (`eval/`, `POST /eval/*`)
 - [x] **compliance-security** — `security/rbac.py`, `security/redaction.py`, `security/prompt_guard.py`, RBAC unmask/approve, `docs/dpia.md` (POC-szint)
 - [x] **testing** — pytest: ingest, retrieval, masking, Phase 2–7 endpoint tesztek, PII szivárgás-kapu, adversariális harness, demó-szcenáriók, acceptance kapu
+- [x] **vector-search** — Docker-mentes vektoros keresés: beágyazott Qdrant (`QdrantClient(path=)`), OpenAI `text-embedding-3-large` + sqlite cache (`data/processed/embedding_cache.db`), determinisztikus hash-fallback, hermetikus teszt-conftest
+- [x] **llm-generation** — Valódi LLM-generálás: `backend/llm.py` shared JSON-client, LLM classify (kategória-validálás), LLM draft (citation-alapú), LLM eszkalációs javaslat (monoton: csak emel), prompt-injection preambulum, 132 passing teszt
 
 ---
 
 ## Implementációs állapot (2026-06-07)
 
 ### Fázis 1 — kész
-- 32 PDF manifest, 51k+ chunk, sparse index + opcionális Qdrant
+- 32 PDF manifest, 51k+ chunk, sparse index + beágyazott Qdrant (Docker nélkül)
 - `gen_emails.py`: 16 verziózott minta-email (`data/sample_emails/`)
+- `preprocessing/embedding.py`: közös embedding-interfész — OpenAI `text-embedding-3-large` sqlite cache-sel (`data/processed/embedding_cache.db`) vagy determinisztikus 64-dim hash-fallback; `preprocessing/index.py`: stabil UUID5 pont-ID, tartalom-hash, dinamikus vektordimenzió
 
 ### Fázis 1b — kész
 - `derive_params.py`: provenance-szal frissített `policies.yaml`, `mandatory_refs.yaml`, `disclaimer.yaml`
 
 ### Fázis 2 — kész (POC-szint)
-- `backend/retrieval.py`: hibrid sparse+dense, rerank, cross-ref, Qdrant fallback
-- `backend/router.py`, `backend/metadata.py`: model_profile + prompt/aszf verzió meta
+- `backend/retrieval.py`: OpenAI módban szemantikus keresés beágyazott Qdrant-ból (`qdrant_semantic`), kulcs/hiba esetén lokális hibrid fallback (`hybrid_local`)
+- `backend/llm.py`: shared LLM JSON-client, `SYSTEM_PREAMBLE` prompt-injection védelemmel, `llm_available()` kapu
+- `backend/classify.py`: LLM osztályozás `ALLOWED_CATEGORIES`-re validálva + szabályalapú fallback; `classify_mode` mező
+- `backend/draft.py`: LLM draft citation-validálással + sablon-fallback; `generation_mode` mező
+- `backend/escalation.py`: `llm_escalation_suggestion()` monoton javaslat + `merge_escalation()` (csak emel, nem csökkent)
+- `backend/verify.py`: citation-alapú groundedness (token-overlap ≥0.3) + legacy substring-mód backward-compat
+- `backend/router.py`, `backend/metadata.py`: model_profile (`cloud/<model>` / `cloud/<model>-no-key`) + prompt/aszf verzió meta
 - `backend/masking.py`: regex-alapú visszafordítható maszkolás SQLite token-térképpel
 - `backend/history.py`, `backend/ocr_service.py`, `backend/reindex_service.py`, `backend/eval_service.py`
 - FastAPI endpointok: `/mask`, `/unmask`, `/ocr`, `/reindex`, `/eval/run` + meglévő core flow meta mezőkkel
 
 ### Fázis 3 — kész (POC-szint)
-- `agent/nodes.py`: 12 determinisztikus node (lang/típus, maszkolás, kontextus, classify, priority, retrieve, policy-map, escalation, actions, draft, verify, unmask)
+- `agent/nodes.py`: 12 node (lang/típus, maszkolás, kontextus, classify, priority, retrieve, policy-map, escalation, actions, draft, verify, unmask) — `retrieve_node` szemantikus Qdrant utat használ OpenAI módban; `escalation_node` LLM-javaslatot hív + monoton merge; `verify_node` citation-alapú groundedness-t futtat
 - `agent/graph.py` + `agent/runner.py`: LangGraph compile + `POST /agent/run`
-- Copilot csatorna (`chat`/`phone`) beszédpont-formátum; email csatorna teljes draft
+- Copilot csatorna (`chat`/`phone`) beszédpont-formátum; email csatorna teljes LLM-generált draft
 - `timeline[]` minden lépés kimenetével (UI-idővonalhoz)
+- `tests/conftest.py`: hermetikus autouse fixture — `OPENAI_API_KEY=""` az összes tesztben, megelőzi az éles API-hívást
 
 ### Fázis 4 — kész (POC-szint)
 - `ui/app.py` + `ui/views/*`: inbox, szabad bevitel, háromhasábos ügy nézet, csatorna-fülek (email/chat/telefon/postai OCR)
@@ -77,10 +86,17 @@
 - API: `POST /demo/run`, `POST /acceptance/run`, `GET /observability/traces`
 
 ### Tudatos POC-hiányok (Fázis 7 után)
-- LLM-as-judge külön bíró-modell helyett determinisztikus heurisztika
+- LLM-as-judge külön bíró-modell helyett determinisztikus heurisztika (eval)
 - Szintetikus LLM kérdésbank generálás helyett minta-email katalógus
 - Langfuse éles SDK bekötés (lokális JSON trace helyett); prod adversariális red-team bővítés
 - Valós CRM/email integráció (mock adapterek készültek)
+
+### vector_search ág kiegészítések (2026-06-07)
+- **Embedding**: `preprocessing/embedding.py` közös interfész, OpenAI `text-embedding-3-large` + sqlite cache, determinisztikus 64-dim hash-fallback
+- **Qdrant beágyazott mód**: `QdrantClient(path=)` — Docker nem szükséges; a `server` profile opcionális marad
+- **LLM generálás**: `backend/llm.py` shared client (JSON mód, prompt-injection preambulum), LLM classify + draft + eszkalációs javaslat csendben fallbackkel
+- **load_dotenv**: `config/settings.py` betölti a `.env`-t modul-importnál (`find_dotenv(usecwd=True)`)
+- **Hermetikus tesztek**: `tests/conftest.py` autouse fixture — az élő `.env` kulcs nem szivárog a tesztekbe
 
 ---
 
@@ -88,10 +104,10 @@
 
 - **Agent-keretrendszer**: LangGraph. *Miért:* explicit node/állapot + checkpoint + human-in-the-loop megállók → a kért lépésenkénti láthatóság és a jóváhagyás-kapuk natívan adottak; determinisztikusabb és auditálhatóbb, mint egy szabad agent-loop.
 - **RAG/ingest**: LlamaIndex. *Miért:* kész, erős ingest- és citation-primitívek a §-szintű chunkoláshoz és forráshivatkozáshoz; gyorsabb és megbízhatóbb, mint saját pipeline-t építeni.
-- **Vektor-DB**: Qdrant, **hibrid (dense+sparse) keresés**. *Miért:* a jogi szövegben a §-számokra és szakszavakra a sparse (kulcsszavas) ág pontosabb találatot ad, mint a tisztán szemantikus keresés; Qdrant production-szerű, mégis egyetlen konténerrel fut.
-- **Embedding**: `bge-m3` (lokál) / `text-embedding-3-large` (felhő), közös interfész. *Miért:* a `bge-m3` kiváló többnyelvű (magyar) és hibrid-képes lokálra, az OpenAI erős magyarra a felhős ágon; a közös interfész teszi lehetővé a felhő↔on-prem váltást.
+- **Vektor-DB**: Qdrant, **hibrid (dense+sparse) keresés**. *Miért:* a jogi szövegben a §-számokra és szakszavakra a sparse (kulcsszavas) ág pontosabb találatot ad, mint a tisztán szemantikus keresés; Qdrant production-szerű. **Beágyazott helyi mód** (`QDRANT_MODE=local`, `QdrantClient(path=)`) Docker nélkül is fut a POC-ban; külső szerverhez `QDRANT_MODE=server`.
+- **Embedding**: `text-embedding-3-large` (felhő, OpenAI-kulccsal) / determinisztikus 64-dim hash-fallback (kulcs nélkül vagy `PROVIDER=onprem`), közös interfész (`preprocessing/embedding.py`). SQLite cache (`data/processed/embedding_cache.db`) a redundáns API-hívások elkerülésére. *Megjegyzés: a `bge-m3` lokális modell tervben volt; a beágyazott Qdrant + OpenAI kombináció lefedi a POC igényeit, a `bge-m3` integrálása prod-roadmap.*
 - **Reranking**: `bge-reranker-v2-m3` (lokál) / opcionális Cohere. *Miért:* a rerank érdemben emeli a retrieval pontosságát (közvetlenül a citation/accuracy KPI-kat), és a `bge` páros koherens, lokál-barát stacket ad.
-- **Generálás**: **elsődlegesen Azure OpenAI (EU régió)** GPT (DPA + no-training); **on-prem opció demóként** Ollamával, kisebb modellen (`Qwen2.5`/`Llama`), kapcsolható router. *Miért:* a felhő adja a legjobb magyar minőséget és sebességet, EU-rezidencia + no-training fedi a compliance-t; az on-prem ág demonstrálja az adatszuverén alternatívát vendor-lock-in nélkül.
+- **Generálás**: **elsődlegesen OpenAI GPT** (EU-rezidens Azure OpenAI ajánlott, DPA + no-training); **on-prem opció demóként** Ollamával, kisebb modellen (`Qwen2.5`/`Llama`), kapcsolható router. Megvalósítva: `backend/llm.py` shared JSON-client, `SYSTEM_PREAMBLE` prompt-injection védelemmel, `classify_mode` / `generation_mode` / `escalation_mode` audit-mezők. Modell: `OPENAI_MODEL=gpt-4.1` (ajánlott).
 - **Observability**: **Langfuse** (self-hosted). *Miért:* a többlépéses agentet trace nélkül nehéz debugolni és mérni; a self-hosted megoldásnál az adat nálunk marad, és méri a `<30 mp` time-to-answer KPI-t és a költséget.
 - **Perzisztencia**: SQLite (inbox, ügyek, draftok, verziók, audit, userek; az emailek **feladó-címmel és ügy-kapcsolattal** az előzmény-lekérdezéshez). *Miért:* nulla üzemeltetés, fájlalapú, elég a POC párhuzamossági igényéhez; egyértelmű migrációs út Postgresre prod-ban.
 - **Auth**: konfig-alapú felhasználólista jelszóval (ÜI / supervisor); a **supervisor** összesített statisztika-nézetet is lát. *Miért:* a POC audit-igényéhez (ki járt el / ki hagyott jóvá) elég, de nem visz be fölösleges OAuth-komplexitást.
@@ -326,7 +342,8 @@ A gráf node-jai (sorrendben), eszközhívásokkal és a Fázis 2 endpointokra t
 
 ### Komponensek futása
 - **FastAPI backend** és **Streamlit UI**: lokális Python virtuális környezetben.
-- **Qdrant** (és opcionálisan **Ollama**): **Dockerben** (minimális konténerezés — az app lokálisan fut).
+- **Qdrant**: alapból **beágyazott helyi mód** (`QDRANT_MODE=local`) — Python-folyamatban fut, nincs Docker-igény. Külső szerveres módhoz (`QDRANT_MODE=server`): `docker compose --profile server up -d`.
+- **Ollama** (opcionális, on-prem ág): Dockerben.
 - **Langfuse**: self-hosted tracing (saját compose), vagy felhős free tier; az agent-lépések és LLM-hívások trace-elése, latency/költség mérés.
 - **SQLite**: fájlalapú, a backend mellett.
 

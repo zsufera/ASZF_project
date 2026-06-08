@@ -1,6 +1,27 @@
 from backend.main import AgentRunRequest, agent_run
 
+import agent.nodes as nodes
 from agent.runner import run_agent
+
+
+def test_retrieve_node_allows_semantic_path(monkeypatch):
+    captured: dict = {}
+
+    def spy(**kwargs):
+        captured.update(kwargs)
+        return {"chunks": [], "retrieval_mode": "hybrid_local", "result_count": 0}
+
+    monkeypatch.setattr(nodes, "retrieve", spy)
+    state = {
+        "case_id": "c1",
+        "classification": {"category": "egyeb"},
+        "input_text": "számlázási kifogás",
+    }
+
+    nodes.retrieve_node(state)
+
+    # Must not force the local-only path; semantic search runs when OpenAI is active.
+    assert captured.get("prefer_qdrant") is not False
 
 
 def _fake_retrieve(**kwargs):

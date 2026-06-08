@@ -4,14 +4,18 @@ from config.settings import settings
 
 
 def get_model_profile() -> str:
+    from backend.llm import llm_available
+
     if settings.provider == "onprem":
         return f"onprem/ollama@{settings.ollama_url}"
-    if settings.openai_api_key:
+    if llm_available():
         return f"cloud/{settings.openai_model}"
     return f"cloud/{settings.openai_model}-no-key"
 
 
 def get_embed_profile() -> str:
-    if settings.provider == "onprem":
-        return "onprem/deterministic-hash-v1"
-    return settings.openai_embed_model
+    from preprocessing.embedding import active_mode
+
+    if active_mode() == "openai":
+        return f"cloud/{settings.openai_embed_model}"
+    return "local/deterministic-hash-v1"

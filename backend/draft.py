@@ -5,8 +5,18 @@ from typing import Any
 
 import yaml
 
+from backend.llm import chat_json, llm_available
+
 
 DEFAULT_DISCLAIMER_PATH = Path("config/disclaimer.yaml")
+
+GENERATE_SYSTEM = (
+    "Írj hivatalos, udvarias magyar válaszlevelet a maszkolt adatok megtartásával. "
+    "Szerkezet: tárgy, megszólítás, törzs, javasolt intézkedés, aláírás. "
+    "Minden tartalmi állításhoz hivatkozz a megadott forrásokra (chunk_id). "
+    "Csak a megadott forrásokra alapozz; ha nincs fedezet, jelezd és javasolj eszkalációt. "
+    'Válasz JSON: {"targy": "...", "level_szoveg": "... (maszkolt)", "felhasznalt_forrasok": ["chunk_id"]}'
+)
 
 
 def load_disclaimer(path: Path = DEFAULT_DISCLAIMER_PATH) -> str:
@@ -27,7 +37,7 @@ def ensure_disclaimer(body_masked: str, output_mode: str) -> tuple[str, bool]:
     return f"{body_masked.rstrip()}\n\n{disclaimer}", True
 
 
-def build_draft(
+def build_draft_template(
     case_id: str,
     category: str,
     output_mode: str,
@@ -78,3 +88,56 @@ def build_draft(
         "citations": citations,
         "disclaimer_applied": disclaimer_applied,
     }
+
+
+def build_draft(
+    case_id: str,
+    category: str,
+    output_mode: str,
+    policy_map: dict[str, Any],
+    actions: list[dict[str, Any]],
+    disclaimer_text: str | None = None,
+) -> dict[str, Any]:
+    policy_items = policy_map.get("policy_items", [])
+    if not llm_available() or not policy_items:
+        result = build_draft_template(case_id, category, output_mode, policy_map, actions, disclaimer_text)
+        result["generation_mode"] = "template"
+        return result
+    try:
+        available_ids = {item.get("chunk_id") for item in policy_items if item.get("chunk_id")}
+        sources_block = "\n".join(
+            f"- [{item.get('chunk_id')}] \"{item.get('idezet', '')}\""
+            for item in policy_items
+            if item.get("idezet")
+        )
+        action_block = "\n".join(
+            f"- {action.get('tipus')}: {action.get('indok', '')}"
+            for action in actions
+            if action.get("tipus")
+        )
+        disclaimer = disclaimer_text if disclaimer_text is not None else load_disclaimer()
+        user = (
+            f"Kimeneti mód: {output_mode}\n"
+            f"Kategória: {category}\n"
+            f"Források:\n{sources_block}\n"
+            f"Javasolt intézkedés:\n{action_block or '- (nincs)'}\n"
+            f"Disclaimer (ha a mód automata): {disclaimer}"
+        )
+        data = chat_json(GENERATE_SYSTEM, user)
+        body = str(data.get("level_szoveg", "")).strip()
+        if not body:
+            raise ValueError("empty body")
+        subject = str(data.get("targy") or f"Válaszjavaslat {category} ügyben")
+        citations = [c for c in (data.get("felhasznalt_forrasok") or []) if c in available_ids]
+        body, disclaimer_applied = ensure_disclaimer(body, output_mode)
+        return {
+            "subject": subject,
+            "body_masked": body,
+            "citations": citations,
+            "disclaimer_applied": disclaimer_applied,
+            "generation_mode": "llm",
+        }
+    except Exception:
+        result = build_draft_template(case_id, category, output_mode, policy_map, actions, disclaimer_text)
+        result["generation_mode"] = "template"
+        return result

@@ -3,6 +3,7 @@ uvicorn[standard]
 pydantic
 python-dotenv
 qdrant-client
+openai
 llama-index
 langgraph
 langchain

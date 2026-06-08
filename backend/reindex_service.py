@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from preprocessing.derive_params import derive_all
+from preprocessing.embedding import active_mode, vector_size
 from preprocessing.index import DEFAULT_CHUNKS_PATH, index_chunks, load_chunks
 from preprocessing.manifest import DEFAULT_OUTPUT_PATH, build_manifest, write_manifest
 from preprocessing.parse import DEFAULT_CHUNKS_OUTPUT, DEFAULT_PAGES_OUTPUT, parse_and_chunk
@@ -49,6 +50,8 @@ def run_reindex(force: bool = False) -> dict[str, Any]:
         "indexed_qdrant_chunks": indexed_chunks,
         "parsed_pages": page_count,
         "qdrant_status": qdrant_status,
+        "embedding_mode": active_mode(),
+        "embedding_dim": vector_size(),
         "derive_report": {
             "mandatory_ref_categories": derive_report.get("mandatory_ref_categories"),
             "escalation_trigger_count": derive_report.get("escalation_trigger_count"),

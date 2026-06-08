@@ -6,6 +6,7 @@ import json
 import math
 import re
 import unicodedata
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +14,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.http import models
 
 from config.settings import settings
+from preprocessing.embedding import embed_documents, vector_size
 
 
 DEFAULT_CHUNKS_PATH = Path("data/processed/chunks.jsonl")
@@ -103,35 +105,90 @@ def deterministic_embedding(text: str, vector_size: int = VECTOR_SIZE) -> list[f
     return [value / norm for value in vector]
 
 
-def ensure_collection(client: QdrantClient, collection_name: str = DEFAULT_COLLECTION) -> None:
-    collections = client.get_collections().collections
-    if any(collection.name == collection_name for collection in collections):
-        return
+def content_hash(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def point_id(chunk_id: str) -> str:
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, str(chunk_id)))
+
+
+def make_client() -> QdrantClient:
+    if settings.qdrant_mode == "local":
+        return QdrantClient(path=settings.qdrant_path)
+    return QdrantClient(url=settings.qdrant_url)
+
+
+# ---------------------------------------------------------------------------
+# Process-level singleton — helyi módban a HNSW index ~615 MB-os fájlból tölt;
+# minden egyes make_client() + close() ciklus újra betölti. A singleton egyszer
+# nyitja meg és folyamatosan életben tartja a backend folyamat alatt.
+# ---------------------------------------------------------------------------
+_shared_client: QdrantClient | None = None
+
+
+def get_shared_client() -> QdrantClient:
+    """Return a process-level singleton QdrantClient.
+
+    Local mode: avoids reloading the HNSW index on every retrieval call.
+    Server mode: reuses the HTTP connection pool.
+    """
+    global _shared_client
+    if _shared_client is None:
+        _shared_client = make_client()
+    return _shared_client
+
+
+def ensure_collection(
+    client: QdrantClient,
+    collection_name: str = DEFAULT_COLLECTION,
+    size: int | None = None,
+) -> None:
+    size = size or vector_size()
+    for collection in client.get_collections().collections:
+        if collection.name == collection_name:
+            info = client.get_collection(collection_name)
+            if info.config.params.vectors.size == size:
+                return
+            client.delete_collection(collection_name)
+            break
     client.create_collection(
         collection_name=collection_name,
-        vectors_config=models.VectorParams(size=VECTOR_SIZE, distance=models.Distance.COSINE),
+        vectors_config=models.VectorParams(size=size, distance=models.Distance.COSINE),
     )
 
 
 def index_chunks(
     chunks: list[dict[str, Any]],
-    qdrant_url: str = settings.qdrant_url,
     collection_name: str = DEFAULT_COLLECTION,
+    force: bool = False,
+    client: QdrantClient | None = None,
 ) -> int:
     if not chunks:
         return 0
-    client = QdrantClient(url=qdrant_url)
-    ensure_collection(client, collection_name)
-    points = [
-        models.PointStruct(
-            id=idx,
-            vector=deterministic_embedding(chunk.get("text", "")),
-            payload=chunk,
-        )
-        for idx, chunk in enumerate(chunks)
-    ]
-    client.upsert(collection_name=collection_name, points=points)
-    return len(points)
+    owns_client = client is None
+    client = client or make_client()
+    try:
+        size = vector_size()
+        ensure_collection(client, collection_name, size)
+        texts = [chunk.get("text", "") for chunk in chunks]
+        vectors = embed_documents(texts, use_cache=not force)
+        points = []
+        for chunk, vector in zip(chunks, vectors, strict=True):
+            payload = dict(chunk)
+            payload["content_hash"] = content_hash(chunk.get("text", ""))
+            points.append(
+                models.PointStruct(
+                    id=point_id(chunk.get("chunk_id", "")),
+                    vector=vector,
+                    payload=payload,
+                )
+            )
+        client.upsert(collection_name=collection_name, points=points)
+        return len(points)
+    finally:
+        if owns_client:
+            client.close()
 
 
 def main() -> None:

@@ -9,7 +9,8 @@ import yaml
 from agent.state import AgentState
 from backend.classify import classify_message
 from backend.draft import build_draft
-from backend.escalation import decide_escalation
+from backend.escalation import decide_escalation, llm_escalation_suggestion, merge_escalation
+from backend.llm import llm_available
 from backend.history import get_history
 from backend.masking import mask_text, unmask_text
 from backend.metadata import PROMPT_VERSION, load_manifest_summary
@@ -182,7 +183,6 @@ def retrieve_node(state: AgentState) -> AgentState:
         query=query,
         service_provider=state.get("service_provider"),
         limit=5,
-        prefer_qdrant=False,
     )
     return {
         "retrieval": result,
@@ -220,6 +220,14 @@ def escalation_node(state: AgentState) -> AgentState:
         sla_expired=bool(state.get("sla_expired")),
         trigger_hits=sorted(set(trigger_hits)),
     )
+    suggestion = llm_escalation_suggestion(
+        text_masked=text,
+        category=str(classification.get("category", "egyeb")),
+        confidence=float(classification.get("confidence", 0.0)),
+        policy_coverage=bool(policy_map.get("policy_items")),
+    )
+    result = merge_escalation(result, suggestion)
+    result["escalation_mode"] = "rule+llm" if llm_available() else "rule"
     return {
         "escalation": result,
         "timeline": _append_timeline(state, "escalation", result),
@@ -298,6 +306,7 @@ def verify_node(state: AgentState) -> AgentState:
         draft_body_masked=draft.get("body_masked", ""),
         chunks=chunks,
         mandatory_refs=mandatory_refs,
+        citations=[str(c) for c in draft.get("citations", []) if c],
     )
     return {
         "verify": result,

@@ -44,7 +44,7 @@ from backend.metadata import response_meta
 from backend.ocr_service import run_ocr
 from backend.policy_map import build_policy_map
 from backend.reindex_service import run_reindex
-from backend.retrieval import retrieve
+from backend.retrieval import refresh_chunk_cache, retrieve
 from backend.verify import verify_draft
 from config.settings import settings
 from integrations.customer_directory import MockCustomerDirectory
@@ -364,6 +364,9 @@ async def ocr(case_id: str = Form(...), pdf_file: UploadFile = File(...)) -> dic
 @app.post("/reindex")
 def reindex(payload: ReindexRequest) -> dict:
     result = run_reindex(force=payload.force)
+    # Invalidate the in-memory chunk cache so the next retrieval picks up
+    # the freshly indexed data without a backend restart.
+    refresh_chunk_cache()
     return {**response_meta(), **result}
 
 

@@ -1,4 +1,91 @@
+import json
+
+import preprocessing.embedding as emb
+import preprocessing.index as index
+import backend.retrieval as retrieval
 from backend.retrieval import hybrid_score, resolve_cross_refs, retrieve
+from config.settings import settings
+
+
+def _write_two_chunks(tmp_path):
+    rows = [
+        {"chunk_id": "one-bill", "szolgaltato": "ONE", "dok_tipus": "ÁSZF",
+         "paragrafus_szam": "3.1", "doc_id": "d1", "cross_refs": [],
+         "text": "A számlázási kifogás bejelentése és kivizsgálása."},
+        {"chunk_id": "one-term", "szolgaltato": "ONE", "dok_tipus": "ÁSZF",
+         "paragrafus_szam": "5.2", "doc_id": "d1", "cross_refs": [],
+         "text": "A szerződés felmondásának feltételei."},
+    ]
+    path = tmp_path / "chunks.jsonl"
+    path.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n",
+                    encoding="utf-8")
+    return path
+
+
+def test_retrieve_falls_back_to_hybrid_local_without_key(tmp_path, monkeypatch):
+    monkeypatch.setattr(settings, "provider", "cloud")
+    monkeypatch.setattr(settings, "openai_api_key", "")  # deterministic -> skip qdrant
+    chunks_path = _write_two_chunks(tmp_path)
+
+    result = retrieve("számlázási kifogás", service_provider="ONE",
+                      chunks_path=chunks_path)
+
+    assert result["retrieval_mode"] == "hybrid_local"
+    assert result["result_count"] >= 1
+
+
+def test_retrieve_uses_semantic_when_openai(tmp_path, monkeypatch):
+    monkeypatch.setattr(settings, "provider", "cloud")
+    monkeypatch.setattr(settings, "openai_api_key", "sk-test")
+    monkeypatch.setattr(settings, "openai_embed_dim", 8)
+    monkeypatch.setattr(settings, "qdrant_mode", "local")
+    monkeypatch.setattr(settings, "qdrant_path", str(tmp_path / "qd"))
+    monkeypatch.setattr(emb, "EMBED_CACHE_PATH", tmp_path / "cache.db")
+
+    def fake_embed(texts):
+        # "kifogás"-bearing text gets a distinct vector so it ranks first.
+        out = []
+        for text in texts:
+            if "kifogás" in text:
+                out.append([1.0, 0, 0, 0, 0, 0, 0, 0])
+            else:
+                out.append([0, 1.0, 0, 0, 0, 0, 0, 0])
+        return out
+
+    monkeypatch.setattr(emb, "_openai_embed", fake_embed)
+
+    chunks_path = _write_two_chunks(tmp_path)
+    rows = index.load_chunks(chunks_path)
+    index.index_chunks(rows)  # builds local collection at qdrant_path
+
+    result = retrieval.retrieve("kifogás", service_provider="ONE",
+                                chunks_path=chunks_path)
+
+    assert result["retrieval_mode"] == "qdrant_semantic"
+    assert result["chunks"][0]["chunk_id"] == "one-bill"
+
+
+def test_reindex_reports_embedding_mode(monkeypatch, tmp_path):
+    import backend.reindex_service as reindex_service
+
+    monkeypatch.setattr(settings, "provider", "cloud")
+    monkeypatch.setattr(settings, "openai_api_key", "")  # deterministic
+
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text('{"document_count": 0, "documents": []}', encoding="utf-8")
+
+    # Avoid touching real PDFs / Qdrant: stub the heavy steps.
+    monkeypatch.setattr(reindex_service, "DEFAULT_OUTPUT_PATH", manifest_path)
+    monkeypatch.setattr(reindex_service, "build_manifest", lambda: [])
+    monkeypatch.setattr(reindex_service, "write_manifest", lambda items, path: None)
+    monkeypatch.setattr(reindex_service, "parse_and_chunk", lambda **kwargs: (0, 0))
+    monkeypatch.setattr(reindex_service, "load_chunks", lambda path: [])
+    monkeypatch.setattr(reindex_service, "index_chunks", lambda chunks: 0)
+    monkeypatch.setattr(reindex_service, "derive_all", lambda: {})
+
+    report = reindex_service.run_reindex()
+    assert report["embedding_mode"] == "deterministic"
+    assert report["embedding_dim"] == 64
 
 
 def test_hybrid_score_prefers_matching_tokens() -> None:

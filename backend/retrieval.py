@@ -4,11 +4,13 @@ import math
 import re
 from typing import Any
 
+from preprocessing.embedding import active_mode, embed_query
 from preprocessing.index import (
     DEFAULT_CHUNKS_PATH,
     DEFAULT_COLLECTION,
     deterministic_embedding,
     fold_text,
+    get_shared_client,
     load_chunks,
     quote_text,
     search_chunks,
@@ -23,6 +25,29 @@ REF_NUMBER_PATTERN = re.compile(r"\d+(?:\.\d+){0,4}")
 HYBRID_SPARSE_WEIGHT = 0.55
 HYBRID_DENSE_WEIGHT = 0.45
 CROSS_REF_LIMIT = 3
+
+# ---------------------------------------------------------------------------
+# In-memory chunk cache — a 28,5 MB-os chunks.jsonl beolvasása és 51 049 JSON
+# sor parse-olása minden híváskor szükségtelen CPU/disk terhelés.
+# Az újraindexelés (_refresh_chunk_cache) a /reindex endpoint hívja.
+# ---------------------------------------------------------------------------
+_chunk_cache: list[dict] | None = None
+_chunk_cache_path: Path | None = None
+
+
+def _get_chunks(chunks_path: Path = DEFAULT_CHUNKS_PATH) -> list[dict]:
+    """Return cached chunks; reload only if path changed or cache is empty."""
+    global _chunk_cache, _chunk_cache_path
+    if _chunk_cache is None or _chunk_cache_path != chunks_path:
+        _chunk_cache = load_chunks(chunks_path)
+        _chunk_cache_path = chunks_path
+    return _chunk_cache
+
+
+def refresh_chunk_cache() -> None:
+    """Invalidate the in-memory chunk cache (call after reindexing)."""
+    global _chunk_cache
+    _chunk_cache = None
 
 
 def cosine_similarity(left: list[float], right: list[float]) -> float:
@@ -136,33 +161,36 @@ def search_qdrant(
     service_provider: str | None,
     limit: int,
 ) -> list[dict[str, Any]]:
+    if active_mode() != "openai":
+        return []
     try:
-        from qdrant_client import QdrantClient
+        from qdrant_client.http import models
 
-        client = QdrantClient(url=settings.qdrant_url, timeout=2.0)
-        vector = deterministic_embedding(query)
-        must_conditions = []
+        # Singleton client: helyi módban a HNSW index betöltése csak egyszer
+        # történik a process élettartama alatt, nem minden hívásnál.
+        client = get_shared_client()
+        vector = embed_query(query)
+        query_filter = None
         if service_provider:
-            must_conditions.append(
-                {
-                    "key": "szolgaltato",
-                    "match": {"value": service_provider},
-                }
+            query_filter = models.Filter(
+                must=[
+                    models.FieldCondition(
+                        key="szolgaltato",
+                        match=models.MatchValue(value=service_provider),
+                    )
+                ]
             )
-        query_filter = {"must": must_conditions} if must_conditions else None
-        hits = client.search(
+        response = client.query_points(
             collection_name=DEFAULT_COLLECTION,
-            query_vector=vector,
+            query=vector,
             query_filter=query_filter,
             limit=limit,
         )
-        results: list[dict[str, Any]] = []
-        for hit in hits:
-            payload = hit.payload or {}
-            results.append(
-                chunk_to_result(float(hit.score), payload) | {"retrieval_source": "qdrant_dense"}
-            )
-        return results
+        return [
+            chunk_to_result(float(hit.score), hit.payload or {})
+            | {"retrieval_source": "qdrant_semantic"}
+            for hit in response.points
+        ]
     except Exception:
         return []
 
@@ -175,7 +203,7 @@ def retrieve(
     chunks_path: Any = DEFAULT_CHUNKS_PATH,
     prefer_qdrant: bool = True,
 ) -> dict[str, Any]:
-    all_chunks = load_chunks(chunks_path)
+    all_chunks = _get_chunks(chunks_path)
     filtered = [
         chunk
         for chunk in all_chunks
@@ -186,7 +214,7 @@ def retrieve(
     qdrant_results = search_qdrant(query, service_provider, limit) if prefer_qdrant else []
     if qdrant_results:
         primary = qdrant_results
-        retrieval_mode = "qdrant_hybrid"
+        retrieval_mode = "qdrant_semantic"
     elif filtered:
         sparse_results = search_chunks(
             query=query,

@@ -1,7 +1,7 @@
 # ÁSZF és szerződési feltételek Q&A Agent — üzleti specifikáció (1. kör)
 
 > Belső ügyintézői copilot B2C panaszokhoz. Üzleti és igény-specifikációs összefoglaló a végleges specifikáció és a technikai kör előtt.
-> Dátum: 2026-06-06
+> Dátum: 2026-06-06, utolsó frissítés: 2026-06-07
 
 ---
 
@@ -268,10 +268,10 @@ A „Dok-paraméterezés” pontoknál az agent a feltöltött dokumentumokból 
 8. Felelősségi mátrix: agent javaslat, ÜI jóváhagyott szöveg, téves osztályozás.
 
 ### Technikai kör
-9. Adatforrások és formátumok: betöltés, verziókezelés, frissítési mechanizmus.
-10. RAG-pipeline: chunkolás (paragrafus/§ szintű), embedding (magyar jogi szöveg), vektoradatbázis, retrieval + citation.
-11. Modellválasztás: magyar nyelvi minőség, on-prem vs. felhő (adatvédelem).
-12. Integráció: előosztályozó agent, ticketing/CRM/rsz., email-rendszer.
-13. UX/felület: ÜI copilot (chat/telefon), email-flow, draft-verziókezelés, jóváhagyási lépés.
-14. Mérés/KPI-eszköz: precision@k, válaszidő, gold standard kiértékelés, audit-teljesség.
-15. Biztonság: hozzáférés-kezelés, PII-kezelés, naplózás, prompt-injection védelem a beérkező leveleknél.
+9. ~~Adatforrások és formátumok: betöltés, verziókezelés, frissítési mechanizmus.~~ ✓ kész
+10. ~~RAG-pipeline: chunkolás (paragrafus/§ szintű), embedding (magyar jogi szöveg), vektoradatbázis, retrieval + citation.~~ ✓ kész — beágyazott Qdrant, OpenAI `text-embedding-3-large` + determinisztikus fallback, LLM classify/draft/escalation
+11. ~~Modellválasztás: magyar nyelvi minőség, on-prem vs. felhő (adatvédelem).~~ ✓ kész — OpenAI GPT-4.1 felhő + on-prem Ollama kapcsolható router
+12. Integráció: előosztályozó agent, ticketing/CRM/rsz., email-rendszer. *(mock adapterek elkészültek, éles integráció későbbi fázis)*
+13. ~~UX/felület: ÜI copilot (chat/telefon), email-flow, draft-verziókezelés, jóváhagyási lépés.~~ ✓ kész
+14. ~~Mérés/KPI-eszköz: precision@k, válaszidő, gold standard kiértékelés, audit-teljesség.~~ ✓ kész
+15. ~~Biztonság: hozzáférés-kezelés, PII-kezelés, naplózás, prompt-injection védelem a beérkező leveleknél.~~ ✓ kész

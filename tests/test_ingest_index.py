@@ -1,7 +1,37 @@
 import json
 from pathlib import Path
 
+import preprocessing.index as index
+from config.settings import settings
 from preprocessing.index import load_chunks, search_chunks
+
+
+def test_index_chunks_local_mode_deterministic(tmp_path, monkeypatch):
+    monkeypatch.setattr(settings, "qdrant_mode", "local")
+    monkeypatch.setattr(settings, "qdrant_path", str(tmp_path / "qd"))
+    monkeypatch.setattr(settings, "provider", "cloud")
+    monkeypatch.setattr(settings, "openai_api_key", "")  # deterministic -> size 64
+
+    chunks = [
+        {"chunk_id": "c1", "szolgaltato": "ONE", "text": "számlázási kifogás kezelése"},
+        {"chunk_id": "c2", "szolgaltato": "ONE", "text": "felmondás feltételei"},
+    ]
+
+    client = index.make_client()
+    count = index.index_chunks(chunks, client=client)
+
+    assert count == 2
+    info = client.get_collection(index.DEFAULT_COLLECTION)
+    assert info.config.params.vectors.size == 64
+    # content_hash is attached to payloads
+    points, _ = client.scroll(index.DEFAULT_COLLECTION, with_payload=True, limit=10)
+    assert all("content_hash" in point.payload for point in points)
+    client.close()
+
+
+def test_point_id_is_stable_for_chunk_id():
+    assert index.point_id("c1") == index.point_id("c1")
+    assert index.point_id("c1") != index.point_id("c2")
 
 
 def test_load_chunks_reads_jsonl(tmp_path: Path) -> None:
