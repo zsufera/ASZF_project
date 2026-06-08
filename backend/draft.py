@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import re
 from pathlib import Path
 from typing import Any
@@ -8,6 +9,7 @@ import yaml
 
 from backend.llm import chat_json, llm_available
 
+logger = logging.getLogger(__name__)
 
 MARKER_RE = re.compile(r"\[S\d+\]")
 
@@ -241,6 +243,7 @@ def synthesize_answer(
             "disclaimer_applied": disclaimer_applied,
         }
     except Exception:
+        logger.exception("synthesize_answer failed; falling back to insufficient")
         return _insufficient_result(fmt, category, sources)
 
 
