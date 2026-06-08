@@ -29,7 +29,11 @@ Fejlesztés közben kötelező iránytű: [FEJLESZTESI_GUARDRAILS.md](FEJLESZTES
    - `python -m backend.db`
 5. Backend indítás:
    - `uvicorn backend.main:app --reload`
-6. Streamlit UI (Fázis 4):
+6. **Frontend (React — ajánlott, a Streamlit UI leváltása):**
+   - `cd frontend && npm install && npm run dev` (a backend fusson a 8000 porton)
+   - demo belépés: `ui_demo` / `ui_demo` vagy `supervisor_demo` / `supervisor_demo`
+   - részletek: [frontend/README.md](frontend/README.md), [frontend/UX-DECISIONS.md](frontend/UX-DECISIONS.md)
+7. Streamlit UI (Fázis 4 — **legacy**, a React frontend váltja le):
    - `streamlit run ui/app.py`
    - demo belépés: `ui_demo` / `ui_demo` vagy `supervisor_demo` / `supervisor_demo`
 
@@ -117,7 +121,18 @@ Lépések: nyelv/típus → maszkolás → kontextus → osztályozás → prior
 
 Válasz tartalmazza a `timeline` listát UI-idővonalhoz.
 
-## Streamlit UI (Fázis 4)
+## Frontend (React) — a Streamlit UI leváltása
+
+A `frontend/` egy önálló **React + TypeScript + Tailwind** SPA, amely a One Magyarország arculatot követi és a meglévő FastAPI backendre épül (nincs új végpont). Ez váltja le a Streamlit UI-t.
+
+- Indítás: `cd frontend && npm install && npm run dev` (backend a 8000 porton; a Vite a `/api`-t a backendre proxyzza).
+- Build: `npm run build`. Backend URL felülírása: `VITE_BACKEND_URL`.
+- Dokumentáció: [frontend/README.md](frontend/README.md), tervezési forrás: [docs/design-export/](docs/design-export/), eltérések/indoklás: [frontend/UX-DECISIONS.md](frontend/UX-DECISIONS.md).
+- Nézetek: Bejelentkezés · Inbox · Ügy-munkaállomás (háromhasábos, becsukható agent-idővonal) · Új ügy · Copilot (chat/telefon) · Postai levél · Evaluation · Supervisor.
+
+## Streamlit UI (Fázis 4 — legacy)
+
+> A React frontend (lásd fent) váltja le. Az alábbi Streamlit-felület referenciaként marad.
 
 Indítás: `streamlit run ui/app.py` (a backend fusson: `uvicorn backend.main:app --reload`).
 

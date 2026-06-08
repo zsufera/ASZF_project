@@ -1,0 +1,134 @@
+export type Role = "ui" | "supervisor";
+export type Priority = "surgos" | "normal";
+export type KpiStatus = "green" | "yellow" | "red";
+export type OutputMode = "hitl" | "automata";
+export type ModelProfile = "cloud" | "onprem";
+export type FeedbackRating = "jo" | "rossz";
+
+export interface User {
+  username: string;
+  role: Role;
+}
+
+export interface InboxItem {
+  case_id: string;
+  category_label: string;
+  priority: Priority;
+  status_label: string;
+  channel_label: string;
+  subject: string;
+  sla_days_remaining: number;
+  escalated: boolean;
+  confidence: number;
+}
+
+export interface DraftVersion {
+  version_no: number;
+  subject: string;
+  body_masked: string;
+  created_at: string;
+  id: string;
+}
+
+export interface ChunkItem {
+  chunk_id: string;
+  paragrafus: string;
+  quote?: string;
+  idezet?: string;
+  dok_tipus: string;
+  kozertheto_magyarazat?: string;
+}
+
+export interface TimelineStep {
+  step: string;
+  output: Record<string, unknown>;
+}
+
+export interface EscalationState {
+  required: boolean;
+  reasons: string[];
+}
+
+export interface AgentState {
+  retrieval: { chunks: ChunkItem[] };
+  policy_map: { policy_items: unknown[] };
+  timeline: TimelineStep[];
+  draft: { subject: string; body_masked: string; citations: string[] };
+  escalation: EscalationState;
+}
+
+export interface CustomerCandidateItem {
+  customer_name: string;
+  customer_id: string;
+  link_url: string;
+}
+
+export interface Case {
+  case_id: string;
+  category_label: string;
+  priority: Priority;
+  confidence: number;
+  escalated: boolean;
+  channel_label: string;
+  status_label: string;
+  sla_days_remaining: number;
+  sender_email_masked: string;
+  inbound_text_masked: string;
+  service_provider?: string;
+  customer_candidates: CustomerCandidateItem[];
+  draft_versions: DraftVersion[];
+  agent_state: AgentState;
+}
+
+export interface HistoryItem {
+  date: string;
+  subject: string;
+  category: string;
+  status: string;
+}
+
+export interface EscalatedItem {
+  case_id: string;
+  priority: Priority;
+  sla_days_remaining: number;
+  subject: string;
+  escalation_reason?: string;
+}
+
+export interface KpiValues {
+  faithfulness?: number;
+  citation_support_rate?: number;
+  judge_score?: number;
+  coverage?: number;
+  escalation_appropriateness?: number;
+  retrieval_support?: number;
+  time_to_answer_ms_p95?: number;
+  out_of_scope_answer_rate?: number;
+  [key: string]: number | undefined;
+}
+
+export interface EvalResult {
+  run_id: string;
+  aszf_version: string;
+  kpis: {
+    values: KpiValues;
+    status: Record<string, KpiStatus>;
+    targets: Record<string, number>;
+  };
+  results: Array<{ email_id: string; [key: string]: unknown }>;
+  baseline_diff: { has_baseline: boolean; diff: Record<string, unknown> };
+}
+
+export interface SupervisorStats {
+  total_cases: number;
+  escalated_cases: number;
+  closed_cases: number;
+  escalation_rate: number;
+  by_operator: Array<{ username: string; processed: number }>;
+}
+
+export interface OcrResult {
+  ocr_text_masked: string;
+  ocr_confidence: number;
+  low_conf_spans: Array<{ start: number; end: number }>;
+}

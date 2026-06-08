@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   ÁSZF Q&A Copilot — One Magyarország design tokens
+   ============================================================ */
+:root {
+  --one-turq: #16C7C0;
+  --one-turq-d: #0FA39D;
+  --one-turq-l: #E3FAF8;
+  --one-black: #0E1212;
+  --one-ink: #16201F;
+  --one-grey: #6B7A79;
+  --one-line: #E2EAE9;
+  --one-canvas: #F7FAF9;
+  --one-surface: #FFFFFF;
+
+  --status-urgent-fg: #B42318;  --status-urgent-bg: #FDE2E1;
+  --status-esc-fg: #B96A00;     --status-esc-bg: #FFF0DB;
+  --status-conf-fg: #8A6D00;    --status-conf-bg: #FEF7D6;
+  --kpi-ok: #22A06B;
+  --kpi-warn: #E0A400;
+  --kpi-bad: #D64545;
+  --highlight: #FFF3B0;
+
+  --font-sans: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  --fs-xs: 10px; --fs-sm: 11px; --fs-md: 12px; --fs-base: 14px;
+  --fs-lg: 16px; --fs-xl: 18px; --fs-2xl: 22px;
+  --fw-regular: 400; --fw-semibold: 600; --fw-bold: 700; --fw-extrabold: 800;
+
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 20px; --sp-6: 24px;
+
+  --r-sm: 6px; --r-md: 8px; --r-lg: 12px; --r-xl: 14px; --r-pill: 20px; --r-full: 9999px;
+
+  --shadow-card: 0 1px 2px rgba(14, 18, 18, 0.04);
+  --shadow-focus: 0 0 0 2px var(--one-turq-l);
+
+  --rail-w: 70px;
+  --header-h: 52px;
+  --case-cols: 1fr 2fr 1fr;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--one-canvas);
+  color: var(--one-ink);
+  font-size: var(--fs-base);
+  margin: 0;
+  padding: 0;
+}
+
+*:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+mark {
+  background: var(--highlight);
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-up {
+  animation: fadeUp 120ms ease-out both;
+}
+
+.animate-fade-in {
+  animation: fadeIn 150ms ease both;
+}
