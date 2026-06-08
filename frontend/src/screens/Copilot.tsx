@@ -4,11 +4,15 @@ import { api } from "../lib/api";
 import { useSession } from "../state/session";
 import { useToast } from "../state/toast";
 import { ChatTurn } from "../components/ChatTurn";
+import type { SourceRef } from "../lib/types";
+import { InlineAnswer } from "../components/InlineAnswer";
+import { RichSourceCard } from "../components/SourceCard";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
-  sources?: string[];
+  sources?: SourceRef[];
+  generationMode?: "llm" | "insufficient";
 }
 
 const STREAMING_DELAY = 40;
@@ -66,13 +70,14 @@ export function Copilot() {
         channel: "chat",
         input_text: text,
         output_mode: outputMode,
-      }) as { draft?: { body_masked?: string; citations?: string[] }; timeline?: unknown[] };
+      }) as { draft?: { body_masked?: string; sources?: SourceRef[]; generation_mode?: "llm" | "insufficient" } };
 
       const body = res.draft?.body_masked ?? "Nincs válasz.";
-      const sources = res.draft?.citations ?? [];
+      const sources = res.draft?.sources ?? [];
+      const generationMode = res.draft?.generation_mode;
       setLastAssistantFull(body);
       setStreamTrigger((n) => n + 1);
-      setMessages((prev) => [...prev, { role: "assistant", content: body, sources }]);
+      setMessages((prev) => [...prev, { role: "assistant", content: body, sources, generationMode }]);
     } catch (e) {
       setMessages((prev) => [...prev, { role: "assistant", content: `Hiba: ${e instanceof Error ? e.message : "ismeretlen"}` }]);
     } finally {
@@ -134,12 +139,29 @@ export function Copilot() {
               )}
               {messages.map((m, i) => {
                 const isLastAssistant = m.role === "assistant" && i === messages.length - 1;
+                const streaming = isLastAssistant && loading;
+                if (m.role === "assistant" && !streaming) {
+                  return (
+                    <div key={i} className="flex gap-2 mb-3 animate-fade-up">
+                      <div className="w-7 h-7 rounded-full bg-one-turq-l flex items-center justify-center text-[11px] flex-none" aria-label="Copilot">◎</div>
+                      <div className="rounded-xl px-3 py-2 max-w-[80%] bg-one-turq-l text-one-ink">
+                        {m.generationMode === "insufficient" && (
+                          <div className="mb-2 bg-status-esc-bg border border-status-esc-fg rounded-md px-2 py-1 text-[10px] text-status-esc-fg">
+                            ⚠ Nincs elég ÁSZF-fedezet — emberi ellenőrzés / eszkaláció javasolt.
+                          </div>
+                        )}
+                        <InlineAnswer body={m.content} sources={m.sources} onCite={(ref) => {
+                          document.getElementById(`copilot-src-${ref}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+                        }} />
+                      </div>
+                    </div>
+                  );
+                }
                 return (
                   <ChatTurn
                     key={i}
                     role={m.role}
-                    content={isLastAssistant && loading ? streamedText : m.content}
-                    sources={m.sources}
+                    content={streaming ? streamedText : m.content}
                   />
                 );
               })}
@@ -182,16 +204,18 @@ export function Copilot() {
                 </button>
               </div>
             )}
-            {messages.some((m) => m.sources && m.sources.length > 0) && (
-              <div className="bg-one-surface border border-one-line rounded-one shadow-card p-3 text-[11px]">
-                <h3 className="text-[10px] uppercase text-one-grey tracking-wider mb-2">📚 Hivatkozott források</h3>
-                {messages.filter((m) => m.sources?.length).map((m, i) =>
-                  m.sources!.map((s, j) => (
-                    <div key={`${i}-${j}`} className="border-l-2 border-one-turq px-2 py-1 mb-1 text-[10px] text-one-turq-d font-semibold">{s}</div>
-                  ))
-                )}
-              </div>
-            )}
+            {(() => {
+              const lastWithSources = [...messages].reverse().find((m) => m.sources && m.sources.length > 0);
+              if (!lastWithSources?.sources?.length) return null;
+              return (
+                <div className="bg-one-surface border border-one-line rounded-one shadow-card p-3">
+                  <h3 className="text-[10px] uppercase text-one-grey tracking-wider mb-2">📚 Hivatkozott források</h3>
+                  {lastWithSources.sources.map((s) => (
+                    <RichSourceCard key={s.ref} source={s} id={`copilot-src-${s.ref}`} />
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
