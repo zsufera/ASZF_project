@@ -140,8 +140,10 @@
 ## 3. Prioritált ütemterv
 
 ### Fázis 1 — Gyors nyeremények (determinisztikus, meglévő metaadat, nincs új modell)
-**A1** cross-doc ref-feloldás · **A2** reference-closure · **A4** completeness-jel · **B3** kategória→szekció routing · **C3** hatály-szűrő · **B1** small-to-big.
+**A1** cross-doc ref-feloldás ✅ · **A2** reference-closure ✅ · **A4** completeness-jel ⏳ (az `unresolved_refs` expozíció kész; az eszkalációba kötés halasztva — a korpuszban a kereszt-dok hivatkozás ubikvitus, hard triggerként túl-eszkalálna) · **B3** kategória→szekció routing ✅ · **C3** hatály-szűrő ⏳ · **B1** small-to-big ✅.
 > Ez a fázis adja a legnagyobb jogi-domain értéket a legkisebb kockázattal. A1+A2 a kulcs.
+>
+> **Állapot (2026-06-08):** A1, A2, B3, B1 leszállítva (TDD + tesztek). Spec/terv: `docs/superpowers/specs|plans/2026-06-08-cross-reference-resolution-closure*`. Hátralévő Fázis 1: A4 (megjelenítésként, nem eszkalációként), C3 (verzió-család-párosítás kell).
 
 ### Fázis 2 — Közepes (némi infra / index-bővítés)
 **A3** gráf-bejárás · **B2** auto-merging · **B4** breadcrumb (re-index) · **C1** reranker · **C2** numerikus hibrid.
