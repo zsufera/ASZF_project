@@ -66,33 +66,33 @@ export const STEP_META: Record<string, StepMeta> = {
     fields: ["ready_for_approval"],
   },
   knowledge_search: {
-    label: "ÁSZF-források keresése",
-    explain: "Megkeresi a kérdéshez kapcsolódó ÁSZF-szakaszokat és forrásjelölőkkel visszaadja.",
+    label: "Tudáskereső (ÁSZF)",
+    explain: "Megkeresi a kérdéshez kapcsolódó ÁSZF-szakaszokat, és forrásjelölőkkel visszaadja őket a Copilotnak.",
     fields: ["search_query", "result_count"],
   },
   customer_context: {
-    label: "Ügyfél-kontextus",
-    explain: "Betölti a feladó korábbi ügyeit és a lehetséges ügyfél-találatokat.",
+    label: "Ügyfélkontextus",
+    explain: "Betölti az elérhető előzményeket és a lehetséges ügyfél-találatokat.",
     fields: ["history_loaded", "customer_count"],
   },
   escalation_advice: {
-    label: "Eszkalációs tanácsadás",
-    explain: "Eldönti, kell-e supervisor-eszkaláció, és megadja az okokat.",
+    label: "Eszkalációs javaslat",
+    explain: "Megvizsgálja, kell-e supervisor-eszkaláció, és megadja az okokat.",
     fields: ["required", "reasons"],
   },
   draft_reply: {
-    label: "Válasz-draft",
-    explain: "Forrásokra hivatkozó válaszjavaslatot fogalmaz.",
+    label: "Válaszfogalmazó",
+    explain: "Forrásokra hivatkozó válaszjavaslatot fogalmaz a megtalált szabályzati elemek alapján.",
     fields: ["format", "generation_mode", "source_count"],
   },
   verify_grounding: {
-    label: "Megalapozottság ellenőrzése",
-    explain: "Ellenőrzi, hogy a draft állításai a forrásokon alapulnak-e.",
+    label: "Forrásellenőrző",
+    explain: "Ellenőrzi, hogy a válasz állításai a hivatkozott forrásokon alapulnak-e.",
     fields: ["ungrounded_count"],
   },
   iteration_cap: {
-    label: "Ciklus-korlát",
-    explain: "Az orchestrator elérte a megengedett lépésszámot.",
+    label: "Orchestrator cikluskorlát",
+    explain: "A Copilot orchestrator elérte a megengedett lépésszámot.",
     fields: ["iterations"],
   },
 };
@@ -129,6 +129,10 @@ export const FIELD_LABELS: Record<string, string> = {
 export const PIPELINE_STEPS: string[] = [
   "detect_lang_type", "mask_input", "load_context", "classify", "priority_triage",
   "retrieve", "policy_map", "escalation", "suggest_actions", "draft", "verify", "prepare_unmask",
+];
+
+export const COPILOT_STEPS: string[] = [
+  "classify", "knowledge_search", "escalation_advice", "draft_reply", "verify_grounding",
 ];
 
 export function stepLabel(step: string): string {

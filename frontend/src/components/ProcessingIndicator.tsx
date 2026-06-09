@@ -3,6 +3,7 @@ import { PIPELINE_STEPS, stepLabel } from "../lib/agentSteps";
 
 interface ProcessingIndicatorProps {
   active: boolean;
+  steps?: string[];
   /** Mennyi idő alatt lépjen a következő szakaszra (szimulált). */
   intervalMs?: number;
 }
@@ -11,17 +12,18 @@ interface ProcessingIndicatorProps {
  * A feldolgozás alatt végigfut az agent pipeline szakaszain (szimulált, idő-alapú).
  * Nem valós token-stream: a backend szinkron, a végén adja vissza a teljes idővonalat.
  */
-export function ProcessingIndicator({ active, intervalMs = 3500 }: ProcessingIndicatorProps) {
+export function ProcessingIndicator({ active, steps, intervalMs = 3500 }: ProcessingIndicatorProps) {
   const [idx, setIdx] = useState(0);
+  const stepNames = steps ?? PIPELINE_STEPS;
 
   useEffect(() => {
     if (!active) { setIdx(0); return; }
     setIdx(0);
     const id = setInterval(() => {
-      setIdx((i) => Math.min(i + 1, PIPELINE_STEPS.length - 1));
+      setIdx((i) => Math.min(i + 1, stepNames.length - 1));
     }, intervalMs);
     return () => clearInterval(id);
-  }, [active, intervalMs]);
+  }, [active, intervalMs, stepNames]);
 
   if (!active) return null;
 
@@ -32,7 +34,7 @@ export function ProcessingIndicator({ active, intervalMs = 3500 }: ProcessingInd
         Az agent dolgozik…
       </div>
       <ul className="space-y-1">
-        {PIPELINE_STEPS.map((s, i) => (
+        {stepNames.map((s, i) => (
           <li
             key={s}
             className={`flex items-center gap-2 text-[10px] ${

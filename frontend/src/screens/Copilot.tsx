@@ -8,12 +8,17 @@ import type { GenerationMode, SourceRef } from "../lib/types";
 import { InlineAnswer } from "../components/InlineAnswer";
 import { RichSourceCard } from "../components/SourceCard";
 import { ProcessingIndicator } from "../components/ProcessingIndicator";
+import { AgentTimeline } from "../components/AgentTimeline";
+import { COPILOT_STEPS } from "../lib/agentSteps";
+import type { TimelineStep } from "../lib/types";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
   sources?: SourceRef[];
   generationMode?: GenerationMode;
+  timeline?: TimelineStep[];
+  orchestratorMode?: "llm" | "fallback";
 }
 
 type CopilotDraftMeta = { generation_mode?: GenerationMode };
@@ -48,7 +53,7 @@ export function Copilot() {
   const [createdCaseId, setCreatedCaseId] = useState<string | null>(() => {
     return sessionStorage.getItem("copilot.caseId");
   });
-  // Ideiglenes case_id a chat-munkamenethez (az /agent/run kötelező mezője)
+  // Ideiglenes session_id a Copilot chat-munkamenethez.
   const [sessionCaseId] = useState(() => `CHAT-${crypto.randomUUID()}`);
   const [transcript, setTranscript] = useState("");
   const [streamTrigger, setStreamTrigger] = useState(0);
@@ -76,10 +81,18 @@ export function Copilot() {
 
       const body = res.reply ?? "Nincs válasz.";
       const sources = res.sources ?? [];
-      const generationMode = res.draft?.generation_mode;
+      const draft: CopilotDraftMeta | null | undefined = res.draft;
+      const generationMode = draft?.generation_mode;
       setLastAssistantFull(body);
       setStreamTrigger((n) => n + 1);
-      setMessages((prev) => [...prev, { role: "assistant", content: body, sources, generationMode }]);
+      setMessages((prev) => [...prev, {
+        role: "assistant",
+        content: body,
+        sources,
+        generationMode,
+        timeline: res.timeline,
+        orchestratorMode: res.orchestrator_mode,
+      }]);
     } catch (e) {
       setMessages((prev) => [...prev, { role: "assistant", content: `Hiba: ${e instanceof Error ? e.message : "ismeretlen"}` }]);
     } finally {
@@ -169,7 +182,7 @@ export function Copilot() {
               })}
               {loading && messages[messages.length - 1]?.role === "user" && (
                 <div className="mb-3 animate-fade-up">
-                  <ProcessingIndicator active={loading} />
+                  <ProcessingIndicator active={loading} steps={COPILOT_STEPS} />
                 </div>
               )}
               <div ref={bottomRef} />
@@ -217,6 +230,18 @@ export function Copilot() {
                   {lastWithSources.sources.map((s) => (
                     <RichSourceCard key={s.ref} source={s} id={`copilot-src-${s.ref}`} />
                   ))}
+                </div>
+              );
+            })()}
+            {(() => {
+              const lastWithTimeline = [...messages].reverse().find((m) => m.timeline && m.timeline.length > 0);
+              if (!lastWithTimeline?.timeline?.length) return null;
+              return (
+                <div>
+                  <div className="mb-2 text-[10px] uppercase text-one-grey tracking-wider">
+                    Copilot agent {lastWithTimeline.orchestratorMode === "fallback" ? "(fallback)" : "(LLM)"}
+                  </div>
+                  <AgentTimeline steps={lastWithTimeline.timeline} defaultOpen={false} />
                 </div>
               );
             })()}
