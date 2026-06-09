@@ -63,6 +63,43 @@ def test_evaluate_single_with_mock_retrieve(monkeypatch) -> None:
     assert result["time_to_answer_ms"] >= 0
 
 
+def test_evaluate_single_uses_agentic_synthesis_and_citation_verify(monkeypatch) -> None:
+    captured = {}
+    monkeypatch.setattr("backend.eval_service.retrieve", _fake_retrieve)
+
+    def fake_synthesize_answer(**kwargs):
+        captured["synthesize"] = kwargs
+        return {
+            "subject": "s",
+            "body_masked": "A szamlazasi kifogast kivizsgaljuk [S1].",
+            "citations": ["one-5-1"],
+            "sources": [{"ref": "S1", "chunk_id": "one-5-1", "used": True}],
+            "generation_mode": "llm",
+            "format": "email",
+        }
+
+    def fake_verify_draft(**kwargs):
+        captured["verify"] = kwargs
+        return {"claims": [{"grounded": True}], "ungrounded_count": 0, "warning": None}
+
+    monkeypatch.setattr("backend.eval_service.synthesize_answer", fake_synthesize_answer, raising=False)
+    monkeypatch.setattr("backend.eval_service.verify_draft", fake_verify_draft)
+
+    payload = {
+        "email_id": "email-001-szamlazas-one",
+        "torzs": "Szamlazasi kifogasom van a roaming tetel miatt.",
+        "varht_kategoria": "szamlazas",
+        "szolgaltato": "ONE",
+        "varhato_eszkalacio": False,
+        "edge_case": None,
+    }
+    evaluate_single(payload)
+
+    assert captured["synthesize"]["input_text_masked"] == payload["torzs"]
+    assert captured["synthesize"]["channel"] == "email"
+    assert captured["verify"]["citations"] == ["one-5-1"]
+
+
 def test_run_eval_produces_kpis(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr("backend.eval_service.retrieve", _fake_retrieve)
     monkeypatch.setattr("eval.report.RUNS_DIR", tmp_path / "runs")

@@ -25,17 +25,19 @@ def test_retrieve_node_allows_semantic_path(monkeypatch):
 
 
 def _fake_retrieve(**kwargs):
+    # A szamlazas kötelező hivatkozása (chunk_id/paragrafus a config/mandatory_refs.yaml-ből),
+    # hogy a megalapozottság teljesüljön és a happy-path NE eszkaláljon.
     return {
         "chunks": [
             {
-                "chunk_id": "one-5-1",
+                "chunk_id": "doc_b74e87e45de13120_p0058_s002",
                 "quote": "A szamlazasi kifogast az ugyfelszolgalat kivizsgalja.",
                 "score": 0.9,
                 "dok_tipus": "ÁSZF",
-                "paragrafus": "5.1",
+                "paragrafus": "5.5.1",
                 "szolgaltato": "ONE",
-                "dok_cim": "ONE ÁSZF",
-                "oldalszam": 12,
+                "dok_cim": "ASZF_0_torzs_hatalyos_20260605",
+                "oldalszam": 58,
                 "cross_refs": [],
                 "source_file": "one.pdf",
                 "retrieval_source": "hybrid_local",
@@ -112,7 +114,7 @@ def test_agent_run_copilot_channel(monkeypatch) -> None:
     assert result["draft"]["format"] == "copilot"
     assert result["draft"]["body_masked"]  # nem üres
     assert "sources" in result["draft"]
-    assert result["draft"]["generation_mode"] in {"llm", "insufficient"}
+    assert result["draft"]["generation_mode"] in {"llm", "insufficient", "template"}
     assert "Beszédpontok" not in result["draft"]["body_masked"]  # régi viselkedés megszűnt
 
 
@@ -186,3 +188,65 @@ def test_draft_node_uses_synthesize_for_email(monkeypatch):
     assert captured["channel"] == "email"
     assert out["draft"]["format"] == "email"
     assert out["timeline"][-1]["output"]["generation_mode"] == "llm"
+
+
+def test_draft_node_passes_active_customer_text_to_synthesize(monkeypatch):
+    captured = {}
+
+    def fake_synth(**kwargs):
+        captured.update(kwargs)
+        return {"subject": "s", "body_masked": "Levél [S1].",
+                "sources": [], "citations": [], "generation_mode": "llm",
+                "format": "email", "disclaimer_applied": False}
+
+    monkeypatch.setattr(nodes, "synthesize_answer", fake_synth)
+    nodes.draft_node({
+        "case_id": "c",
+        "channel": "email",
+        "input_text_masked": "A számlámon vitatott roaming tétel szerepel.",
+        "classification": {"category": "szamlazas"},
+        "policy_map": {"policy_items": []},
+        "actions": [],
+        "timeline": [],
+    })
+
+    assert captured["input_text_masked"] == "A számlámon vitatott roaming tétel szerepel."
+
+
+def test_prepare_unmask_blocks_approval_when_verification_warns() -> None:
+    out = nodes.prepare_unmask({
+        "case_id": "CASE-READY",
+        "draft": {"subject": "s", "body_masked": "Nincs fedezet."},
+        "verify": {"warning": "A draft nem teljesen forrásolt."},
+        "escalation": {"required": True},
+        "timeline": [],
+    })
+
+    assert out["draft_preview_unmasked"]["ready_for_approval"] is False
+    assert out["timeline"][-1]["output"]["ready_for_approval"] is False
+
+
+def test_retrieve_node_timeline_includes_unresolved_count(monkeypatch):
+    monkeypatch.setattr(nodes, "retrieve", lambda **kw: {
+        "chunks": [], "retrieval_mode": "x", "result_count": 0,
+        "unresolved_refs": [{"raw": "3. számú melléklet", "doc_hint": "3. számú melléklet", "paragraph": None}],
+    })
+    state = {"case_id": "c", "classification": {"category": "szamlazas"}, "input_text": "x", "timeline": []}
+    out = nodes.retrieve_node(state)
+    assert out["timeline"][-1]["output"]["unresolved_count"] == 1
+
+
+def test_retrieve_node_uses_rewritten_query(monkeypatch):
+    captured = {}
+
+    def fake_retrieve(**kwargs):
+        captured.update(kwargs)
+        return {"chunks": [], "retrieval_mode": "x", "result_count": 0, "unresolved_refs": []}
+
+    monkeypatch.setattr(nodes, "retrieve", fake_retrieve)
+    monkeypatch.setattr(nodes, "rewrite_query", lambda text, category: "FOKUSZALT KERESOKERDES")
+    state = {"case_id": "c", "classification": {"category": "szerzodesfelmondas_modositas"},
+             "input_text": "beszélt nyelvi üzenet", "timeline": []}
+    out = nodes.retrieve_node(state)
+    assert captured["query"] == "FOKUSZALT KERESOKERDES"
+    assert out["timeline"][-1]["output"]["search_query"] == "FOKUSZALT KERESOKERDES"

@@ -30,7 +30,8 @@ Fejlesztés közben kötelező iránytű: [FEJLESZTESI_GUARDRAILS.md](FEJLESZTES
 5. Backend indítás:
    - `uvicorn backend.main:app --reload`
 6. **Frontend (React — ajánlott, a Streamlit UI leváltása):**
-   - `cd frontend && npm install && npm run dev` (a backend fusson a 8000 porton)
+   - **Fejlesztéshez** (HMR): `cd frontend && npm install && npm run dev` (a backend fusson a 8000 porton)
+   - **Egykattintásos futtatás (Docker nélkül, nem CLI):** a repo gyökerében **dupla kattintás a `start.bat`-ra** (vagy `start.ps1`). Ez az első indításkor buildeli a frontendet, majd a backend **egyetlen folyamatban** kiszolgálja az API-t ÉS a felületet a `http://localhost:8000` címen (a böngésző automatikusan megnyílik). Belül: `uvicorn backend.serve:app`.
    - demo belépés: `ui_demo` / `ui_demo` vagy `supervisor_demo` / `supervisor_demo`
    - részletek: [frontend/README.md](frontend/README.md), [frontend/UX-DECISIONS.md](frontend/UX-DECISIONS.md)
 7. Streamlit UI (Fázis 4 — **legacy**, a React frontend váltja le):

@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from backend.llm import chat_json, llm_available
 from preprocessing.index import fold_text
+
+logger = logging.getLogger(__name__)
 
 
 ALLOWED_CATEGORIES = {
@@ -87,7 +90,9 @@ def classify_message(message_text_masked: str, history_summary_masked: str | Non
             f"Előzmény-összegzés (opcionális): {history_summary_masked or ''}"
         )
         data = chat_json(CLASSIFY_SYSTEM, user)
-        category = fold_text(str(data.get("fo_kategoria", "")))
+        # A modell visszaadhatja a kategóriát szóközzel ("hibabejelentés szolgáltatáskiesés")
+        # az aláhúzós whitelist-forma helyett — normalizáljuk, hogy ne essen feleslegesen fallbackre.
+        category = fold_text(str(data.get("fo_kategoria", ""))).strip().replace(" ", "_")
         if category not in ALLOWED_CATEGORIES:
             raise ValueError("invalid category")
         confidence = float(data.get("konfidencia", 0.6))
@@ -107,5 +112,6 @@ def classify_message(message_text_masked: str, history_summary_masked: str | Non
             "classify_mode": "llm",
         }
     except Exception:
+        logger.exception("classify_message LLM path failed; falling back to rules")
         rule["classify_mode"] = "rule"
         return rule

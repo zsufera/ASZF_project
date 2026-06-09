@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { DraftVersion, OutputMode } from "../lib/types";
 
 interface DraftEditorProps {
@@ -41,10 +41,16 @@ export function DraftEditor({ draft, versions, outputMode, onModeChange, onSave,
   const [mode, setMode] = useState<"free" | "template">("free");
   const [subject, setSubject] = useState(draft.subject ?? "");
   const [body, setBody] = useState(draft.body_masked ?? "");
-  const [selectedVersion, setSelectedVersion] = useState(versions[versions.length - 1]?.id ?? "");
+  const [selectedVersion, setSelectedVersion] = useState(versions[0]?.id ?? "");
   const [saving, setSaving] = useState(false);
   const [approving, setApproving] = useState(false);
   const [editMode, setEditMode] = useState(false);
+
+  useEffect(() => {
+    setSubject(draft.subject ?? "");
+    setBody(draft.body_masked ?? "");
+    setSelectedVersion(versions[0]?.id ?? "");
+  }, [draft.subject, draft.body_masked, versions]);
 
   const handleSave = async () => {
     setSaving(true);

@@ -8,13 +8,14 @@ import yaml
 
 from agent.state import AgentState
 from backend.classify import classify_message
-from backend.draft import synthesize_answer
+from backend.draft import strip_source_markers, synthesize_answer
 from backend.escalation import decide_escalation, llm_escalation_suggestion, merge_escalation
 from backend.llm import llm_available
 from backend.history import get_history
-from backend.masking import mask_text, unmask_text
+from backend.masking import mask_text, sender_email_key as build_sender_email_key, unmask_text
 from backend.metadata import PROMPT_VERSION, load_manifest_summary
 from backend.policy_map import build_policy_map, load_mandatory_refs
+from backend.query_rewrite import rewrite_query
 from backend.retrieval import retrieve
 from backend.router import get_model_profile
 from backend.verify import verify_draft
@@ -87,7 +88,10 @@ def detect_trigger_hits(text: str) -> list[str]:
 
 def detect_lang_type(state: AgentState) -> AgentState:
     text = _active_text(state).lower()
-    nyelv = "en" if any(hint in text for hint in ENGLISH_HINTS) else "hu"
+    # Egy magyar e-mail is tartalmazhat angol szót ("please", "invoice"); a magyar
+    # ékezetes karakterek jelenléte felülírja az angol jelet (fals pozitív elkerülése).
+    has_hu_accents = any(ch in "áéíóöőúüű" for ch in text)
+    nyelv = "en" if (any(hint in text for hint in ENGLISH_HINTS) and not has_hu_accents) else "hu"
     if any(hint in text for hint in NEM_PANASZ_HINTS):
         tipus = "nem_panasz"
     elif any(hint in text for hint in HATOKORON_KIVULI_HINTS):
@@ -117,12 +121,15 @@ def mask_input(state: AgentState) -> AgentState:
 
 def load_context(state: AgentState) -> AgentState:
     sender = state.get("sender_email")
+    sender_key = state.get("sender_email_key") or (
+        build_sender_email_key(sender) if sender and "@" in sender else None
+    )
     history_summary = state.get("history_summary_masked")
     customer_candidates = list(state.get("customer_candidates") or [])
     payload: dict[str, Any] = {"history_loaded": False, "customer_count": len(customer_candidates)}
 
     if sender and not history_summary:
-        history = get_history(sender)
+        history = get_history(sender, sender_email_key=sender_key)
         history_summary = history.get("summary_masked")
         payload["history_loaded"] = True
         payload["is_repeated"] = history.get("is_repeated", False)
@@ -176,17 +183,23 @@ def priority_triage(state: AgentState) -> AgentState:
 def retrieve_node(state: AgentState) -> AgentState:
     classification = state.get("classification", {})
     category = classification.get("category", "egyeb")
-    query = _active_text(state)
-    if len(query) > 400:
-        query = f"{category} {query[:400]}"
+    # A nyers, beszélt nyelvi üzenet helyett fókuszált, jogi-kulcsszavas keresőkérdés.
+    search_query = rewrite_query(_active_text(state), category)
+    if len(search_query) > 400:
+        search_query = search_query[:400]
     result = retrieve(
-        query=query,
+        query=search_query,
         service_provider=state.get("service_provider"),
         limit=5,
+        category=category,
     )
     return {
         "retrieval": result,
-        "timeline": _append_timeline(state, "retrieve", {"result_count": result.get("result_count", 0)}),
+        "timeline": _append_timeline(state, "retrieve", {
+            "search_query": search_query[:120],
+            "result_count": result.get("result_count", 0),
+            "unresolved_count": len(result.get("unresolved_refs", [])),
+        }),
     }
 
 
@@ -207,8 +220,8 @@ def escalation_node(state: AgentState) -> AgentState:
     policy_map = state.get("policy_map", {})
     text = _active_text(state)
     trigger_hits = detect_trigger_hits(text)
-    if classification.get("is_repeated"):
-        trigger_hits.append("ismetlodo_panasz")
+    # Az ismétlődő panaszt a decide_escalation kezeli (is_repeated → "ismetlod_panasz");
+    # itt NEM duplikáljuk külön elnevezéssel.
     if state.get("lang_type", {}).get("tipus") == "hatokoron_kivuli":
         trigger_hits.append("hatokoron_kivuli")
 
@@ -271,6 +284,7 @@ def draft_node(state: AgentState) -> AgentState:
         output_mode=output_mode,
         policy_map=policy_map,
         actions=actions,
+        input_text_masked=_active_text(state),
     )
 
     return {
@@ -307,10 +321,17 @@ def verify_node(state: AgentState) -> AgentState:
 def prepare_unmask(state: AgentState) -> AgentState:
     draft = state.get("draft", {})
     case_id = state["case_id"]
+    verify = state.get("verify", {})
+    escalation = state.get("escalation", {})
+    ready_for_approval = (
+        not verify.get("warning")
+        and not escalation.get("required")
+        and draft.get("generation_mode") != "insufficient"
+    )
     preview = {
-        "subject_unmasked": unmask_text(case_id, draft.get("subject", "")),
-        "body_unmasked": unmask_text(case_id, draft.get("body_masked", "")),
-        "ready_for_approval": True,
+        "subject_unmasked": strip_source_markers(unmask_text(case_id, draft.get("subject", ""))),
+        "body_unmasked": strip_source_markers(unmask_text(case_id, draft.get("body_masked", ""))),
+        "ready_for_approval": ready_for_approval,
     }
     manifest = load_manifest_summary()
     audit_refs = {
@@ -321,5 +342,5 @@ def prepare_unmask(state: AgentState) -> AgentState:
     return {
         "draft_preview_unmasked": preview,
         "audit_refs": audit_refs,
-        "timeline": _append_timeline(state, "prepare_unmask", {"ready_for_approval": True}),
+        "timeline": _append_timeline(state, "prepare_unmask", {"ready_for_approval": ready_for_approval}),
     }

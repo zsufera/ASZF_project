@@ -8,7 +8,7 @@ from typing import Any
 
 from agent.nodes import HATOKORON_KIVULI_HINTS, detect_trigger_hits
 from backend.classify import classify_message
-from backend.draft import build_draft
+from backend.draft import synthesize_answer
 from backend.escalation import decide_escalation
 from backend.metadata import PROMPT_VERSION, load_manifest_summary
 from backend.policy_map import build_policy_map
@@ -104,18 +104,21 @@ def evaluate_single(payload: dict[str, Any]) -> dict[str, Any]:
     )
 
     actions = [{"tipus": "eszkalacio", "indok": "eval"}] if escalation.get("required") else [{"tipus": "tajekoztatas", "indok": "eval"}]
-    draft = build_draft(
+    draft = synthesize_answer(
         case_id=f"EVAL-{payload.get('email_id', 'unknown')}",
         category=category,
+        channel="email",
         output_mode="hitl",
         policy_map=policy_map,
         actions=actions,
+        input_text_masked=text,
     )
     mandatory_refs = _mandatory_chunk_ids(category) or [str(cid) for cid in draft.get("citations", []) if cid]
     verify = verify_draft(
         draft_body_masked=draft.get("body_masked", ""),
         chunks=chunks,
         mandatory_refs=mandatory_refs,
+        citations=[str(cid) for cid in draft.get("citations", []) if cid],
     )
 
     elapsed_ms = int((time.perf_counter() - started) * 1000)

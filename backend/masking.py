@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import re
 import sqlite3
 from typing import Any
@@ -33,6 +34,18 @@ def _ensure_table(conn: sqlite3.Connection) -> None:
 def _next_token(label: str, counters: dict[str, int]) -> str:
     counters[label] = counters.get(label, 0) + 1
     return f"[MASK_{label.upper()}_{counters[label]}]"
+
+
+def sender_email_key(address: str | None) -> str | None:
+    """Stable non-PII lookup key for same-sender history.
+
+    Mask tokens are intentionally case-local and reusable, so they cannot
+    identify a sender across cases.
+    """
+    normalized = (address or "").strip().lower()
+    if not normalized:
+        return None
+    return "email:" + hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
 def _store_token(case_id: str, token: str, original: str) -> None:
