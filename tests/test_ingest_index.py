@@ -29,6 +29,31 @@ def test_index_chunks_local_mode_deterministic(tmp_path, monkeypatch):
     client.close()
 
 
+def test_index_chunks_removes_stale_points_on_reindex(tmp_path, monkeypatch):
+    monkeypatch.setattr(settings, "qdrant_mode", "local")
+    monkeypatch.setattr(settings, "qdrant_path", str(tmp_path / "qd"))
+    monkeypatch.setattr(settings, "provider", "cloud")
+    monkeypatch.setattr(settings, "openai_api_key", "")
+
+    client = index.make_client()
+    index.index_chunks(
+        [
+            {"chunk_id": "old", "szolgaltato": "ONE", "text": "regi chunk"},
+            {"chunk_id": "keep", "szolgaltato": "ONE", "text": "marado chunk"},
+        ],
+        client=client,
+    )
+
+    index.index_chunks(
+        [{"chunk_id": "keep", "szolgaltato": "ONE", "text": "marado chunk"}],
+        client=client,
+    )
+
+    points, _ = client.scroll(index.DEFAULT_COLLECTION, with_payload=True, limit=10)
+    assert [point.payload["chunk_id"] for point in points] == ["keep"]
+    client.close()
+
+
 def test_point_id_is_stable_for_chunk_id():
     assert index.point_id("c1") == index.point_id("c1")
     assert index.point_id("c1") != index.point_id("c2")

@@ -31,7 +31,11 @@ from backend.retention_service import purge_expired_records
 from backend.workflow import WorkflowError
 from backend.classify import classify_message
 from backend.db import init_db
-from backend.draft import build_draft
+from backend.draft import synthesize_answer
+from backend.api.agent import router as agent_router
+from backend.api.cases import router as cases_router
+from backend.api.copilot import router as copilot_router
+from backend.api.history import router as history_router
 from agent.runner import run_agent
 from backend.acceptance_service import run_acceptance
 from backend.eval_service import export_run, run_eval, set_baseline_from_run
@@ -54,6 +58,11 @@ from security.rbac import RBACError, require_permission
 
 app = FastAPI(title="ASZF QnA Agent API", version="0.4.0")
 POSTAL_PDF_DIR = Path("data/postal_pdfs")
+
+app.include_router(cases_router)
+app.include_router(history_router)
+app.include_router(agent_router)
+app.include_router(copilot_router)
 
 
 class ClassifyRequest(BaseModel):
@@ -82,6 +91,8 @@ class DraftRequest(BaseModel):
     output_mode: str
     policy_map: dict
     actions: list[dict] = Field(default_factory=list)
+    channel: str = "email"
+    input_text_masked: str | None = None
 
 
 class VerifyRequest(BaseModel):
@@ -281,12 +292,14 @@ def policy_map(payload: PolicyMapRequest) -> dict:
 
 @app.post("/draft")
 def draft(payload: DraftRequest) -> dict:
-    result = build_draft(
+    result = synthesize_answer(
         case_id=payload.case_id,
         category=payload.category,
+        channel=payload.channel,
         output_mode=payload.output_mode,
         policy_map=payload.policy_map,
         actions=payload.actions,
+        input_text_masked=payload.input_text_masked,
     )
     return {**response_meta(), **result}
 

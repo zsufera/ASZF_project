@@ -12,7 +12,7 @@ Belső **ügyintézői copilot** telekom ügyfélszolgálatra: ÁSZF-forrásolt 
 - `preprocessing/` — ingest: `manifest`, `parse`, `index.py`, `embedding.py`, `derive_params`, `gen_emails`, `smoke_*`.
 - `frontend/` — **React + TS + Tailwind + Vite** SPA (ez az aktív UI). `src/screens`, `src/components`, `src/lib/{api,types,agentSteps}`, `src/state`.
 - `ui/` — **Streamlit (legacy)**, referencia; a React váltja le.
-- `eval/` — referencia-mentes kiértékelés. `config/` — `settings.py`, `policies.yaml`, `mandatory_refs.yaml`, `disclaimer.yaml`. `tests/` — pytest (`conftest.py` hermetikus). `docs/design-export/` — One design tokenek.
+- `eval/` — referencia-mentes kiértékelés. `config/` — `settings.py`, `policies.yaml`, `mandatory_refs.yaml`, `disclaimer.yaml`. `tests/` — pytest (`conftest.py` hermetikus). `docs/archive/design-export/` — archivált One design tokenek.
 
 ## Futtatás (Windows)
 ```powershell
@@ -49,7 +49,7 @@ cd frontend; npx tsc --noEmit; npm run build
 - Egy **ismert, független** bukó teszt: `test_settings_have_local_qdrant_defaults` (a lokális `.env` `OPENAI_EMBED_DIM=512` miatt) — ez nem a kódunk.
 
 ## Frontend
-- One design tokenek: `docs/design-export/tokens.css` + `tailwind.tokens.js`; Tailwind `one-*` osztályok. Named exportok. `tsc --noEmit` + `npm run build` legyen tiszta.
+- One design tokenek: `docs/archive/design-export/tokens.css` + `tailwind.tokens.js`; Tailwind `one-*` osztályok. Named exportok. `tsc --noEmit` + `npm run build` legyen tiszta.
 
 ## Git
 - **Ne commitolj `main`-re** — dolgozz ágon. Kis, gyakori commitok. Commit-trailer: `Co-Authored-By: Claude ...`.

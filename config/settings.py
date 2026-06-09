@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import os
 
 try:
@@ -12,6 +12,11 @@ except ImportError:  # python-dotenv optional at runtime
     pass
 
 
+def _optional_int_env(name: str) -> int | None:
+    value = os.getenv(name)
+    return int(value) if value else None
+
+
 @dataclass
 class Settings:
     provider: str = os.getenv("PROVIDER", "cloud")
@@ -19,9 +24,7 @@ class Settings:
     qdrant_url: str = os.getenv("QDRANT_URL", "http://localhost:6333")
     qdrant_mode: str = os.getenv("QDRANT_MODE", "local")
     qdrant_path: str = os.getenv("QDRANT_PATH", "data/qdrant_local")
-    openai_embed_dim: int | None = (
-        int(os.environ["OPENAI_EMBED_DIM"]) if os.getenv("OPENAI_EMBED_DIM") else None
-    )
+    openai_embed_dim: int | None = field(default_factory=lambda: _optional_int_env("OPENAI_EMBED_DIM"))
     ollama_url: str = os.getenv("OLLAMA_URL", "http://localhost:11434")
     confidence_threshold: float = float(os.getenv("CONFIDENCE_THRESHOLD", "0.75"))
     sla_fallback_days: int = int(os.getenv("SLA_FALLBACK_DAYS", "30"))

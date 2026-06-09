@@ -73,3 +73,24 @@ def test_openai_partial_cache_only_embeds_missing(monkeypatch, tmp_path):
     emb.embed_documents(["alpha", "gamma"])
     # First call embedded ["alpha"], second only ["gamma"].
     assert sent == [["alpha"], ["gamma"]]
+
+
+def test_openai_embedding_batches_respect_token_budget(monkeypatch, tmp_path):
+    monkeypatch.setattr(settings, "provider", "cloud")
+    monkeypatch.setattr(settings, "openai_api_key", "sk-test")
+    monkeypatch.setattr(settings, "openai_embed_dim", 4)
+    monkeypatch.setattr(emb, "EMBED_CACHE_PATH", tmp_path / "cache.db")
+    monkeypatch.setattr(emb, "OPENAI_BATCH_SIZE", 128)
+    monkeypatch.setattr(emb, "OPENAI_BATCH_TOKEN_LIMIT", 10)
+
+    sent = []
+
+    def fake_embed(texts):
+        sent.append(list(texts))
+        return [[0.25, 0.25, 0.25, 0.25] for _ in texts]
+
+    monkeypatch.setattr(emb, "_openai_embed", fake_embed)
+
+    emb.embed_documents(["alpha " * 6, "beta " * 6, "gamma"])
+
+    assert sent == [["alpha " * 6], ["beta " * 6, "gamma"]]

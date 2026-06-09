@@ -1,4 +1,4 @@
-const one = require("../docs/design-export/tailwind.tokens.js");
+const one = require("../docs/archive/design-export/tailwind.tokens.js");
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {

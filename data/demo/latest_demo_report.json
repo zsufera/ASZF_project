@@ -1,0 +1,163 @@
+{
+  "scenarios_run": 4,
+  "scenarios_passed": 4,
+  "all_passed": true,
+  "results": [
+    {
+      "scenario_id": "szamlazas_e2e",
+      "title": "Számlázási panasz végpontig",
+      "case_id": "DEMO-szamlazas_e2e",
+      "passed": true,
+      "failures": [],
+      "duration_ms": 137869,
+      "classification": {
+        "category": "szamlazas",
+        "subtype": "téves tétel - nem rendelt mobilnet opció",
+        "confidence": 0.95,
+        "candidates": [
+          {
+            "category": "szamlazas",
+            "confidence": 0.95
+          },
+          {
+            "category": "egyeb",
+            "confidence": 0.05
+          }
+        ],
+        "is_repeated": false,
+        "classify_mode": "llm"
+      },
+      "escalation": {
+        "required": true,
+        "reasons": [
+          "A rendelkezésre álló szabályzatforrások nincsenek csatolva/hiányoznak, ezért nincs fedezet a döntéshez a források alapján — kérje supervisor/eszkalációt.",
+          "Vitatható tétel a számlán: 4 990 Ft mobilnet opció (ügyfél állítása) — eszkaláció javasolt a számlapanaszok kezeléséhez.",
+          "hianyzo_kotelezo_hivatkozas",
+          "llm_javaslat"
+        ],
+        "llm_reasoning": "Vitatható tétel a számlán: 4 990 Ft mobilnet opció (ügyfél állítása) — eszkaláció javasolt a számlapanaszok kezeléséhez.; A rendelkezésre álló szabályzatforrások nincsenek csatolva/hiányoznak, ezért nincs fedezet a döntéshez a források alapján — kérje supervisor/eszkalációt.",
+        "escalation_mode": "rule+llm"
+      },
+      "draft_format": "email",
+      "chunk_count": 6
+    },
+    {
+      "scenario_id": "egyedi_szerzodes_eszkalacio",
+      "title": "Egyedi szerződés gyanú → eszkaláció",
+      "case_id": "DEMO-egyedi_szerzodes_eszkalacio",
+      "passed": true,
+      "failures": [],
+      "duration_ms": 91907,
+      "classification": {
+        "category": "szerzodesfelmondas_modositas",
+        "subtype": "kedvezményes szerződés érvényessége / ÁSZF alkalmazása",
+        "confidence": 0.9,
+        "candidates": [
+          {
+            "category": "szerzodesfelmondas_modositas",
+            "confidence": 0.9
+          },
+          {
+            "category": "egyeb",
+            "confidence": 0.35
+          },
+          {
+            "category": "szamlazas",
+            "confidence": 0.1
+          }
+        ],
+        "is_repeated": false,
+        "classify_mode": "llm"
+      },
+      "escalation": {
+        "required": true,
+        "reasons": [
+          "Belső eszkalációs triggerek: egyedi szerződés és jogi kérés esetén supervisor bevonása szükséges. Forrás chunk_id: policy_triggers_1",
+          "Egyedi szerződés gyanúja (ügyfél megadta: '2023-ban egyedi, aláírt kedvezményes szerződést kötöttem a céges flottával'). Forrás chunk_id: msg_1",
+          "Jogi egyeztetés/írásbeli állásfoglalás kérése — jogi/hatósági jellegű kérés, eszkaláció indokolt. Forrás chunk_id: msg_1",
+          "egyedi_szerzodes_gyanu",
+          "hianyzo_kotelezo_hivatkozas",
+          "llm_javaslat"
+        ],
+        "llm_reasoning": "Egyedi szerződés gyanúja (ügyfél megadta: '2023-ban egyedi, aláírt kedvezményes szerződést kötöttem a céges flottával'). Forrás chunk_id: msg_1; Jogi egyeztetés/írásbeli állásfoglalás kérése — jogi/hatósági jellegű kérés, eszkaláció indokolt. Forrás chunk_id: msg_1; Belső eszkalációs triggerek: egyedi szerződés és jogi kérés esetén supervisor bevonása szükséges. Forrás chunk_id: policy_triggers_1",
+        "escalation_mode": "rule+llm"
+      },
+      "draft_format": "email",
+      "chunk_count": 5
+    },
+    {
+      "scenario_id": "sla_lejarat_eszkalacio",
+      "title": "SLA-lejárat → eszkaláció",
+      "case_id": "DEMO-sla_lejarat_eszkalacio",
+      "passed": true,
+      "failures": [],
+      "duration_ms": 120155,
+      "classification": {
+        "category": "szamlazas",
+        "subtype": null,
+        "confidence": 0.0,
+        "candidates": [
+          {
+            "category": "szamlazas",
+            "confidence": 0.0
+          },
+          {
+            "category": "egyeb",
+            "confidence": 0.0
+          }
+        ],
+        "is_repeated": false,
+        "classify_mode": "llm"
+      },
+      "escalation": {
+        "required": true,
+        "reasons": [
+          "Alacsony konfidencia: a beérkezett kérdés konfidenciája 0.0, ezért önálló, biztos döntés nem hozható; javasolt supervisor bevonása (chunk_id: NONE_PROVIDED).",
+          "Nincs fedezet a megadott forrásokban az állítás ellenőrzéséhez: nem található forráschunk, amely igazolná vagy cáfolná a májusi számlán szereplő 4 990 Ft-os mobilnet opció jogosultságát (chunk_id: NONE_PROVIDED).",
+          "Nincs forrás a számlajavítási/jóváírási eljárás részleteire: a szükséges számlakezelési lépések és jogosultsági feltételek nincsenek a rendelkezésre álló forrásokban, ezért eszkaláció a számlázási/supervisor csapathoz szükséges (chunk_id: NONE_PROVIDED).",
+          "Vitás összeg: az ügyfél reklamál egy konkrét, 4 990 Ft-os tételezést — vitatott összeg esetén eszkaláció indokolt a további vizsgálathoz és jóváírási döntéshez (chunk_id: NONE_PROVIDED).",
+          "alacsony_konfidencia",
+          "llm_javaslat",
+          "sla_lejart"
+        ],
+        "llm_reasoning": "Nincs fedezet a megadott forrásokban az állítás ellenőrzéséhez: nem található forráschunk, amely igazolná vagy cáfolná a májusi számlán szereplő 4 990 Ft-os mobilnet opció jogosultságát (chunk_id: NONE_PROVIDED).; Vitás összeg: az ügyfél reklamál egy konkrét, 4 990 Ft-os tételezést — vitatott összeg esetén eszkaláció indokolt a további vizsgálathoz és jóváírási döntéshez (chunk_id: NONE_PROVIDED).; Alacsony konfidencia: a beérkezett kérdés konfidenciája 0.0, ezért önálló, biztos döntés nem hozható; javasolt supervisor bevonása (chunk_id: NONE_PROVIDED).; Nincs forrás a számlajavítási/jóváírási eljárás részleteire: a szükséges számlakezelési lépések és jogosultsági feltételek nincsenek a rendelkezésre álló forrásokban, ezért eszkaláció a számlázási/supervisor csapathoz szükséges (chunk_id: NONE_PROVIDED).",
+        "escalation_mode": "rule+llm"
+      },
+      "draft_format": "email",
+      "chunk_count": 8
+    },
+    {
+      "scenario_id": "phone_copilot",
+      "title": "Telefon copilot beszédpontok",
+      "case_id": "DEMO-phone_copilot",
+      "passed": true,
+      "failures": [],
+      "duration_ms": 85485,
+      "classification": {
+        "category": "szamlazas",
+        "subtype": "számlázási_kifogás (forrás: msg_0)",
+        "confidence": 0.95,
+        "candidates": [
+          {
+            "category": "szamlazas",
+            "confidence": 0.95
+          }
+        ],
+        "is_repeated": false,
+        "classify_mode": "llm"
+      },
+      "escalation": {
+        "required": true,
+        "reasons": [
+          "A beérkezett üzenet általános számlázási kifogásra utal; mivel a kérdés a megadott forrásokból nem válaszolható meg egyértelműen, javasolt supervisor bevonása a további vizsgálathoz és ügyintézéshez (trigger: a kérdés a forrásokból nem válaszolható meg) (chunk_id: none_provided)",
+          "Nincs rendelkezésre álló forrásfedezet a konkrét számlázási válasz megadásához; nem kaptunk szabályzati forráschunkokat a hivatkozáshoz (chunk_id: none_provided).",
+          "llm_javaslat"
+        ],
+        "llm_reasoning": "Nincs rendelkezésre álló forrásfedezet a konkrét számlázási válasz megadásához; nem kaptunk szabályzati forráschunkokat a hivatkozáshoz (chunk_id: none_provided).; A beérkezett üzenet általános számlázási kifogásra utal; mivel a kérdés a megadott forrásokból nem válaszolható meg egyértelműen, javasolt supervisor bevonása a további vizsgálathoz és ügyintézéshez (trigger: a kérdés a forrásokból nem válaszolható meg) (chunk_id: none_provided)",
+        "escalation_mode": "rule+llm"
+      },
+      "draft_format": "copilot",
+      "chunk_count": 8
+    }
+  ]
+}

@@ -10,6 +10,7 @@ from config.settings import settings
 DETERMINISTIC_SIZE = 64
 DEFAULT_OPENAI_DIM = 3072
 OPENAI_BATCH_SIZE = 128
+OPENAI_BATCH_TOKEN_LIMIT = 280_000
 EMBED_CACHE_PATH = Path("data/processed/embedding_cache.db")
 
 
@@ -67,6 +68,41 @@ def _openai_embed(texts: list[str]) -> list[list[float]]:
     return [item.embedding for item in response.data]
 
 
+def _embedding_token_count(text: str) -> int:
+    try:
+        import tiktoken
+
+        return len(tiktoken.get_encoding("cl100k_base").encode(text))
+    except Exception:
+        return max(1, len(text) // 4)
+
+
+def _openai_batch_indices(texts: list[str], indices: list[int]) -> list[list[int]]:
+    batches: list[list[int]] = []
+    current: list[int] = []
+    current_tokens = 0
+
+    for idx in indices:
+        token_count = max(1, _embedding_token_count(texts[idx]))
+        if current and (
+            len(current) >= OPENAI_BATCH_SIZE
+            or current_tokens + token_count > OPENAI_BATCH_TOKEN_LIMIT
+        ):
+            batches.append(current)
+            current = []
+            current_tokens = 0
+        current.append(idx)
+        current_tokens += token_count
+        if len(current) >= OPENAI_BATCH_SIZE:
+            batches.append(current)
+            current = []
+            current_tokens = 0
+
+    if current:
+        batches.append(current)
+    return batches
+
+
 def embed_documents(texts: list[str], use_cache: bool = True) -> list[list[float]]:
     if not texts:
         return []
@@ -88,8 +124,7 @@ def embed_documents(texts: list[str], use_cache: bool = True) -> list[list[float
                 results[idx] = _unpack(row[0])
     missing = [idx for idx, value in enumerate(results) if value is None]
 
-    for start in range(0, len(missing), OPENAI_BATCH_SIZE):
-        batch_idx = missing[start : start + OPENAI_BATCH_SIZE]
+    for batch_idx in _openai_batch_indices(texts, missing):
         vectors = _openai_embed([texts[i] for i in batch_idx])
         for i, vector in zip(batch_idx, vectors, strict=True):
             results[i] = list(vector)

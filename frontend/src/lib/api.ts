@@ -1,6 +1,6 @@
 import type {
   User, InboxItem, Case, HistoryItem, CustomerCandidateItem,
-  EvalResult, EscalatedItem, SupervisorStats, OcrResult,
+  EvalResult, EscalatedItem, SupervisorStats, OcrResult, CopilotChatResponse,
 } from "./types";
 
 const BASE = (import.meta.env.VITE_BACKEND_URL ?? "/api") as string;
@@ -75,6 +75,9 @@ export const api = {
 
   agentRun: (body: Record<string, unknown>) =>
     req<{ timeline: unknown[] }>("POST", "/agent/run", body),
+
+  copilotChat: (body: { session_id: string; message: string; history: { role: string; content: string }[]; customer_facing?: boolean }) =>
+    req<CopilotChatResponse>("POST", "/copilot/chat", body),
 
   runEval: (body: { limit: number; category?: string; service_provider?: string; include_edge: boolean }) =>
     req<EvalResult>("POST", "/eval/run", body),

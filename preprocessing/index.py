@@ -47,11 +47,24 @@ def tokenize(text: str) -> list[str]:
 
 def sparse_score(query: str, text: str) -> float:
     query_tokens = set(tokenize(query))
+    return sparse_score_tokens(query_tokens, text)
+
+
+def sparse_score_tokens(query_tokens: set[str], text: str) -> float:
     if not query_tokens:
         return 0.0
     text_tokens = set(tokenize(text))
     overlap = query_tokens & text_tokens
     return len(overlap) / len(query_tokens)
+
+
+def _chunk_token_set(chunk: dict[str, Any]) -> set[str]:
+    cached = chunk.get("_token_set_cache")
+    if isinstance(cached, set):
+        return cached
+    tokens = set(tokenize(chunk.get("text", "")))
+    chunk["_token_set_cache"] = tokens
+    return tokens
 
 
 def quote_text(text: str, max_chars: int = 500) -> str:
@@ -66,13 +79,17 @@ def search_chunks(
     dok_tipus: str | None = None,
     limit: int = 5,
 ) -> list[dict[str, Any]]:
+    query_tokens = set(tokenize(query))
     scored: list[tuple[float, dict[str, Any]]] = []
     for chunk in chunks:
         if service_provider and chunk.get("szolgaltato") != service_provider:
             continue
         if dok_tipus and chunk.get("dok_tipus") != dok_tipus:
             continue
-        score = sparse_score(query, chunk.get("text", ""))
+        if not query_tokens:
+            score = 0.0
+        else:
+            score = len(query_tokens & _chunk_token_set(chunk)) / len(query_tokens)
         if score <= 0:
             continue
         scored.append((score, chunk))
@@ -163,6 +180,16 @@ def ensure_collection(
     )
 
 
+def clear_collection_points(
+    client: QdrantClient,
+    collection_name: str = DEFAULT_COLLECTION,
+) -> None:
+    client.delete(
+        collection_name=collection_name,
+        points_selector=models.FilterSelector(filter=models.Filter(must=[])),
+    )
+
+
 def index_chunks(
     chunks: list[dict[str, Any]],
     collection_name: str = DEFAULT_COLLECTION,
@@ -175,9 +202,10 @@ def index_chunks(
     client = client or make_client()
     try:
         size = vector_size()
-        ensure_collection(client, collection_name, size)
         texts = [chunk.get("text", "") for chunk in chunks]
         vectors = embed_documents(texts, use_cache=not force)
+        ensure_collection(client, collection_name, size)
+        clear_collection_points(client, collection_name)
         points = []
         for chunk, vector in zip(chunks, vectors, strict=True):
             payload = dict(chunk)

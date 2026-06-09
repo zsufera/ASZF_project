@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
+import warnings
 from pathlib import Path
 from typing import Any
 
@@ -296,6 +297,11 @@ def build_draft(
     actions: list[dict[str, Any]],
     disclaimer_text: str | None = None,
 ) -> dict[str, Any]:
+    warnings.warn(
+        "build_draft() is deprecated; active answer generation uses synthesize_answer().",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     policy_items = policy_map.get("policy_items", [])
     if not llm_available() or not policy_items:
         result = build_draft_template(case_id, category, output_mode, policy_map, actions, disclaimer_text)

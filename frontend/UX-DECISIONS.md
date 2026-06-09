@@ -1,9 +1,9 @@
 # React UI — UX-döntések és eltérések a handofftól
 
-Ez a React frontend a [`docs/design-export/design-handoff.md`](../docs/design-export/design-handoff.md) szerint épül, az alábbi, tapasztalat-alapú finomításokkal. Cél: a Streamlit-korlátok nélkül logikusabb, gyorsabb felület — a megbeszélt arculat és IA megtartásával.
+Ez a React frontend az archivált [`docs/archive/design-export/design-handoff.md`](../docs/archive/design-export/design-handoff.md) alapján épül, az alábbi, tapasztalat-alapú finomításokkal. Cél: a Streamlit-korlátok nélkül logikusabb, gyorsabb felület — a megbeszélt arculat és IA megtartásával.
 
 ## Megtartva változatlanul
-- One arculat (türkiz/fekete/fehér), tokenek a `docs/design-export/tokens.css` / `tailwind.tokens.js`-ből.
+- One arculat (türkiz/fekete/fehér), tokenek a `docs/archive/design-export/tokens.css` / `tailwind.tokens.js`-ből.
 - „Munkaállomás" IA: ikon-sáv + fejléc + főterület.
 - Háromhasábos ügy-nézet (kontextus / draft / agent-idővonal).
 - Postai levél önálló nav-pont; Copilot = Chat + Telefon.

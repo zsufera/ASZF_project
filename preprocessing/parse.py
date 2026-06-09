@@ -20,7 +20,12 @@ DEFAULT_CHUNKS_OUTPUT = Path("data/processed/chunks.jsonl")
 MAX_CHUNK_TOKENS = 7_500
 
 SECTION_PATTERN = re.compile(
-    r"(?m)^\s*(?P<section>(?:\d+(?:\.\d+){0,4}|[IVXLCDM]+)\.?\s+.+|(?:\d+\.\s*)?[§]\s*\d+.*)$"
+    r"(?m)^[ \t]*(?P<section>"
+    r"(?:\d+\.\s+[^\r\n]+)"
+    r"|(?:\d+\.\d+(?:\.\d+){0,4}\.?\s+[^\r\n]+)"
+    r"|(?:[IVXLCDM]+\.\s+[^\r\n]+)"
+    r"|(?:(?:\d+\.\s*)?[§]\s*\d+[^\r\n]*)"
+    r")[ \t]*$"
 )
 CROSS_REF_PATTERN = re.compile(
     r"(?i)(?:\d+(?:\.\d+){1,4}\s*(?:pont|bekezdés|bekezdes)|\d+\s*§|[IVXLCDM]+\.\s*(?:fejezet|pont))"
@@ -97,11 +102,50 @@ def extract_section_title(text: str) -> str | None:
 def extract_paragraph_number(section_title: str | None) -> str | None:
     if not section_title:
         return None
-    match = re.match(r"^\s*(?P<num>\d+(?:\.\d+){0,4}|§\s*\d+|\d+\s*§)", section_title)
+    match = re.match(r"^\s*(?P<num>\d+(?:\.\d+){0,5}|§\s*\d+|\d+\s*§)", section_title)
     return match.group("num") if match else None
 
 
+def _looks_like_table_page(page_text: str) -> bool:
+    lines = [line.strip() for line in page_text.splitlines() if line.strip()]
+    if len(lines) < 8:
+        return False
+    folded_lines = [line.casefold() for line in lines]
+    table_terms = (
+        "sorszám",
+        "sorszam",
+        "csatorna",
+        "díj",
+        "dij",
+        "ár",
+        "ar",
+        "nettó",
+        "netto",
+        "bruttó",
+        "brutto",
+        "csomag",
+        "program",
+        "jelleg",
+        "felbontás",
+        "felbontas",
+    )
+    has_table_vocabulary = any(
+        term in line for line in folded_lines for term in table_terms
+    )
+    if not has_table_vocabulary:
+        return False
+
+    numeric_only = sum(bool(re.fullmatch(r"\d{1,4}\.?", line)) for line in lines)
+    short_lines = sum(len(line) <= 32 for line in lines)
+    return numeric_only >= 5 and (
+        numeric_only / len(lines) >= 0.18 or short_lines / len(lines) >= 0.75
+    )
+
+
 def split_page_to_sections(page_text: str) -> list[tuple[str | None, str]]:
+    if _looks_like_table_page(page_text):
+        return [(None, page_text.strip())] if page_text.strip() else []
+
     matches = list(SECTION_PATTERN.finditer(page_text))
     if not matches:
         return [(None, page_text.strip())] if page_text.strip() else []

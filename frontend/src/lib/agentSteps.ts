@@ -65,6 +65,36 @@ export const STEP_META: Record<string, StepMeta> = {
     explain: "Visszafejti a maszkolt adatokat a jóváhagyáshoz.",
     fields: ["ready_for_approval"],
   },
+  knowledge_search: {
+    label: "Tudáskereső (ÁSZF)",
+    explain: "Megkeresi a kérdéshez kapcsolódó ÁSZF-szakaszokat, és forrásjelölőkkel visszaadja őket a Copilotnak.",
+    fields: ["search_query", "result_count"],
+  },
+  customer_context: {
+    label: "Ügyfélkontextus",
+    explain: "Betölti az elérhető előzményeket és a lehetséges ügyfél-találatokat.",
+    fields: ["history_loaded", "customer_count"],
+  },
+  escalation_advice: {
+    label: "Eszkalációs javaslat",
+    explain: "Megvizsgálja, kell-e supervisor-eszkaláció, és megadja az okokat.",
+    fields: ["required", "reasons"],
+  },
+  draft_reply: {
+    label: "Válaszfogalmazó",
+    explain: "Forrásokra hivatkozó válaszjavaslatot fogalmaz a megtalált szabályzati elemek alapján.",
+    fields: ["format", "generation_mode", "source_count"],
+  },
+  verify_grounding: {
+    label: "Forrásellenőrző",
+    explain: "Ellenőrzi, hogy a válasz állításai a hivatkozott forrásokon alapulnak-e.",
+    fields: ["ungrounded_count"],
+  },
+  iteration_cap: {
+    label: "Orchestrator cikluskorlát",
+    explain: "A Copilot orchestrator elérte a megengedett lépésszámot.",
+    fields: ["iterations"],
+  },
 };
 
 export const FIELD_LABELS: Record<string, string> = {
@@ -79,6 +109,7 @@ export const FIELD_LABELS: Record<string, string> = {
   subtype: "Altípus",
   value: "Érték",
   reason: "Indok",
+  search_query: "Keresőkérdés",
   result_count: "Találatok",
   unresolved_count: "Be nem húzható hivatkozás",
   item_count: "Szabályzati elemek",
@@ -91,12 +122,17 @@ export const FIELD_LABELS: Record<string, string> = {
   generation_mode: "Generálás módja",
   ungrounded_count: "Nem megalapozott állítások",
   ready_for_approval: "Jóváhagyásra kész",
+  iterations: "Iterációk",
 };
 
 // A pipeline szakaszai sorrendben (a folyamat-jelzőhöz is használható).
 export const PIPELINE_STEPS: string[] = [
   "detect_lang_type", "mask_input", "load_context", "classify", "priority_triage",
   "retrieve", "policy_map", "escalation", "suggest_actions", "draft", "verify", "prepare_unmask",
+];
+
+export const COPILOT_STEPS: string[] = [
+  "classify", "knowledge_search", "escalation_advice", "draft_reply", "verify_grounding",
 ];
 
 export function stepLabel(step: string): string {

@@ -5,10 +5,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_case_workstation_uses_stable_sender_key_for_history() -> None:
-    source = (ROOT / "frontend/src/screens/CaseWorkstation.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend/src/hooks/useCaseData.ts").read_text(encoding="utf-8")
 
-    assert "getHistory(c.sender_email_masked)" not in source
-    assert "getHistory(c.sender_email_masked, c.sender_email_key)" in source
+    assert "getHistory(currentCase.sender_email_masked)" not in source
+    assert "getHistory(currentCase.sender_email_masked, currentCase.sender_email_key)" in source
 
 
 def test_case_type_exposes_sender_email_key() -> None:
@@ -41,7 +41,7 @@ def test_frontend_generation_mode_accepts_template_fallback() -> None:
 
 
 def test_case_header_uses_stable_sender_display_not_reusable_mask_token() -> None:
-    source = (ROOT / "frontend/src/screens/CaseWorkstation.tsx").read_text(encoding="utf-8")
+    source = (ROOT / "frontend/src/components/case/CaseHeader.tsx").read_text(encoding="utf-8")
 
     assert "{caseData.sender_email_masked}" not in source
     assert "{caseData.sender_email_display}" in source

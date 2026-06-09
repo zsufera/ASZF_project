@@ -1,7 +1,8 @@
 from config.settings import Settings
 
 
-def test_settings_have_local_qdrant_defaults():
+def test_settings_have_local_qdrant_defaults(monkeypatch):
+    monkeypatch.delenv("OPENAI_EMBED_DIM", raising=False)
     s = Settings()
     assert s.qdrant_mode == "local"
     assert s.qdrant_path == "data/qdrant_local"

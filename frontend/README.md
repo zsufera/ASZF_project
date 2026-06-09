@@ -1,6 +1,6 @@
 # ÁSZF Copilot — React Frontend
 
-React SPA replacing the Streamlit `ui/` for the ÁSZF Q&A Copilot (One Magyarország).
+React SPA replacing the legacy Streamlit `legacy/ui/` for the ASZF Q&A Copilot.
 
 ## Requirements
 
@@ -38,7 +38,7 @@ VITE_BACKEND_URL=http://127.0.0.1:8000
 
 ## Relation to Streamlit UI
 
-This SPA replaces `ui/` (Streamlit). The FastAPI backend is unchanged — all endpoints are the same. To run only the new frontend:
+This SPA replaces `legacy/ui/` (Streamlit). The FastAPI backend is unchanged — all endpoints are the same. To run only the new frontend:
 
 1. Start the backend: `uvicorn backend.main:app --reload`
 2. Start the frontend dev server: `cd frontend && npm run dev`
