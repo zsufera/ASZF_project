@@ -234,3 +234,19 @@ def test_retrieve_node_timeline_includes_unresolved_count(monkeypatch):
     state = {"case_id": "c", "classification": {"category": "szamlazas"}, "input_text": "x", "timeline": []}
     out = nodes.retrieve_node(state)
     assert out["timeline"][-1]["output"]["unresolved_count"] == 1
+
+
+def test_retrieve_node_uses_rewritten_query(monkeypatch):
+    captured = {}
+
+    def fake_retrieve(**kwargs):
+        captured.update(kwargs)
+        return {"chunks": [], "retrieval_mode": "x", "result_count": 0, "unresolved_refs": []}
+
+    monkeypatch.setattr(nodes, "retrieve", fake_retrieve)
+    monkeypatch.setattr(nodes, "rewrite_query", lambda text, category: "FOKUSZALT KERESOKERDES")
+    state = {"case_id": "c", "classification": {"category": "szerzodesfelmondas_modositas"},
+             "input_text": "beszélt nyelvi üzenet", "timeline": []}
+    out = nodes.retrieve_node(state)
+    assert captured["query"] == "FOKUSZALT KERESOKERDES"
+    assert out["timeline"][-1]["output"]["search_query"] == "FOKUSZALT KERESOKERDES"

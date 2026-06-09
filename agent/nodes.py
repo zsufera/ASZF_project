@@ -15,6 +15,7 @@ from backend.history import get_history
 from backend.masking import mask_text, sender_email_key as build_sender_email_key, unmask_text
 from backend.metadata import PROMPT_VERSION, load_manifest_summary
 from backend.policy_map import build_policy_map, load_mandatory_refs
+from backend.query_rewrite import rewrite_query
 from backend.retrieval import retrieve
 from backend.router import get_model_profile
 from backend.verify import verify_draft
@@ -182,11 +183,12 @@ def priority_triage(state: AgentState) -> AgentState:
 def retrieve_node(state: AgentState) -> AgentState:
     classification = state.get("classification", {})
     category = classification.get("category", "egyeb")
-    query = _active_text(state)
-    if len(query) > 400:
-        query = f"{category} {query[:400]}"
+    # A nyers, beszélt nyelvi üzenet helyett fókuszált, jogi-kulcsszavas keresőkérdés.
+    search_query = rewrite_query(_active_text(state), category)
+    if len(search_query) > 400:
+        search_query = search_query[:400]
     result = retrieve(
-        query=query,
+        query=search_query,
         service_provider=state.get("service_provider"),
         limit=5,
         category=category,
@@ -194,6 +196,7 @@ def retrieve_node(state: AgentState) -> AgentState:
     return {
         "retrieval": result,
         "timeline": _append_timeline(state, "retrieve", {
+            "search_query": search_query[:120],
             "result_count": result.get("result_count", 0),
             "unresolved_count": len(result.get("unresolved_refs", [])),
         }),

@@ -32,8 +32,8 @@ export const STEP_META: Record<string, StepMeta> = {
   },
   retrieve: {
     label: "ÁSZF-források keresése",
-    explain: "Megkeresi a kérdéshez kapcsolódó ÁSZF-szakaszokat, és behúzza a hivatkozott szakaszokat.",
-    fields: ["result_count", "unresolved_count"],
+    explain: "Fókuszált keresőkérdést készít az üzenetből, megkeresi a kapcsolódó ÁSZF-szakaszokat, és behúzza a hivatkozott szakaszokat.",
+    fields: ["search_query", "result_count", "unresolved_count"],
   },
   policy_map: {
     label: "Szabályzati megfeleltetés",
