@@ -16,6 +16,8 @@ interface Message {
   generationMode?: GenerationMode;
 }
 
+type CopilotDraftMeta = { generation_mode?: GenerationMode };
+
 const STREAMING_DELAY = 40;
 
 function useStreamText(full: string, trigger: number) {
@@ -37,7 +39,7 @@ function useStreamText(full: string, trigger: number) {
 
 export function Copilot() {
   const navigate = useNavigate();
-  const { user, outputMode } = useSession();
+  const { user } = useSession();
   const { show } = useToast();
   const [tab, setTab] = useState<"chat" | "telefon">("chat");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -66,15 +68,14 @@ export function Copilot() {
     setInput("");
     setLoading(true);
     try {
-      const res = await api.agentRun({
-        case_id: sessionCaseId,
-        channel: "chat",
-        input_text: text,
-        output_mode: outputMode,
-      }) as { draft?: { body_masked?: string; sources?: SourceRef[]; generation_mode?: GenerationMode } };
+      const res = await api.copilotChat({
+        session_id: sessionCaseId,
+        message: text,
+        history: messages.map((m) => ({ role: m.role, content: m.content })),
+      });
 
-      const body = res.draft?.body_masked ?? "Nincs válasz.";
-      const sources = res.draft?.sources ?? [];
+      const body = res.reply ?? "Nincs válasz.";
+      const sources = res.sources ?? [];
       const generationMode = res.draft?.generation_mode;
       setLastAssistantFull(body);
       setStreamTrigger((n) => n + 1);

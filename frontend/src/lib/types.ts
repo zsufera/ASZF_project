@@ -57,6 +57,7 @@ export type GenerationMode = "llm" | "insufficient" | "template";
 export interface TimelineStep {
   step: string;
   output: Record<string, unknown>;
+  summary?: string;
 }
 
 export interface EscalationState {
@@ -155,4 +156,12 @@ export interface OcrResult {
   ocr_text_masked: string;
   ocr_confidence: number;
   low_conf_spans: Array<{ start: number; end: number }>;
+}
+
+export interface CopilotChatResponse {
+  reply: string;
+  sources?: SourceRef[];
+  draft?: { generation_mode?: GenerationMode } | null;
+  timeline: TimelineStep[];
+  orchestrator_mode: "llm" | "fallback";
 }

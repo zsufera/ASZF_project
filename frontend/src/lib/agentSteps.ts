@@ -65,6 +65,36 @@ export const STEP_META: Record<string, StepMeta> = {
     explain: "Visszafejti a maszkolt adatokat a jóváhagyáshoz.",
     fields: ["ready_for_approval"],
   },
+  knowledge_search: {
+    label: "ÁSZF-források keresése",
+    explain: "Megkeresi a kérdéshez kapcsolódó ÁSZF-szakaszokat és forrásjelölőkkel visszaadja.",
+    fields: ["search_query", "result_count"],
+  },
+  customer_context: {
+    label: "Ügyfél-kontextus",
+    explain: "Betölti a feladó korábbi ügyeit és a lehetséges ügyfél-találatokat.",
+    fields: ["history_loaded", "customer_count"],
+  },
+  escalation_advice: {
+    label: "Eszkalációs tanácsadás",
+    explain: "Eldönti, kell-e supervisor-eszkaláció, és megadja az okokat.",
+    fields: ["required", "reasons"],
+  },
+  draft_reply: {
+    label: "Válasz-draft",
+    explain: "Forrásokra hivatkozó válaszjavaslatot fogalmaz.",
+    fields: ["format", "generation_mode", "source_count"],
+  },
+  verify_grounding: {
+    label: "Megalapozottság ellenőrzése",
+    explain: "Ellenőrzi, hogy a draft állításai a forrásokon alapulnak-e.",
+    fields: ["ungrounded_count"],
+  },
+  iteration_cap: {
+    label: "Ciklus-korlát",
+    explain: "Az orchestrator elérte a megengedett lépésszámot.",
+    fields: ["iterations"],
+  },
 };
 
 export const FIELD_LABELS: Record<string, string> = {
@@ -79,6 +109,7 @@ export const FIELD_LABELS: Record<string, string> = {
   subtype: "Altípus",
   value: "Érték",
   reason: "Indok",
+  search_query: "Keresőkérdés",
   result_count: "Találatok",
   unresolved_count: "Be nem húzható hivatkozás",
   item_count: "Szabályzati elemek",
@@ -91,6 +122,7 @@ export const FIELD_LABELS: Record<string, string> = {
   generation_mode: "Generálás módja",
   ungrounded_count: "Nem megalapozott állítások",
   ready_for_approval: "Jóváhagyásra kész",
+  iterations: "Iterációk",
 };
 
 // A pipeline szakaszai sorrendben (a folyamat-jelzőhöz is használható).
