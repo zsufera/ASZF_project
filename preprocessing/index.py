@@ -47,11 +47,24 @@ def tokenize(text: str) -> list[str]:
 
 def sparse_score(query: str, text: str) -> float:
     query_tokens = set(tokenize(query))
+    return sparse_score_tokens(query_tokens, text)
+
+
+def sparse_score_tokens(query_tokens: set[str], text: str) -> float:
     if not query_tokens:
         return 0.0
     text_tokens = set(tokenize(text))
     overlap = query_tokens & text_tokens
     return len(overlap) / len(query_tokens)
+
+
+def _chunk_token_set(chunk: dict[str, Any]) -> set[str]:
+    cached = chunk.get("_token_set_cache")
+    if isinstance(cached, set):
+        return cached
+    tokens = set(tokenize(chunk.get("text", "")))
+    chunk["_token_set_cache"] = tokens
+    return tokens
 
 
 def quote_text(text: str, max_chars: int = 500) -> str:
@@ -66,13 +79,17 @@ def search_chunks(
     dok_tipus: str | None = None,
     limit: int = 5,
 ) -> list[dict[str, Any]]:
+    query_tokens = set(tokenize(query))
     scored: list[tuple[float, dict[str, Any]]] = []
     for chunk in chunks:
         if service_provider and chunk.get("szolgaltato") != service_provider:
             continue
         if dok_tipus and chunk.get("dok_tipus") != dok_tipus:
             continue
-        score = sparse_score(query, chunk.get("text", ""))
+        if not query_tokens:
+            score = 0.0
+        else:
+            score = len(query_tokens & _chunk_token_set(chunk)) / len(query_tokens)
         if score <= 0:
             continue
         scored.append((score, chunk))

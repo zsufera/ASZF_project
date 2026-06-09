@@ -19,6 +19,7 @@ ORCHESTRATOR_SYSTEM = (
     '{"action":"call_tool","tool":"<name>","args":{...}}\n'
     '{"action":"respond","reply":"<final internal answer>"}\n'
     '{"action":"ask_user","question":"<clarifying question>"}\n'
+    'If you want to use a tool, action MUST be "call_tool" and tool MUST contain the tool name.\n'
     "Only call listed tools. Do not invent facts. Preserve source markers like [S1]. "
     "Keep masked PII tokens unchanged.\n"
     + tools_spec.tools_prompt()
@@ -44,6 +45,19 @@ def _decide(session: CopilotSession, observations: list[dict[str, Any]]) -> dict
     return chat_json(ORCHESTRATOR_SYSTEM, user)
 
 
+def _normalize_decision(decision: dict[str, Any]) -> dict[str, Any]:
+    action = str(decision.get("action") or "").strip()
+    if action in SUBAGENTS:
+        return {"action": "call_tool", "tool": action, "args": decision.get("args") or {}}
+    if action == "call_tool" and not decision.get("tool"):
+        candidate = str(decision.get("name") or decision.get("tool_name") or "").strip()
+        if candidate in SUBAGENTS:
+            return {**decision, "tool": candidate, "args": decision.get("args") or {}}
+    if action in {"final", "answer"} and decision.get("reply"):
+        return {**decision, "action": "respond"}
+    return decision
+
+
 def _fallback_reply(session: CopilotSession) -> str:
     if session.draft and session.draft.get("body_masked"):
         return session.draft["body_masked"]
@@ -51,6 +65,15 @@ def _fallback_reply(session: CopilotSession) -> str:
         "Nincs elegendo ASZF-fedezet automatikus valaszhoz. "
         "Emberi ellenorzes / eszkalacio javasolt."
     )
+
+
+def _has_policy_coverage(session: CopilotSession) -> bool:
+    return bool((session.retrieval or {}).get("policy_map", {}).get("policy_items"))
+
+
+def _ensure_draft(session: CopilotSession) -> None:
+    if session.draft is None and _has_policy_coverage(session):
+        SUBAGENTS["draft_reply"](session)
 
 
 def _source_refs(session: CopilotSession) -> list[dict[str, Any]]:
@@ -92,9 +115,8 @@ def _finalize(session: CopilotSession, reply_masked: str, mode: str) -> dict[str
 def _run_fallback(session: CopilotSession) -> dict[str, Any]:
     SUBAGENTS["classify"](session)
     SUBAGENTS["knowledge_search"](session)
-    escalation = SUBAGENTS["escalation_advice"](session)
-    if not escalation["required"]:
-        SUBAGENTS["draft_reply"](session)
+    SUBAGENTS["escalation_advice"](session)
+    _ensure_draft(session)
     return _finalize(session, _fallback_reply(session), OrchestratorMode.FALLBACK)
 
 
@@ -105,7 +127,7 @@ def run(session: CopilotSession) -> dict[str, Any]:
     observations: list[dict[str, Any]] = []
     for _ in range(MAX_ITERATIONS):
         try:
-            decision = _decide(session, observations)
+            decision = _normalize_decision(_decide(session, observations))
         except Exception:
             logger.exception("orchestrator decision failed; switching to fallback")
             return _run_fallback(session)
@@ -129,7 +151,8 @@ def run(session: CopilotSession) -> dict[str, Any]:
                 result = {"error": str(exc)}
             observations.append({"tool": tool, "result": result})
             continue
-        break
+        logger.warning("orchestrator returned invalid decision: %s", decision)
+        return _run_fallback(session)
 
     session.record(
         step="iteration_cap",
@@ -137,4 +160,5 @@ def run(session: CopilotSession) -> dict[str, Any]:
         status="warning",
         summary="iteration cap reached",
     )
+    _ensure_draft(session)
     return _finalize(session, _fallback_reply(session), OrchestratorMode.LLM)

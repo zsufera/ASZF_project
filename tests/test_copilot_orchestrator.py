@@ -44,6 +44,48 @@ def test_orchestrator_llm_loop_calls_chosen_tools(monkeypatch):
     assert any(entry["step"] == "knowledge_search" for entry in result["timeline"])
 
 
+def test_orchestrator_accepts_tool_name_as_action(monkeypatch):
+    monkeypatch.setattr("agent.copilot.orchestrator.llm_available", lambda: True)
+    scripted = [
+        {"action": "classify", "args": {}},
+        {"action": "respond", "reply": "Besoroltam."},
+    ]
+    calls = {"i": 0}
+
+    def fake_decide(system, user):
+        out = scripted[calls["i"]]
+        calls["i"] += 1
+        return out
+
+    monkeypatch.setattr("agent.copilot.orchestrator.chat_json", fake_decide)
+    session = CopilotSession(session_id="CHAT-O4", message_masked="Nincs internetem napok ota")
+    result = orchestrator.run(session)
+    assert result["reply_masked"] == "Besoroltam."
+    assert any(entry["step"] == "classify" for entry in result["timeline"])
+
+
+def test_orchestrator_invalid_llm_decision_falls_back(monkeypatch):
+    monkeypatch.setattr("agent.copilot.orchestrator.llm_available", lambda: True)
+    monkeypatch.setattr(
+        "agent.copilot.orchestrator.chat_json",
+        lambda system, user: {"action": "nonsense"},
+    )
+    session = CopilotSession(session_id="CHAT-O5", message_masked="Mennyi a felmondasi ido?")
+    result = orchestrator.run(session)
+    assert result["orchestrator_mode"] == "fallback"
+    assert any(entry["step"] == "knowledge_search" for entry in result["timeline"])
+
+
+def test_fallback_drafts_even_when_escalation_required(monkeypatch):
+    monkeypatch.setattr("agent.copilot.orchestrator.llm_available", lambda: False)
+    session = CopilotSession(session_id="CHAT-O6", message_masked="Mennyi a felmondasi ido?")
+    result = orchestrator.run(session)
+    steps = [entry["step"] for entry in result["timeline"]]
+    assert "escalation_advice" in steps
+    assert "draft_reply" in steps
+    assert "Nincs elegendo ASZF-fedezet" not in result["reply_masked"]
+
+
 def test_orchestrator_respects_iteration_cap(monkeypatch):
     monkeypatch.setattr("agent.copilot.orchestrator.llm_available", lambda: True)
     monkeypatch.setattr(

@@ -5,6 +5,13 @@ from typing import Any
 
 from preprocessing.index import fold_text
 
+_doc_name_index_cache: dict[tuple[int, int], dict[tuple[str, str], str]] = {}
+_paragraph_index_cache: dict[tuple[int, int], dict[tuple[str, str], dict[str, Any]]] = {}
+
+
+def _cache_key(chunks: list[dict[str, Any]]) -> tuple[int, int]:
+    return (id(chunks), len(chunks))
+
 _PARAGRAPH_NUMBER = re.compile(r"\d+(?:\.\d+){0,4}")
 # fájlnévből: "...2a_mobil_melleklet...", "..._3_melleklet...", "...1_sz_melleklet..."
 _MELLEKLET_IN_FILENAME = re.compile(r"(\d+)\s*([ab]?)[a-z0-9_]*?mellekl")
@@ -44,6 +51,10 @@ def _doc_keys_from_hint(doc_hint: str) -> set[str]:
 
 def build_doc_name_index(chunks: list[dict[str, Any]]) -> dict[tuple[str, str], str]:
     """(szolgaltato, normalizált dok-név) -> doc_id. Kétértelmű kulcs (ütköző doc_id) eldobva."""
+    cache_key = _cache_key(chunks)
+    cached = _doc_name_index_cache.get(cache_key)
+    if cached is not None:
+        return cached
     index: dict[tuple[str, str], str] = {}
     ambiguous: set[tuple[str, str]] = set()
     for chunk in chunks:
@@ -61,11 +72,16 @@ def build_doc_name_index(chunks: list[dict[str, Any]]) -> dict[tuple[str, str], 
                 ambiguous.add(k)
             else:
                 index[k] = doc_id
+    _doc_name_index_cache[cache_key] = index
     return index
 
 
 def build_paragraph_index(chunks: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, Any]]:
     """(doc_id, normalizált paragrafus) -> chunk (első nyer)."""
+    cache_key = _cache_key(chunks)
+    cached = _paragraph_index_cache.get(cache_key)
+    if cached is not None:
+        return cached
     index: dict[tuple[str, str], dict[str, Any]] = {}
     for chunk in chunks:
         doc_id = chunk.get("doc_id")
@@ -73,6 +89,7 @@ def build_paragraph_index(chunks: list[dict[str, Any]]) -> dict[tuple[str, str],
         if not doc_id or not paragraph:
             continue
         index.setdefault((doc_id, paragraph), chunk)
+    _paragraph_index_cache[cache_key] = index
     return index
 
 
