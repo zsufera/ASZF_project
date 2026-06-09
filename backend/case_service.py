@@ -12,7 +12,7 @@ from agent.runner import run_agent
 from backend.audit_service import record_audit_event, record_iteration_audit, record_pii_access
 from backend.draft import ensure_disclaimer, strip_source_markers
 from backend.history import get_history
-from backend.masking import mask_text, unmask_text
+from backend.masking import mask_text, sender_email_key, unmask_text
 from backend.metadata import load_manifest_summary
 from backend.workflow import validate_transition
 from config.settings import settings
@@ -80,6 +80,7 @@ def _case_row_to_inbox_item(row: sqlite3.Row, payload: dict[str, Any]) -> dict[s
         "escalated": bool(row["escalated"]),
         "escalation_reasons": json.loads(row["escalation_reasons"]) if row["escalation_reasons"] else [],
         "sender_email_masked": row["sender_email_masked"],
+        "sender_email_key": row["sender_email_key"],
         "service_provider": row["service_provider"],
         "subject": payload.get("subject") or "",
         "category": category,
@@ -108,12 +109,14 @@ def seed_inbox_from_samples(force: bool = False) -> dict[str, Any]:
             continue
         sender = payload.get("felado_email", "")
         masked_sender = mask_text(case_code, sender)["masked_text"] if sender else None
+        sender_key = sender_email_key(sender)
         masked_body = mask_text(case_code, payload.get("torzs", ""))["masked_text"]
         prepared.append(
             {
                 "case_code": case_code,
                 "exists": case_code in existing_codes,
                 "masked_sender": masked_sender,
+                "sender_key": sender_key,
                 "masked_body": masked_body,
                 "channel_payload": json.dumps(
                     {
@@ -146,14 +149,15 @@ def seed_inbox_from_samples(force: bool = False) -> dict[str, Any]:
                 """
                 INSERT INTO cases (
                     case_code, channel, status, priority, sender_email_masked,
-                    service_provider, created_at, updated_at
-                ) VALUES (?, 'email', ?, ?, ?, ?, ?, ?)
+                    sender_email_key, service_provider, created_at, updated_at
+                ) VALUES (?, 'email', ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     item["case_code"],
                     item["status"],
                     item["priority"],
                     item["masked_sender"],
+                    item["sender_key"],
                     item["service_provider"],
                     _utc_now(),
                     _utc_now(),
@@ -342,13 +346,14 @@ def create_ad_hoc_case(
     case_code = f"CASE-ADHOC-{stamp}"
     masked_body = mask_text(case_code, input_text)["masked_text"]
     masked_sender = mask_text(case_code, sender_email)["masked_text"] if sender_email else None
+    sender_key = sender_email_key(sender_email)
     with sqlite3.connect(settings.sqlite_path) as conn:
         conn.execute(
             """
-            INSERT INTO cases (case_code, channel, status, priority, sender_email_masked, service_provider)
-            VALUES (?, ?, 'uj', 'normal', ?, ?)
+            INSERT INTO cases (case_code, channel, status, priority, sender_email_masked, sender_email_key, service_provider)
+            VALUES (?, ?, 'uj', 'normal', ?, ?, ?)
             """,
-            (case_code, channel, masked_sender, service_provider),
+            (case_code, channel, masked_sender, sender_key, service_provider),
         )
         case_id = conn.execute("SELECT id FROM cases WHERE case_code = ?", (case_code,)).fetchone()[0]
         conn.execute(
@@ -381,6 +386,7 @@ def process_case(
         return {"error": "Ügy nem található", "case_id": case_code}
 
     sender = detail.get("sender_email_masked")
+    sender_key = detail.get("sender_email_key")
     provider = service_provider or detail.get("service_provider")
     text = input_text_masked or detail.get("inbound_text_masked") or ""
 
@@ -392,6 +398,7 @@ def process_case(
         channel=detail["channel"],
         input_text_masked=text,
         sender_email=sender,
+        sender_email_key=sender_key,
         service_provider=provider,
         output_mode=output_mode,
         selected_customer_id=selected_customer_id,
@@ -409,7 +416,7 @@ def process_case(
 
     history_case_ids: list[str] = []
     if sender:
-        history = get_history(sender)
+        history = get_history(sender, sender_email_key=sender_key)
         history_case_ids = [item["case_id"] for item in history.get("items", []) if item.get("case_id") != case_code]
 
     classification = result.get("classification", {})

@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS cases (
     escalated INTEGER NOT NULL DEFAULT 0,
     escalation_reasons TEXT,
     sender_email_masked TEXT,
+    sender_email_key TEXT,
     service_provider TEXT,
     selected_customer_id TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -132,6 +133,15 @@ def init_db(db_path: str | None = None) -> None:
     Path(target).parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(target) as conn:
         conn.executescript(SCHEMA_SQL)
+        columns = {row[1] for row in conn.execute("PRAGMA table_info(cases)").fetchall()}
+        if "sender_email_key" not in columns:
+            conn.execute("ALTER TABLE cases ADD COLUMN sender_email_key TEXT")
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_cases_sender_email_key_created_at
+            ON cases(sender_email_key, created_at DESC)
+            """
+        )
         conn.commit()
 
 

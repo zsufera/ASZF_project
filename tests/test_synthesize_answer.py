@@ -80,6 +80,34 @@ def test_synthesize_llm_email_marks_used_sources(monkeypatch):
     assert result["citations"] == ["c1"]
 
 
+def test_synthesize_prompt_includes_customer_message(monkeypatch):
+    _enable_llm(monkeypatch)
+    captured = {}
+
+    def fake_chat(system, user):
+        captured["user"] = user
+        return {
+            "targy": "Válasz",
+            "valasz": "A vitatott tételt kivizsgáljuk [S1].",
+            "felhasznalt_forrasok": ["S1"],
+            "elegtelen_fedezet": False,
+        }
+
+    monkeypatch.setattr(draft, "chat_json", fake_chat)
+    draft.synthesize_answer(
+        case_id="c",
+        category="szamlazas",
+        channel="email",
+        output_mode="hitl",
+        policy_map=_PMAP,
+        actions=[],
+        input_text_masked="A számlámon vitatott roaming tétel szerepel.",
+    )
+
+    assert "Ügyfél üzenete" in captured["user"]
+    assert "vitatott roaming tétel" in captured["user"]
+
+
 def test_synthesize_copilot_format(monkeypatch):
     _enable_llm(monkeypatch)
     monkeypatch.setattr(draft, "chat_json", lambda s, u: {

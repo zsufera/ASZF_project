@@ -126,6 +126,7 @@ def search_qdrant(
     query: str,
     service_provider: str | None,
     limit: int,
+    dok_tipus: str | None = None,
 ) -> list[dict[str, Any]]:
     if active_mode() != "openai":
         return []
@@ -137,15 +138,23 @@ def search_qdrant(
         client = get_shared_client()
         vector = embed_query(query)
         query_filter = None
+        must_conditions = []
         if service_provider:
-            query_filter = models.Filter(
-                must=[
-                    models.FieldCondition(
-                        key="szolgaltato",
-                        match=models.MatchValue(value=service_provider),
-                    )
-                ]
+            must_conditions.append(
+                models.FieldCondition(
+                    key="szolgaltato",
+                    match=models.MatchValue(value=service_provider),
+                )
             )
+        if dok_tipus:
+            must_conditions.append(
+                models.FieldCondition(
+                    key="dok_tipus",
+                    match=models.MatchValue(value=dok_tipus),
+                )
+            )
+        if must_conditions:
+            query_filter = models.Filter(must=must_conditions)
         response = client.query_points(
             collection_name=DEFAULT_COLLECTION,
             query=vector,
@@ -281,7 +290,7 @@ def retrieve(
     needs_pool = bool(category) or bool(_significant_numbers(query))
     candidate_limit = limit * 4 if needs_pool else limit
 
-    qdrant_results = search_qdrant(query, service_provider, candidate_limit) if prefer_qdrant else []
+    qdrant_results = search_qdrant(query, service_provider, candidate_limit, dok_tipus=dok_tipus) if prefer_qdrant else []
     if qdrant_results:
         primary = qdrant_results
         retrieval_mode = "qdrant_semantic"

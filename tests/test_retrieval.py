@@ -154,3 +154,24 @@ def test_retrieve_filters_service_provider(tmp_path, monkeypatch) -> None:
 
     assert result["chunks"]
     assert all(chunk["szolgaltato"] == "ONE" for chunk in result["chunks"])
+
+
+def test_retrieve_passes_dok_tipus_to_qdrant_search(tmp_path, monkeypatch) -> None:
+    chunks_path = _write_two_chunks(tmp_path)
+    captured = {}
+
+    def fake_search_qdrant(query, service_provider, limit, dok_tipus=None):
+        captured["dok_tipus"] = dok_tipus
+        return []
+
+    monkeypatch.setattr("backend.retrieval.search_qdrant", fake_search_qdrant)
+
+    retrieve(
+        query="szamlazasi kifogas",
+        service_provider="ONE",
+        dok_tipus="ÁSZF",
+        chunks_path=chunks_path,
+        prefer_qdrant=True,
+    )
+
+    assert captured["dok_tipus"] == "ÁSZF"

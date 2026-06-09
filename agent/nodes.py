@@ -12,7 +12,7 @@ from backend.draft import strip_source_markers, synthesize_answer
 from backend.escalation import decide_escalation, llm_escalation_suggestion, merge_escalation
 from backend.llm import llm_available
 from backend.history import get_history
-from backend.masking import mask_text, unmask_text
+from backend.masking import mask_text, sender_email_key as build_sender_email_key, unmask_text
 from backend.metadata import PROMPT_VERSION, load_manifest_summary
 from backend.policy_map import build_policy_map, load_mandatory_refs
 from backend.retrieval import retrieve
@@ -120,12 +120,15 @@ def mask_input(state: AgentState) -> AgentState:
 
 def load_context(state: AgentState) -> AgentState:
     sender = state.get("sender_email")
+    sender_key = state.get("sender_email_key") or (
+        build_sender_email_key(sender) if sender and "@" in sender else None
+    )
     history_summary = state.get("history_summary_masked")
     customer_candidates = list(state.get("customer_candidates") or [])
     payload: dict[str, Any] = {"history_loaded": False, "customer_count": len(customer_candidates)}
 
     if sender and not history_summary:
-        history = get_history(sender)
+        history = get_history(sender, sender_email_key=sender_key)
         history_summary = history.get("summary_masked")
         payload["history_loaded"] = True
         payload["is_repeated"] = history.get("is_repeated", False)
@@ -278,6 +281,7 @@ def draft_node(state: AgentState) -> AgentState:
         output_mode=output_mode,
         policy_map=policy_map,
         actions=actions,
+        input_text_masked=_active_text(state),
     )
 
     return {
@@ -314,10 +318,17 @@ def verify_node(state: AgentState) -> AgentState:
 def prepare_unmask(state: AgentState) -> AgentState:
     draft = state.get("draft", {})
     case_id = state["case_id"]
+    verify = state.get("verify", {})
+    escalation = state.get("escalation", {})
+    ready_for_approval = (
+        not verify.get("warning")
+        and not escalation.get("required")
+        and draft.get("generation_mode") != "insufficient"
+    )
     preview = {
         "subject_unmasked": strip_source_markers(unmask_text(case_id, draft.get("subject", ""))),
         "body_unmasked": strip_source_markers(unmask_text(case_id, draft.get("body_masked", ""))),
-        "ready_for_approval": True,
+        "ready_for_approval": ready_for_approval,
     }
     manifest = load_manifest_summary()
     audit_refs = {
@@ -328,5 +339,5 @@ def prepare_unmask(state: AgentState) -> AgentState:
     return {
         "draft_preview_unmasked": preview,
         "audit_refs": audit_refs,
-        "timeline": _append_timeline(state, "prepare_unmask", {"ready_for_approval": True}),
+        "timeline": _append_timeline(state, "prepare_unmask", {"ready_for_approval": ready_for_approval}),
     }

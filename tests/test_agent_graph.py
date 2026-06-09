@@ -190,6 +190,42 @@ def test_draft_node_uses_synthesize_for_email(monkeypatch):
     assert out["timeline"][-1]["output"]["generation_mode"] == "llm"
 
 
+def test_draft_node_passes_active_customer_text_to_synthesize(monkeypatch):
+    captured = {}
+
+    def fake_synth(**kwargs):
+        captured.update(kwargs)
+        return {"subject": "s", "body_masked": "Levél [S1].",
+                "sources": [], "citations": [], "generation_mode": "llm",
+                "format": "email", "disclaimer_applied": False}
+
+    monkeypatch.setattr(nodes, "synthesize_answer", fake_synth)
+    nodes.draft_node({
+        "case_id": "c",
+        "channel": "email",
+        "input_text_masked": "A számlámon vitatott roaming tétel szerepel.",
+        "classification": {"category": "szamlazas"},
+        "policy_map": {"policy_items": []},
+        "actions": [],
+        "timeline": [],
+    })
+
+    assert captured["input_text_masked"] == "A számlámon vitatott roaming tétel szerepel."
+
+
+def test_prepare_unmask_blocks_approval_when_verification_warns() -> None:
+    out = nodes.prepare_unmask({
+        "case_id": "CASE-READY",
+        "draft": {"subject": "s", "body_masked": "Nincs fedezet."},
+        "verify": {"warning": "A draft nem teljesen forrásolt."},
+        "escalation": {"required": True},
+        "timeline": [],
+    })
+
+    assert out["draft_preview_unmasked"]["ready_for_approval"] is False
+    assert out["timeline"][-1]["output"]["ready_for_approval"] is False
+
+
 def test_retrieve_node_timeline_includes_unresolved_count(monkeypatch):
     monkeypatch.setattr(nodes, "retrieve", lambda **kw: {
         "chunks": [], "retrieval_mode": "x", "result_count": 0,
