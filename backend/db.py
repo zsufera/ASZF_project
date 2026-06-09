@@ -2,6 +2,7 @@ import os
 import sqlite3
 from pathlib import Path
 
+from backend.masking import sender_email_key
 from config.settings import settings
 
 
@@ -142,7 +143,30 @@ def init_db(db_path: str | None = None) -> None:
             ON cases(sender_email_key, created_at DESC)
             """
         )
+        _backfill_sender_email_keys(conn)
         conn.commit()
+
+
+def _backfill_sender_email_keys(conn: sqlite3.Connection) -> None:
+    rows = conn.execute(
+        """
+        SELECT c.id, p.original_value
+        FROM cases c
+        JOIN pii_token_map p
+          ON p.case_id = c.case_code
+         AND p.token = c.sender_email_masked
+        WHERE (c.sender_email_key IS NULL OR c.sender_email_key = '')
+          AND c.sender_email_masked IS NOT NULL
+          AND p.original_value LIKE '%@%'
+        """
+    ).fetchall()
+    for case_id, original_value in rows:
+        key = sender_email_key(original_value)
+        if key:
+            conn.execute(
+                "UPDATE cases SET sender_email_key = ? WHERE id = ?",
+                (key, case_id),
+            )
 
 
 if __name__ == "__main__":

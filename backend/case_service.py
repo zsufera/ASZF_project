@@ -61,6 +61,13 @@ def _sla_days_remaining(created_at: str, fallback_days: int | None = None) -> in
     return max(0, days - elapsed)
 
 
+def _sender_email_display(masked_sender: str | None, stable_key: str | None) -> str:
+    if stable_key:
+        digest = stable_key.split(":", 1)[-1]
+        return f"Email #{digest[:8]}"
+    return "Maszkolt email" if masked_sender else ""
+
+
 def _load_policies() -> dict[str, Any]:
     path = Path("config/policies.yaml")
     if not path.exists():
@@ -82,6 +89,7 @@ def _case_row_to_inbox_item(row: sqlite3.Row, payload: dict[str, Any]) -> dict[s
         "escalation_reasons": json.loads(row["escalation_reasons"]) if row["escalation_reasons"] else [],
         "sender_email_masked": row["sender_email_masked"],
         "sender_email_key": row["sender_email_key"],
+        "sender_email_display": _sender_email_display(row["sender_email_masked"], row["sender_email_key"]),
         "service_provider": row["service_provider"],
         "subject": payload.get("subject") or "",
         "category": category,

@@ -130,7 +130,7 @@ export function CaseWorkstation() {
         {caseData.priority === "surgos" && <Badge kind="priority" value="SÜRGŐS" />}
         {caseData.escalated && <Badge kind="escalation" value="Eszkalált" />}
         {caseData.confidence < 0.7 && <Badge kind="confidence" value={caseData.confidence} />}
-        <span className="ml-auto text-one-grey text-[11px]">📧 {caseData.sender_email_masked}</span>
+        <span className="ml-auto text-one-grey text-[11px]">📧 {caseData.sender_email_display}</span>
         <span className="bg-white border border-one-line rounded-lg px-2 py-0.5 text-[11px] font-semibold">⏱ SLA: {caseData.sla_days_remaining} nap</span>
       </div>
 

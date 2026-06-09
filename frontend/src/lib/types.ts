@@ -96,6 +96,7 @@ export interface Case {
   sla_days_remaining: number;
   sender_email_masked: string;
   sender_email_key: string;
+  sender_email_display: string;
   inbound_text_masked: string;
   service_provider?: string;
   customer_candidates: CustomerCandidateItem[];
