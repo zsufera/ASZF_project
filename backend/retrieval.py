@@ -20,7 +20,7 @@ from preprocessing.index import (
 )
 
 from backend.policy_map import category_mandatory_paragraphs, category_section_prefixes
-from backend.reference_resolution import reference_closure
+from backend.reference_resolution import parent_context, reference_closure
 from config.settings import settings
 
 
@@ -235,9 +235,15 @@ def retrieve(
     primary = primary[:limit]
 
     added, unresolved = reference_closure(primary, all_chunks)
+    parents = parent_context(primary, all_chunks)
     expanded = list(primary)
+    closure_ids = {str(chunk.get("chunk_id")) for chunk, _ in added}
     for chunk, score in added:
         expanded.append(chunk_to_result(score, chunk) | {"retrieval_source": "reference_closure"})
+    for chunk, score in parents:
+        if str(chunk.get("chunk_id")) in closure_ids:
+            continue  # a closure már behúzta — ne duplikáljuk
+        expanded.append(chunk_to_result(score, chunk) | {"retrieval_source": "parent_context"})
     return {
         "chunks": expanded,
         "retrieval_mode": retrieval_mode,

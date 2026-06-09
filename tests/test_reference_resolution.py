@@ -105,3 +105,36 @@ def test_closure_skips_chunk_already_in_seed():
     seed = [dict(corpus[0], score=0.8), dict(corpus[1], score=0.7)]
     added, _ = reference_closure(seed, corpus)
     assert added == []
+
+
+from backend.reference_resolution import parent_context
+
+
+def test_parent_context_adds_parent_section():
+    corpus = [
+        {"chunk_id": "leaf", "doc_id": "d", "paragrafus_szam": "5.5.1", "text": "leaf"},
+        {"chunk_id": "parent", "doc_id": "d", "paragrafus_szam": "5.5", "text": "parent"},
+    ]
+    seed = [dict(corpus[0], score=0.8, paragrafus="5.5.1")]
+    added = parent_context(seed, corpus)
+    assert len(added) == 1 and added[0][0]["chunk_id"] == "parent"
+
+
+def test_parent_context_skips_top_level():
+    corpus = [{"chunk_id": "top", "doc_id": "d", "paragrafus_szam": "5", "text": "t"}]
+    seed = [dict(corpus[0], score=0.8)]
+    assert parent_context(seed, corpus) == []
+
+
+def test_parent_context_skips_when_parent_missing():
+    corpus = [{"chunk_id": "leaf", "doc_id": "d", "paragrafus_szam": "5.5.1", "text": "l"}]
+    seed = [dict(corpus[0], score=0.8)]
+    assert parent_context(seed, corpus) == []
+
+
+def test_parent_context_dedups_siblings():
+    corpus = [{"chunk_id": f"l{i}", "doc_id": "d", "paragrafus_szam": f"5.5.{i}", "text": "l"} for i in range(4)]
+    corpus.append({"chunk_id": "parent", "doc_id": "d", "paragrafus_szam": "5.5", "text": "p"})
+    seed = [dict(x, score=0.8) for x in corpus[:4]]
+    added = parent_context(seed, corpus)
+    assert len(added) == 1  # a közös szülő egyszer kerül be

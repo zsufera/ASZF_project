@@ -143,3 +143,39 @@ def reference_closure(
             seen.add(tid)
             added.append((target, base_score))
     return added, unresolved
+
+
+def parent_context(
+    seed_chunks: list[dict[str, Any]],
+    all_chunks: list[dict[str, Any]],
+    max_extra: int = 3,
+) -> list[tuple[dict[str, Any], float]]:
+    """Small-to-big: a top találatok közvetlen szülő §-át behúzza extra kontextusként.
+
+    A szülő a paragrafus-prefixből adódik (5.5.1 -> 5.5), azonos dokumentumon belül.
+    Visszatérés: [(parent_chunk, score), ...] (max_extra-ig, dedupolva). A score a seed - 0.03.
+    """
+    by_id = {str(c.get("chunk_id")): c for c in all_chunks if c.get("chunk_id")}
+    paragraph_index = build_paragraph_index(all_chunks)
+    seen = {str(c.get("chunk_id")) for c in seed_chunks if c.get("chunk_id")}
+
+    added: list[tuple[dict[str, Any], float]] = []
+    for seed in seed_chunks:
+        if len(added) >= max_extra:
+            break
+        source = by_id.get(str(seed.get("chunk_id")))
+        if not source:
+            continue
+        paragraph = normalize_paragraph(source.get("paragrafus_szam") or source.get("paragrafus"))
+        if "." not in paragraph:
+            continue  # felső szintű § — nincs szülő
+        parent_paragraph = paragraph.rsplit(".", 1)[0]
+        parent = paragraph_index.get((source.get("doc_id"), parent_paragraph))
+        if not parent:
+            continue
+        pid = str(parent.get("chunk_id"))
+        if pid in seen:
+            continue
+        seen.add(pid)
+        added.append((parent, max(float(seed.get("score", 0.0)) - 0.03, 0.01)))
+    return added
