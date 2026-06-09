@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { ChunkItem, SourceRef } from "../lib/types";
+import type { ChunkItem, RetrievalSource, SourceRef } from "../lib/types";
 
 interface SourceCardProps {
   chunk: ChunkItem;
@@ -22,6 +22,9 @@ export function SourceCard({ chunk, id, onJump }: SourceCardProps) {
           <button onClick={onJump} className="text-one-turq-d hover:underline ml-2" aria-label="Ugrás a teljes szakaszra">⤴</button>
         )}
       </div>
+      <div className="flex flex-wrap gap-1 mb-1">
+        <ProvenanceBadge source={chunk.retrieval_source} score={chunk.score} />
+      </div>
       {quote && <p className="italic text-[#33403f] mb-1">„{quote}"</p>}
       {chunk.kozertheto_magyarazat && (
         <>
@@ -36,6 +39,29 @@ export function SourceCard({ chunk, id, onJump }: SourceCardProps) {
         </>
       )}
     </div>
+  );
+}
+
+function provenanceLabel(source?: RetrievalSource): string {
+  if (!source) return "forrás";
+  const labels: Record<string, string> = {
+    qdrant_semantic: "szemantikus",
+    hybrid_local: "hibrid",
+    reference_closure: "hivatkozás-closure",
+    parent_context: "szülő kontextus",
+    auto_merged: "összevont szakasz",
+    empty: "nincs találat",
+  };
+  return labels[String(source)] ?? String(source);
+}
+
+export function ProvenanceBadge({ source, score }: { source?: RetrievalSource; score?: number }) {
+  const label = provenanceLabel(source);
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-one-line bg-one-canvas px-2 py-0.5 text-[9px] text-one-grey">
+      <span>{label}</span>
+      {score !== undefined ? <span>{score.toFixed(2)}</span> : null}
+    </span>
   );
 }
 
@@ -83,6 +109,7 @@ export function RichSourceCard({ source, id }: RichSourceCardProps) {
       {open && (
         <div className="mt-2 animate-fade-in">
           <div className="flex flex-wrap gap-2 text-[9px] text-one-grey mb-1">
+            <ProvenanceBadge source={source.retrieval_source} score={source.score} />
             {source.dok_tipus && <span>{source.dok_tipus}</span>}
             {source.oldalszam !== undefined && <span>· {source.oldalszam}. oldal</span>}
           </div>

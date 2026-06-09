@@ -7,6 +7,7 @@ import { CaseHistoryPanel } from "../components/case/CaseHistoryPanel";
 import { CaseInboundMessage } from "../components/case/CaseInboundMessage";
 import { CaseSourcesPanel } from "../components/case/CaseSourcesPanel";
 import { CaseTimelinePanel } from "../components/case/CaseTimelinePanel";
+import { AuditPanel } from "../components/case/AuditPanel";
 import { Modal } from "../components/Modal";
 import { useCaseActions } from "../hooks/useCaseActions";
 import { useCaseData } from "../hooks/useCaseData";
@@ -72,13 +73,19 @@ export function CaseWorkstation() {
 
       <div className={`grid gap-3 transition-all duration-200 ${cols}`}>
         <div className="flex flex-col gap-3 min-w-0">
-          <CaseSourcesPanel sources={sources} chunks={chunks} sourceRefs={sourceRefs} />
+          <CaseSourcesPanel
+            sources={sources}
+            chunks={chunks}
+            unresolvedRefs={caseData.agent_state?.retrieval?.unresolved_refs ?? []}
+            sourceRefs={sourceRefs}
+          />
           <CaseHistoryPanel items={history?.items ?? []} isRepeated={history?.is_repeated ?? false} />
           <CaseCustomerPanel
             candidates={caseData.customer_candidates}
             selected={selectedCustomer}
             onSelect={setSelectedCustomer}
           />
+          <AuditPanel caseId={caseData.case_id} role={user?.role ?? "ui"} />
         </div>
 
         <div className="flex flex-col gap-3 min-w-0">
@@ -89,6 +96,8 @@ export function CaseWorkstation() {
             sources={sources}
             hasTimeline={hasTimeline}
             escalation={escalation}
+            verify={caseData.agent_state?.verify}
+            missingMandatory={caseData.agent_state?.policy_map?.missing_mandatory ?? []}
             generationMode={generationMode}
             processing={processing}
             outputMode={outputMode}

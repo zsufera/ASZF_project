@@ -1,6 +1,7 @@
 import type {
   User, InboxItem, Case, HistoryItem, CustomerCandidateItem,
   EvalResult, EscalatedItem, SupervisorStats, OcrResult, CopilotChatResponse,
+  AuditCaseRecord, AuditCompleteness, AuditEvent, TraceEvent, AcceptanceResult,
 } from "./types";
 
 const BASE = (import.meta.env.VITE_BACKEND_URL ?? "/api") as string;
@@ -90,12 +91,28 @@ export const api = {
   evalBaseline: (body: { run_id: string }) =>
     req<Record<string, unknown>>("POST", "/eval/baseline", body),
 
+  runAcceptance: (body: { eval_limit: number; include_edge: boolean; run_demo: boolean }) =>
+    req<AcceptanceResult>("POST", "/acceptance/run", body),
+
   getSupervisorQueue: () => req<{ items: EscalatedItem[] }>("GET", "/supervisor/queue"),
 
   getSupervisorStats: () => req<SupervisorStats>("GET", "/supervisor/stats"),
 
   getAuditCase: (caseId: string, role: string) =>
-    req<{ iterations: unknown[] }>("GET", `/audit/cases/${caseId}?role=${role}`),
+    req<AuditCaseRecord>("GET", `/audit/cases/${caseId}?role=${role}`),
+
+  getAuditEvents: (params: { role: string; case_id?: string; limit?: number }) => {
+    const qs = new URLSearchParams({ role: params.role });
+    if (params.case_id) qs.set("case_id", params.case_id);
+    if (params.limit) qs.set("limit", String(params.limit));
+    return req<{ events: AuditEvent[]; count: number }>("GET", `/audit/events?${qs.toString()}`);
+  },
+
+  getAuditCompleteness: (caseId: string, role: string) =>
+    req<AuditCompleteness>("GET", `/audit/completeness/${caseId}?role=${role}`),
+
+  getTraces: (limit = 50) =>
+    req<{ traces: TraceEvent[]; count: number }>("GET", `/observability/traces?limit=${limit}`),
 
   purgeGovernance: (body: { dry_run: boolean; username: string; role: string }) =>
     req<Record<string, unknown>>("POST", "/governance/purge", body),

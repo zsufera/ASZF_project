@@ -37,7 +37,19 @@ export interface ChunkItem {
   idezet?: string;
   dok_tipus: string;
   kozertheto_magyarazat?: string;
+  score?: number;
+  retrieval_source?: RetrievalSource;
+  cross_refs?: string[];
 }
+
+export type RetrievalSource =
+  | "qdrant_semantic"
+  | "hybrid_local"
+  | "reference_closure"
+  | "parent_context"
+  | "auto_merged"
+  | "empty"
+  | string;
 
 export interface SourceRef {
   ref: string;            // "S1", "S2", ...
@@ -49,6 +61,7 @@ export interface SourceRef {
   idezet: string;
   magyarazat?: string;
   score?: number;
+  retrieval_source?: RetrievalSource;
   used: boolean;
 }
 
@@ -57,6 +70,10 @@ export type GenerationMode = "llm" | "insufficient" | "template";
 export interface TimelineStep {
   step: string;
   output: Record<string, unknown>;
+  mode?: string;
+  status?: string;
+  counts?: Record<string, unknown>;
+  warnings?: string[];
   summary?: string;
 }
 
@@ -65,9 +82,30 @@ export interface EscalationState {
   reasons: string[];
 }
 
+export interface VerifyClaim {
+  claim: string;
+  grounded: boolean;
+  chunk_id?: string;
+}
+
+export interface VerifyState {
+  claims: VerifyClaim[];
+  ungrounded_count: number;
+  missing_mandatory?: string[];
+  warning?: string;
+  verify_mode?: string;
+}
+
+export type UnresolvedReference = string | {
+  raw?: string;
+  doc_hint?: string;
+  paragraph?: string;
+  [key: string]: unknown;
+};
+
 export interface AgentState {
-  retrieval: { chunks: ChunkItem[] };
-  policy_map: { policy_items: unknown[] };
+  retrieval: { chunks: ChunkItem[]; unresolved_refs: UnresolvedReference[]; retrieval_mode?: string };
+  policy_map: { policy_items: unknown[]; missing_mandatory?: string[]; mandatory_refs?: unknown[] };
   timeline: TimelineStep[];
   draft: {
     subject: string;
@@ -78,6 +116,7 @@ export interface AgentState {
     format?: "email" | "copilot";
   };
   escalation: EscalationState;
+  verify: VerifyState;
 }
 
 export interface CustomerCandidateItem {
@@ -142,6 +181,51 @@ export interface EvalResult {
   };
   results: Array<{ email_id: string; [key: string]: unknown }>;
   baseline_diff: { has_baseline: boolean; diff: Record<string, unknown> };
+}
+
+export interface AuditEvent {
+  id: number;
+  case_id: string;
+  event_type: string;
+  actor_user_id?: number | null;
+  actor_username?: string | null;
+  payload: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface AuditCompleteness {
+  case_id: string;
+  complete: boolean;
+  missing: string[];
+  required_fields: string[];
+}
+
+export interface AuditCaseRecord {
+  case_id: string;
+  status?: string;
+  priority?: string;
+  events: AuditEvent[];
+  iterations: AuditEvent[];
+  latest_iteration?: Record<string, unknown>;
+  audit_meta?: Record<string, unknown>;
+}
+
+export interface TraceEvent {
+  name: string;
+  case_id?: string | null;
+  duration_ms?: number | null;
+  payload: Record<string, unknown>;
+  created_at: string;
+  backend?: string;
+}
+
+export interface AcceptanceResult {
+  passed: boolean;
+  kpi_checks: Record<string, { value: number; rule: [string, number]; passed: boolean }>;
+  kpi_failures: string[];
+  demo_failures: string[];
+  eval_run_id?: string;
+  targets: Record<string, unknown>;
 }
 
 export interface SupervisorStats {

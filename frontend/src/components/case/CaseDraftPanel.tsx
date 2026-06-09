@@ -1,5 +1,5 @@
 import type { MutableRefObject } from "react";
-import type { Case, EscalationState, OutputMode, SourceRef } from "../../lib/types";
+import type { Case, EscalationState, OutputMode, SourceRef, VerifyState } from "../../lib/types";
 import { Card } from "../Card";
 import { DraftEditor } from "../DraftEditor";
 import { InlineAnswer } from "../InlineAnswer";
@@ -11,6 +11,8 @@ interface CaseDraftPanelProps {
   sources: SourceRef[];
   hasTimeline: boolean;
   escalation: EscalationState | null;
+  verify?: VerifyState;
+  missingMandatory?: string[];
   generationMode?: string;
   processing: boolean;
   outputMode: OutputMode;
@@ -29,6 +31,8 @@ export function CaseDraftPanel({
   sources,
   hasTimeline,
   escalation,
+  verify,
+  missingMandatory = [],
   generationMode,
   processing,
   outputMode,
@@ -66,6 +70,9 @@ export function CaseDraftPanel({
           Nincs eleg ASZF-fedezet automatikus valaszhoz; emberi ellenorzes javasolt.
         </div>
       ) : null}
+
+      <GroundingClaimsPanel verify={verify} onCitationClick={onCitationClick} />
+      <MandatoryReferencesPanel missing={missingMandatory} />
 
       {processing ? (
         <ProcessingIndicator active={processing} />
@@ -114,5 +121,59 @@ export function CaseDraftPanel({
         </>
       )}
     </Card>
+  );
+}
+
+export function GroundingClaimsPanel({
+  verify,
+  onCitationClick,
+}: {
+  verify?: VerifyState;
+  onCitationClick: (citation: string) => void;
+}) {
+  const claims = verify?.claims ?? [];
+  if (!claims.length) return null;
+
+  const ungrounded = claims.filter((claim) => !claim.grounded);
+  return (
+    <div className="mb-3 rounded-md border border-one-line bg-one-canvas p-2 text-[11px]">
+      <div className="mb-1 flex items-center justify-between gap-2">
+        <span className="font-semibold text-one-ink">Grounding ellenőrzés</span>
+        <span className={ungrounded.length ? "text-status-esc-fg" : "text-kpi-ok"}>
+          {ungrounded.length ? `${ungrounded.length} nem megalapozott` : "minden állítás fedett"}
+        </span>
+      </div>
+      <div className="space-y-1">
+        {claims.slice(0, 6).map((claim, idx) => (
+          <div key={`${claim.chunk_id ?? "claim"}-${idx}`} className="flex items-start gap-2">
+            <span className={claim.grounded ? "text-kpi-ok" : "text-status-esc-fg"} aria-hidden="true">
+              {claim.grounded ? "✓" : "!"}
+            </span>
+            <button
+              type="button"
+              onClick={() => claim.chunk_id && onCitationClick(claim.chunk_id)}
+              className="text-left text-one-grey hover:text-one-turq-d disabled:hover:text-one-grey"
+              disabled={!claim.chunk_id}
+            >
+              {claim.claim}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function MandatoryReferencesPanel({ missing }: { missing: string[] }) {
+  if (!missing.length) return null;
+  return (
+    <div className="mb-3 rounded-md border border-status-esc-fg bg-status-esc-bg p-2 text-[11px] text-status-esc-fg">
+      <div className="font-semibold mb-1">Hiányzó kötelező hivatkozások</div>
+      <div className="flex flex-wrap gap-1">
+        {missing.map((item) => (
+          <span key={item} className="rounded-full bg-white/70 px-2 py-0.5 text-[10px]">{item}</span>
+        ))}
+      </div>
+    </div>
   );
 }
