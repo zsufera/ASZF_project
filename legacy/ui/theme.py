@@ -1,9 +1,9 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import streamlit as st
 
-# One Magyarország design tokenek (türkiz/fekete/fehér).
-# A pontos márka-hex ide cserélhető, ha rendelkezésre áll a márkakönyvi kód.
+# One MagyarorszĂˇg design tokenek (tĂĽrkiz/fekete/fehĂ©r).
+# A pontos mĂˇrka-hex ide cserĂ©lhetĹ‘, ha rendelkezĂ©sre Ăˇll a mĂˇrkakĂ¶nyvi kĂłd.
 TOKENS: dict[str, str] = {
     "turq": "#16C7C0",
     "turq_d": "#0FA39D",
@@ -27,31 +27,31 @@ _BADGE_STYLES: dict[str, str] = {
 
 
 def badge_html(kind: str, value: str) -> str:
-    """One-stílusú színkódolt badge HTML-fragmentum."""
+    """One-stĂ­lusĂş szĂ­nkĂłdolt badge HTML-fragmentum."""
     cls = _BADGE_STYLES.get(kind, "one-badge")
     label = value
     if kind == "priority" and value == "surgos":
-        label = "● SÜRGŐS"
+        label = "â—Ź SĂśRGĹS"
     return f'<span class="{cls}">{label}</span>'
 
 
 def chip_html(text: str) -> str:
-    """Kis türkiz forrás-chip (pl. citation)."""
+    """Kis tĂĽrkiz forrĂˇs-chip (pl. citation)."""
     return f'<span class="one-chip">{text}</span>'
 
 
 def source_card_html(section: str, dok_tipus: str, quote: str) -> str:
-    """Forrás-kártya HTML-fragmentum (§, dok_tipus, idézet)."""
+    """ForrĂˇs-kĂˇrtya HTML-fragmentum (Â§, dok_tipus, idĂ©zet)."""
     return (
         '<div class="one-src">'
-        f'<div class="one-src__sec">{section} · {dok_tipus}</div>'
-        f'<div class="one-src__q">„{quote}"</div>'
+        f'<div class="one-src__sec">{section} Â· {dok_tipus}</div>'
+        f'<div class="one-src__q">â€ž{quote}"</div>'
         "</div>"
     )
 
 
 def kpi_card_html(label: str, value: str, status: str = "ok") -> str:
-    """KPI-kártya HTML (status: ok|warn|bad → zöld/sárga/piros sáv)."""
+    """KPI-kĂˇrtya HTML (status: ok|warn|bad â†’ zĂ¶ld/sĂˇrga/piros sĂˇv)."""
     return (
         f'<div class="one-kpi one-kpi--{status}">'
         f'<div class="one-kpi__val">{value}</div>'
@@ -61,7 +61,7 @@ def kpi_card_html(label: str, value: str, status: str = "ok") -> str:
 
 
 def theme_css() -> str:
-    """A teljes One téma CSS-e <style> blokként (egyszer injektálandó)."""
+    """A teljes One tĂ©ma CSS-e <style> blokkĂ©nt (egyszer injektĂˇlandĂł)."""
     t = TOKENS
     return f"""<style>
 :root {{
@@ -111,7 +111,8 @@ mark {{ background:#FFF3B0; border-radius:3px; padding:0 2px; }}
 
 
 def inject_theme() -> None:
-    """Egyszer hívandó az app tetején: bekeveri a One CSS-t."""
+    """Egyszer hĂ­vandĂł az app tetejĂ©n: bekeveri a One CSS-t."""
     if not st.session_state.get("_one_theme_injected"):
         st.markdown(theme_css(), unsafe_allow_html=True)
         st.session_state["_one_theme_injected"] = True
+

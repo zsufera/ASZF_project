@@ -35,7 +35,7 @@ Fejlesztés közben kötelező iránytű: [FEJLESZTESI_GUARDRAILS.md](FEJLESZTES
    - demo belépés: `ui_demo` / `ui_demo` vagy `supervisor_demo` / `supervisor_demo`
    - részletek: [frontend/README.md](frontend/README.md), [frontend/UX-DECISIONS.md](frontend/UX-DECISIONS.md)
 7. Streamlit UI (Fázis 4 — **legacy**, a React frontend váltja le):
-   - `streamlit run ui/app.py`
+   - `streamlit run legacy/ui/app.py`
    - demo belépés: `ui_demo` / `ui_demo` vagy `supervisor_demo` / `supervisor_demo`
 
 ## ÁSZF ingest első lépései
@@ -128,14 +128,14 @@ A `frontend/` egy önálló **React + TypeScript + Tailwind** SPA, amely a One M
 
 - Indítás: `cd frontend && npm install && npm run dev` (backend a 8000 porton; a Vite a `/api`-t a backendre proxyzza).
 - Build: `npm run build`. Backend URL felülírása: `VITE_BACKEND_URL`.
-- Dokumentáció: [frontend/README.md](frontend/README.md), tervezési forrás: [docs/design-export/](docs/design-export/), eltérések/indoklás: [frontend/UX-DECISIONS.md](frontend/UX-DECISIONS.md).
+- Dokumentáció: [frontend/README.md](frontend/README.md), archivált tervezési forrás: [docs/archive/design-export/](docs/archive/design-export/), eltérések/indoklás: [frontend/UX-DECISIONS.md](frontend/UX-DECISIONS.md).
 - Nézetek: Bejelentkezés · Inbox · Ügy-munkaállomás (háromhasábos, becsukható agent-idővonal) · Új ügy · Copilot (chat/telefon) · Postai levél · Evaluation · Supervisor.
 
 ## Streamlit UI (Fázis 4 — legacy)
 
 > A React frontend (lásd fent) váltja le. Az alábbi Streamlit-felület referenciaként marad.
 
-Indítás: `streamlit run ui/app.py` (a backend fusson: `uvicorn backend.main:app --reload`).
+Indítás: `streamlit run legacy/ui/app.py` (a backend fusson: `uvicorn backend.main:app --reload`).
 
 Nézetek:
 - **Inbox** — minta-emailek listája, szűrés/rendezés, ügy nézet
@@ -193,7 +193,7 @@ Compliance: [docs/compliance_checklist.md](docs/compliance_checklist.md)
 - `preprocessing/` letöltés, parse, chunk, index, mintaadat
 - `backend/` FastAPI API + DB
 - `agent/` LangGraph állapotgép
-- `ui/` Streamlit felület
+- `legacy/ui/` archivált Streamlit felület
 - `eval/` referencia-mentes kiértékelés
 - `demo/` automatizált demó-szcenáriók
 - `integrations/` külső rendszer adapterek (mock)

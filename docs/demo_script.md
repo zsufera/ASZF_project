@@ -5,7 +5,7 @@
 1. `docker compose up -d` (Qdrant)
 2. `python -m backend.db`
 3. `uvicorn backend.main:app --reload`
-4. Opcionális UI: `streamlit run ui/app.py` (`ui_demo` / `ui_demo`)
+4. Opcionális legacy UI: `streamlit run legacy/ui/app.py` (`ui_demo` / `ui_demo`)
 
 ## Automatizált demó-szcenáriók
 

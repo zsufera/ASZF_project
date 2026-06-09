@@ -2,7 +2,7 @@
 
 > **Cél:** nagyobb, **funkcionalitásbeli** UI-fejlesztések specifikációja a React frontendhez (`frontend/`), a meglévő FastAPI backendre illesztve. Nem stílus/kozmetika — a use-case magját (auditálható, forrásolt, ember-kontrollált ügyintézői copilot) erősítő, működő funkciók.
 > **Forma:** stratégiai roadmap, tételenként implementálható spec-vázlat. Minden tétel külön implementációs tervvé (`docs/superpowers/plans/`) bontható.
-> **Kapcsolódó:** [`docs/design-export/`](design-export/) (One arculat/tokenek), [`frontend/UX-DECISIONS.md`](../frontend/UX-DECISIONS.md), [`docs/rag-roadmap.md`](rag-roadmap.md), [`FEJLESZTESI_GUARDRAILS.md`](../FEJLESZTESI_GUARDRAILS.md) (§7 UI guardrailek).
+> **Kapcsolódó:** [`docs/archive/design-export/`](archive/design-export/) (archivált One arculat/tokenek), [`frontend/UX-DECISIONS.md`](../frontend/UX-DECISIONS.md), [`docs/rag-roadmap.md`](rag-roadmap.md), [`FEJLESZTESI_GUARDRAILS.md`](../FEJLESZTESI_GUARDRAILS.md) (§7 UI guardrailek).
 > **Megjegyzés:** az „F) Tool-calling / élő ügyféladat" tétel szándékosan kimaradt (külön agentic-irány, lásd rag-roadmap E1 / agentic-javaslatok).
 
 ---
@@ -32,7 +32,7 @@
 1. **Backend-elsőbbség hasznosítása:** ahol a végpont már létezik, az UI-érték magas és gyors. A 🥇 tier ilyen.
 2. **A forrásoltság/audit a use-case magja** (guardrails §2, §7): minden nagyobb UI-fejlesztés ezt erősítse, ne hígítsa.
 3. **HITL & RBAC:** az ügyfél-felé menő / érzékeny műveletek (unmask, approve, purge) szerepkör-kötöttek és auditáltak maradjanak.
-4. **One arculat & tokenek:** `docs/design-export/tokens.css` + `tailwind.tokens.js`, `one-*` osztályok; named exportok; `tsc --noEmit` + `npm run build` tiszta.
+4. **One arculat & tokenek:** archivált forrás `docs/archive/design-export/tokens.css` + `tailwind.tokens.js`, `one-*` osztályok; named exportok; `tsc --noEmit` + `npm run build` tiszta.
 5. **a11y & órákig használat:** billentyű-vezérelhetőség, `aria-*`, fókuszgyűrű — az ügyintéző egész nap ezt nézi.
 6. **Offline-biztos:** a `OfflineBanner` mintára minden új nézet kezelje a backend-hiányt.
 

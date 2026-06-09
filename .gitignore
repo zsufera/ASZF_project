@@ -14,3 +14,11 @@ data/ollama/
 
 # Frontend build/dev cache
 frontend/.vite/
+
+# Runtime/generated artifacts
+data/traces/*.jsonl
+data/derived/
+data/eval/runs/
+.pytest_cache/
+
+# Local diagnostics are kept documented under scripts/diagnostics/

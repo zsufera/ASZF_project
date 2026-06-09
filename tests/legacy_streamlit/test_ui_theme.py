@@ -1,6 +1,10 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
-from ui import theme
+import pytest
+
+pytestmark = pytest.mark.legacy
+
+from legacy.ui import theme
 
 
 def test_tokens_have_required_keys():
@@ -18,7 +22,10 @@ def test_theme_css_contains_primary_color():
 
 def test_badge_html_known_kinds():
     html = theme.badge_html("priority", "surgos")
-    assert "one-badge" in html and "SÜRGŐS" in html
-    assert theme.badge_html("category", "Számlázás").count("Számlázás") == 1
-    # ismeretlen kind biztonságos fallback
+    assert "one-badge" in html and "SĂśRGĹS" in html
+    assert theme.badge_html("category", "SzĂˇmlĂˇzĂˇs").count("SzĂˇmlĂˇzĂˇs") == 1
+    # ismeretlen kind biztonsĂˇgos fallback
     assert "one-badge" in theme.badge_html("unknown", "x")
+
+
+

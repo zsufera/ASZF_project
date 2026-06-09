@@ -1,38 +1,38 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import streamlit as st
 
-from ui import api_client
-from ui.components import case_badges_html
+from legacy.ui import api_client
+from legacy.ui.components import case_badges_html
 
 
 def render_inbox_view() -> str | None:
-    st.subheader("📥 Ügyintézői inbox")
+    st.subheader("đź“Ą ĂśgyintĂ©zĹ‘i inbox")
     col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
         category = st.selectbox(
-            "Kategória",
+            "KategĂłria",
             ["", "szamlazas", "dijemeles", "hibabejelentes_szolgaltataskieses", "egyeb"],
-            format_func=lambda value: "Összes" if not value else value,
+            format_func=lambda value: "Ă–sszes" if not value else value,
         )
     with col2:
-        priority = st.selectbox("Prioritás", ["", "surgos", "normal"], format_func=lambda v: "Összes" if not v else v)
+        priority = st.selectbox("PrioritĂˇs", ["", "surgos", "normal"], format_func=lambda v: "Ă–sszes" if not v else v)
     with col3:
         status = st.selectbox(
-            "Státusz",
+            "StĂˇtusz",
             ["", "uj", "folyamatban", "eszkalalva", "jovahagyasra_var", "lezarva"],
-            format_func=lambda v: "Összes" if not v else v,
+            format_func=lambda v: "Ă–sszes" if not v else v,
         )
     with col4:
-        channel = st.selectbox("Csatorna", ["", "email", "chat", "phone", "postal"], format_func=lambda v: "Összes" if not v else v)
+        channel = st.selectbox("Csatorna", ["", "email", "chat", "phone", "postal"], format_func=lambda v: "Ă–sszes" if not v else v)
     with col5:
         sort_by = st.selectbox(
-            "Rendezés",
+            "RendezĂ©s",
             ["priority", "sla", "created_at"],
-            format_func=lambda v: {"priority": "Prioritás", "sla": "SLA", "created_at": "Beérkezés"}[v],
+            format_func=lambda v: {"priority": "PrioritĂˇs", "sla": "SLA", "created_at": "BeĂ©rkezĂ©s"}[v],
         )
 
-    search = st.text_input("🔍 Keresés (azonosító, feladó, tárgy)")
+    search = st.text_input("đź”Ť KeresĂ©s (azonosĂ­tĂł, feladĂł, tĂˇrgy)")
 
     try:
         payload = api_client.list_inbox(
@@ -49,7 +49,7 @@ def render_inbox_view() -> str | None:
 
     items = payload.get("items") or []
     if not items:
-        st.info("Nincs megjeleníthető üzenet.")
+        st.info("Nincs megjelenĂ­thetĹ‘ ĂĽzenet.")
         return None
 
     for item in items:
@@ -58,9 +58,10 @@ def render_inbox_view() -> str | None:
             with cols[0]:
                 st.markdown(case_badges_html(item), unsafe_allow_html=True)
                 st.markdown(
-                    f"**{item.get('subject', '')[:80]}** · ⏱ {item.get('sla_days_remaining', '—')} nap"
+                    f"**{item.get('subject', '')[:80]}** Â· âŹ± {item.get('sla_days_remaining', 'â€”')} nap"
                 )
             with cols[1]:
-                if st.button("Megnyitás", key=f"open_{item['case_id']}", type="primary"):
+                if st.button("MegnyitĂˇs", key=f"open_{item['case_id']}", type="primary"):
                     return item["case_id"]
     return None
+

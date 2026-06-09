@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 import os
@@ -45,11 +45,11 @@ def request_json(
         detail = _parse_response(body)
         raise ApiError(detail.get("error") or detail.get("detail") or str(exc)) from exc
     except urllib.error.URLError as exc:
-        raise ApiError(f"Backend nem elérhető ({BACKEND_URL}): {exc}") from exc
+        raise ApiError(f"Backend nem elĂ©rhetĹ‘ ({BACKEND_URL}): {exc}") from exc
 
 
 def post_ocr(case_id: str, filename: str, content: bytes) -> dict[str, Any]:
-    boundary = "----aszfqna边界"
+    boundary = "----aszfqnačľąç•Ś"
     parts: list[bytes] = []
     parts.append(f"--{boundary}\r\n".encode())
     parts.append(f'Content-Disposition: form-data; name="case_id"\r\n\r\n{case_id}\r\n'.encode())
@@ -169,3 +169,4 @@ def supervisor_queue() -> dict[str, Any]:
 
 def supervisor_stats() -> dict[str, Any]:
     return request_json("GET", "/supervisor/stats")
+

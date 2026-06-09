@@ -7,7 +7,6 @@ openai
 llama-index
 langgraph
 langchain
-streamlit
 presidio-analyzer
 presidio-anonymizer
 pytesseract
