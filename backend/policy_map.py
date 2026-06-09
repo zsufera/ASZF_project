@@ -96,3 +96,29 @@ def build_policy_map(
         "mandatory_refs": required_refs,
         "missing_mandatory": missing_mandatory,
     }
+
+
+def _section_top_level(paragraph: str) -> str:
+    return str(paragraph or "").split(".")[0].strip()
+
+
+def category_section_prefixes(
+    category: str,
+    entries: dict[str, list[dict[str, str]]] | None = None,
+) -> set[str]:
+    """A kategória kötelező hivatkozásainak szekció-prefixe (felső szint), pl. szamlazas -> {"5"}."""
+    cat_entries = (entries if entries is not None else load_mandatory_entries()).get(category, [])
+    return {
+        _section_top_level(entry.get("paragrafus", ""))
+        for entry in cat_entries
+        if _section_top_level(entry.get("paragrafus", ""))
+    }
+
+
+def category_mandatory_paragraphs(
+    category: str,
+    entries: dict[str, list[dict[str, str]]] | None = None,
+) -> set[str]:
+    """A kategória kötelező hivatkozásainak teljes paragrafus-számai (pontos boostoláshoz)."""
+    cat_entries = (entries if entries is not None else load_mandatory_entries()).get(category, [])
+    return {str(entry.get("paragrafus")).strip() for entry in cat_entries if entry.get("paragrafus")}

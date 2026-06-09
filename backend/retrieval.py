@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import re
 import threading
+from collections import defaultdict
 from typing import Any
 
 from preprocessing.embedding import active_mode, embed_query
@@ -19,13 +20,21 @@ from preprocessing.index import (
     tokenize,
 )
 
+from backend.policy_map import category_mandatory_paragraphs, category_section_prefixes
+from backend.reference_resolution import (
+    build_paragraph_index,
+    normalize_paragraph,
+    parent_context,
+    reference_closure,
+)
 from config.settings import settings
 
 
-REF_NUMBER_PATTERN = re.compile(r"\d+(?:\.\d+){0,4}")
 HYBRID_SPARSE_WEIGHT = 0.55
 HYBRID_DENSE_WEIGHT = 0.45
-CROSS_REF_LIMIT = 3
+# Szignifikáns szám: többjegyű (15, 30, 60) VAGY tagolt §/decimális (5.5.1, 15,5).
+# Az egyjegyű számok túl gyakoriak (zaj) → kihagyva.
+_SIGNIFICANT_NUMBER = re.compile(r"\d+(?:[.,]\d+)+|\d{2,}")
 
 # ---------------------------------------------------------------------------
 # In-memory chunk cache — a 28,5 MB-os chunks.jsonl beolvasása és 51 049 JSON
@@ -109,65 +118,15 @@ def rerank_chunks(query: str, chunks: list[dict[str, Any]], limit: int = 5) -> l
     return [chunk_to_result(score, chunk) for score, chunk in scored[:limit]]
 
 
-def _normalize_ref(value: str) -> str:
-    match = REF_NUMBER_PATTERN.search(value)
-    return match.group(0) if match else fold_text(value)
-
-
 def _chunk_index(chunks: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
     return {str(chunk.get("chunk_id")): chunk for chunk in chunks if chunk.get("chunk_id")}
-
-
-def _chunks_by_doc(chunks: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
-    grouped: dict[str, list[dict[str, Any]]] = {}
-    for chunk in chunks:
-        doc_id = str(chunk.get("doc_id") or "")
-        grouped.setdefault(doc_id, []).append(chunk)
-    return grouped
-
-
-def resolve_cross_refs(
-    results: list[dict[str, Any]],
-    all_chunks: list[dict[str, Any]],
-    max_extra: int = CROSS_REF_LIMIT,
-) -> list[dict[str, Any]]:
-    if not results:
-        return results
-
-    by_id = _chunk_index(all_chunks)
-    by_doc = _chunks_by_doc(all_chunks)
-    seen = {item["chunk_id"] for item in results if item.get("chunk_id")}
-    expanded = list(results)
-
-    for result in results:
-        source_chunk = by_id.get(str(result.get("chunk_id")))
-        if not source_chunk:
-            continue
-        doc_id = str(source_chunk.get("doc_id") or "")
-        doc_chunks = by_doc.get(doc_id, [])
-        for ref in source_chunk.get("cross_refs", []):
-            if len(expanded) >= len(results) + max_extra:
-                return expanded
-            ref_key = _normalize_ref(ref)
-            for candidate in doc_chunks:
-                chunk_id = candidate.get("chunk_id")
-                if not chunk_id or chunk_id in seen:
-                    continue
-                paragraph = str(candidate.get("paragrafus_szam") or "")
-                if ref_key and (paragraph.startswith(ref_key) or ref_key in fold_text(paragraph)):
-                    expanded.append(
-                        chunk_to_result(max(result.get("score", 0.0) - 0.05, 0.01), candidate)
-                        | {"retrieval_source": "cross_ref"}
-                    )
-                    seen.add(chunk_id)
-                    break
-    return expanded
 
 
 def search_qdrant(
     query: str,
     service_provider: str | None,
     limit: int,
+    dok_tipus: str | None = None,
 ) -> list[dict[str, Any]]:
     if active_mode() != "openai":
         return []
@@ -179,15 +138,23 @@ def search_qdrant(
         client = get_shared_client()
         vector = embed_query(query)
         query_filter = None
+        must_conditions = []
         if service_provider:
-            query_filter = models.Filter(
-                must=[
-                    models.FieldCondition(
-                        key="szolgaltato",
-                        match=models.MatchValue(value=service_provider),
-                    )
-                ]
+            must_conditions.append(
+                models.FieldCondition(
+                    key="szolgaltato",
+                    match=models.MatchValue(value=service_provider),
+                )
             )
+        if dok_tipus:
+            must_conditions.append(
+                models.FieldCondition(
+                    key="dok_tipus",
+                    match=models.MatchValue(value=dok_tipus),
+                )
+            )
+        if must_conditions:
+            query_filter = models.Filter(must=must_conditions)
         response = client.query_points(
             collection_name=DEFAULT_COLLECTION,
             query=vector,
@@ -203,6 +170,106 @@ def search_qdrant(
         return []
 
 
+def apply_category_boost(
+    results: list[dict[str, Any]],
+    section_prefixes: set[str],
+    mandatory_paras: set[str],
+) -> list[dict[str, Any]]:
+    """A kategória szekciójába (felső szint) vagy kötelező §-ába eső találatokat felsúlyozza,
+    majd újrarendezi. Pontos kötelező-§ egyezés erősebb boostot kap, mint a szekció-egyezés."""
+    if not section_prefixes and not mandatory_paras:
+        return results
+    boosted: list[dict[str, Any]] = []
+    for result in results:
+        paragraph = str(result.get("paragrafus") or "")
+        top = paragraph.split(".")[0].strip()
+        score = float(result.get("score", 0.0))
+        if paragraph in mandatory_paras:
+            score = min(score + 0.2, 1.0)
+        elif top and top in section_prefixes:
+            score = min(score + 0.1, 1.0)
+        boosted.append({**result, "score": round(score, 4)})
+    boosted.sort(key=lambda item: float(item.get("score", 0.0)), reverse=True)
+    return boosted
+
+
+def _significant_numbers(text: str) -> set[str]:
+    return {match.group(0).replace(",", ".") for match in _SIGNIFICANT_NUMBER.finditer(str(text or ""))}
+
+
+def apply_numeric_boost(
+    query: str,
+    results: list[dict[str, Any]],
+    per_match: float = 0.1,
+    cap: float = 0.2,
+) -> list[dict[str, Any]]:
+    """A query szignifikáns számait (határidők, díjak, §-számok) tartalmazó találatokat
+    felsúlyozza és újrarendezi. Szám nélküli query esetén no-op (csak akkor hat, ha számít)."""
+    query_numbers = _significant_numbers(query)
+    if not query_numbers:
+        return results
+    boosted: list[dict[str, Any]] = []
+    for result in results:
+        haystack = f"{result.get('quote', '')} {result.get('paragrafus', '')}"
+        matches = len(query_numbers & _significant_numbers(haystack))
+        score = float(result.get("score", 0.0))
+        if matches:
+            score = min(score + min(matches * per_match, cap), 1.0)
+        boosted.append({**result, "score": round(score, 4)})
+    boosted.sort(key=lambda item: float(item.get("score", 0.0)), reverse=True)
+    return boosted
+
+
+def auto_merge_siblings(
+    results: list[dict[str, Any]],
+    all_chunks: list[dict[str, Any]],
+    min_siblings: int = 2,
+) -> list[dict[str, Any]]:
+    """Ha a találatok közt >= min_siblings testvér-leaf van ugyanazon szülő alatt (és a
+    szülő § külön chunkként létezik), azokat a szülő egyetlen 'auto_merged' találatába vonja."""
+    by_id = {str(chunk.get("chunk_id")): chunk for chunk in all_chunks if chunk.get("chunk_id")}
+    paragraph_index = build_paragraph_index(all_chunks)
+
+    group_for_index: dict[int, tuple] = {}
+    parent_for_group: dict[tuple, dict[str, Any]] = {}
+    members: dict[tuple, list[int]] = defaultdict(list)
+    for i, result in enumerate(results):
+        source = by_id.get(str(result.get("chunk_id")))
+        if not source:
+            continue
+        paragraph = normalize_paragraph(source.get("paragrafus_szam") or source.get("paragrafus"))
+        if "." not in paragraph:
+            continue
+        parent_paragraph = paragraph.rsplit(".", 1)[0]
+        parent = paragraph_index.get((source.get("doc_id"), parent_paragraph))
+        if not parent:
+            continue
+        key = (source.get("doc_id"), parent_paragraph)
+        group_for_index[i] = key
+        parent_for_group[key] = parent
+        members[key].append(i)
+
+    merge_keys = {key for key, idxs in members.items() if len(idxs) >= min_siblings}
+
+    out: list[dict[str, Any]] = []
+    emitted_parents: set[str] = set()
+    for i, result in enumerate(results):
+        key = group_for_index.get(i)
+        if key in merge_keys:
+            parent = parent_for_group[key]
+            pid = str(parent.get("chunk_id"))
+            if pid in emitted_parents:
+                continue  # a további testvéreket eldobjuk
+            emitted_parents.add(pid)
+            out.append(
+                chunk_to_result(float(result.get("score", 0.0)), parent)
+                | {"retrieval_source": "auto_merged"}
+            )
+        else:
+            out.append(result)
+    return out
+
+
 def retrieve(
     query: str,
     service_provider: str | None = None,
@@ -210,6 +277,7 @@ def retrieve(
     limit: int = 5,
     chunks_path: Any = DEFAULT_CHUNKS_PATH,
     prefer_qdrant: bool = True,
+    category: str | None = None,
 ) -> dict[str, Any]:
     all_chunks = _get_chunks(chunks_path)
     filtered = [
@@ -218,8 +286,11 @@ def retrieve(
         if (not service_provider or chunk.get("szolgaltato") == service_provider)
         and (not dok_tipus or chunk.get("dok_tipus") == dok_tipus)
     ]
+    # Nagyobb jelölt-pool, ha kategória- vagy numerikus boost átrendezhet (különben felesleges).
+    needs_pool = bool(category) or bool(_significant_numbers(query))
+    candidate_limit = limit * 4 if needs_pool else limit
 
-    qdrant_results = search_qdrant(query, service_provider, limit) if prefer_qdrant else []
+    qdrant_results = search_qdrant(query, service_provider, candidate_limit, dok_tipus=dok_tipus) if prefer_qdrant else []
     if qdrant_results:
         primary = qdrant_results
         retrieval_mode = "qdrant_semantic"
@@ -229,7 +300,7 @@ def retrieve(
             chunks=filtered,
             service_provider=service_provider,
             dok_tipus=dok_tipus,
-            limit=limit,
+            limit=candidate_limit,
         )
         if sparse_results:
             rescored = []
@@ -243,17 +314,37 @@ def retrieve(
                     )
                 )
             rescored.sort(key=lambda item: item["score"], reverse=True)
-            primary = rescored[:limit]
+            primary = rescored[:candidate_limit]
         else:
-            primary = rerank_chunks(query, filtered, limit=limit)
+            primary = rerank_chunks(query, filtered, limit=candidate_limit)
         retrieval_mode = "hybrid_local"
     else:
         primary = []
         retrieval_mode = "empty"
 
-    expanded = resolve_cross_refs(primary, all_chunks)
+    if category:
+        primary = apply_category_boost(
+            primary,
+            category_section_prefixes(category),
+            category_mandatory_paragraphs(category),
+        )
+    primary = apply_numeric_boost(query, primary)  # C2: query-számok (határidő, díj, §) boost
+    primary = primary[:limit]
+    primary = auto_merge_siblings(primary, all_chunks)  # B2: testvér-leaf-ek a szülőbe
+
+    added, unresolved = reference_closure(primary, all_chunks)
+    parents = parent_context(primary, all_chunks)
+    expanded = list(primary)
+    closure_ids = {str(chunk.get("chunk_id")) for chunk, _ in added}
+    for chunk, score in added:
+        expanded.append(chunk_to_result(score, chunk) | {"retrieval_source": "reference_closure"})
+    for chunk, score in parents:
+        if str(chunk.get("chunk_id")) in closure_ids:
+            continue  # a closure már behúzta — ne duplikáljuk
+        expanded.append(chunk_to_result(score, chunk) | {"retrieval_source": "parent_context"})
     return {
         "chunks": expanded,
         "retrieval_mode": retrieval_mode,
         "result_count": len(expanded),
+        "unresolved_refs": unresolved,
     }

@@ -342,8 +342,8 @@ def unmask(payload: UnmaskRequest) -> dict:
 
 
 @app.get("/history")
-def history(address: str) -> dict:
-    return {**response_meta(), **get_history(address)}
+def history(address: str, sender_email_key: str | None = None) -> dict:
+    return {**response_meta(), **get_history(address, sender_email_key=sender_email_key)}
 
 
 @app.get("/customer-lookup")

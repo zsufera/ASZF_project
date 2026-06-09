@@ -7,6 +7,7 @@ class AgentState(TypedDict, total=False):
     input_text: str
     input_text_masked: str
     sender_email: str | None
+    sender_email_key: str | None
     service_provider: str | None
     output_mode: str
     sla_expired: bool
