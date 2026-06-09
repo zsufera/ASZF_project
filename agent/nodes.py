@@ -186,6 +186,7 @@ def retrieve_node(state: AgentState) -> AgentState:
         query=query,
         service_provider=state.get("service_provider"),
         limit=5,
+        category=category,
     )
     return {
         "retrieval": result,

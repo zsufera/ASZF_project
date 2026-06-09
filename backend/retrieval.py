@@ -19,6 +19,7 @@ from preprocessing.index import (
     tokenize,
 )
 
+from backend.policy_map import category_mandatory_paragraphs, category_section_prefixes
 from backend.reference_resolution import reference_closure
 from config.settings import settings
 
@@ -151,6 +152,29 @@ def search_qdrant(
         return []
 
 
+def apply_category_boost(
+    results: list[dict[str, Any]],
+    section_prefixes: set[str],
+    mandatory_paras: set[str],
+) -> list[dict[str, Any]]:
+    """A kategória szekciójába (felső szint) vagy kötelező §-ába eső találatokat felsúlyozza,
+    majd újrarendezi. Pontos kötelező-§ egyezés erősebb boostot kap, mint a szekció-egyezés."""
+    if not section_prefixes and not mandatory_paras:
+        return results
+    boosted: list[dict[str, Any]] = []
+    for result in results:
+        paragraph = str(result.get("paragrafus") or "")
+        top = paragraph.split(".")[0].strip()
+        score = float(result.get("score", 0.0))
+        if paragraph in mandatory_paras:
+            score = min(score + 0.2, 1.0)
+        elif top and top in section_prefixes:
+            score = min(score + 0.1, 1.0)
+        boosted.append({**result, "score": round(score, 4)})
+    boosted.sort(key=lambda item: float(item.get("score", 0.0)), reverse=True)
+    return boosted
+
+
 def retrieve(
     query: str,
     service_provider: str | None = None,
@@ -158,6 +182,7 @@ def retrieve(
     limit: int = 5,
     chunks_path: Any = DEFAULT_CHUNKS_PATH,
     prefer_qdrant: bool = True,
+    category: str | None = None,
 ) -> dict[str, Any]:
     all_chunks = _get_chunks(chunks_path)
     filtered = [
@@ -166,8 +191,10 @@ def retrieve(
         if (not service_provider or chunk.get("szolgaltato") == service_provider)
         and (not dok_tipus or chunk.get("dok_tipus") == dok_tipus)
     ]
+    # Kategória-routinghoz nagyobb jelölt-pool, hogy a boost ténylegesen átrendezhessen.
+    candidate_limit = limit * 4 if category else limit
 
-    qdrant_results = search_qdrant(query, service_provider, limit) if prefer_qdrant else []
+    qdrant_results = search_qdrant(query, service_provider, candidate_limit) if prefer_qdrant else []
     if qdrant_results:
         primary = qdrant_results
         retrieval_mode = "qdrant_semantic"
@@ -177,7 +204,7 @@ def retrieve(
             chunks=filtered,
             service_provider=service_provider,
             dok_tipus=dok_tipus,
-            limit=limit,
+            limit=candidate_limit,
         )
         if sparse_results:
             rescored = []
@@ -191,13 +218,21 @@ def retrieve(
                     )
                 )
             rescored.sort(key=lambda item: item["score"], reverse=True)
-            primary = rescored[:limit]
+            primary = rescored[:candidate_limit]
         else:
-            primary = rerank_chunks(query, filtered, limit=limit)
+            primary = rerank_chunks(query, filtered, limit=candidate_limit)
         retrieval_mode = "hybrid_local"
     else:
         primary = []
         retrieval_mode = "empty"
+
+    if category:
+        primary = apply_category_boost(
+            primary,
+            category_section_prefixes(category),
+            category_mandatory_paragraphs(category),
+        )
+    primary = primary[:limit]
 
     added, unresolved = reference_closure(primary, all_chunks)
     expanded = list(primary)
