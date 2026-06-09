@@ -119,7 +119,7 @@ export function Knowledge() {
               )}
             </>
           ) : (
-            <p className="text-one-grey text-[12px]">Válassz egy ASZF szakaszt.</p>
+            <p className="text-one-grey text-[12px]">Válassz egy ÁSZF-szakaszt.</p>
           )}
         </main>
 

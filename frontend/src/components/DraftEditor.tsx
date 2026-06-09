@@ -168,6 +168,7 @@ export function DraftEditor({ draft, versions, outputMode, onModeChange, onSave,
             className="cursor-text whitespace-pre-wrap"
             role="textbox"
             aria-label="Draft szöveg — kattints a szerkesztéshez"
+
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === "Enter") setEditMode(true); }}
           >
@@ -189,7 +190,7 @@ export function DraftEditor({ draft, versions, outputMode, onModeChange, onSave,
           className="bg-one-turq text-[#04201f] font-bold text-[11px] px-4 py-2 rounded-pill hover:bg-one-turq-d transition-colors disabled:opacity-50"
           aria-label="Jóváhagyom kiküldésre"
         >
-          {approving ? "⏳ Jóváhagyás…" : "✓ Jóváhagyom kiküldésre"}
+          {approving ? "Jóváhagyás…" : "✓ Jóváhagyom kiküldésre"}
         </button>
         <button
           onClick={handleSave}
@@ -197,7 +198,7 @@ export function DraftEditor({ draft, versions, outputMode, onModeChange, onSave,
           className="bg-white border border-one-line text-one-ink text-[11px] px-3 py-2 rounded-pill hover:bg-one-canvas transition-colors disabled:opacity-50"
           aria-label="Draft mentése"
         >
-          {saving ? "…" : "💾 Draft mentése"}
+          {saving ? "…" : "Draft mentése"}
         </button>
         <div className="ml-auto flex items-center gap-3 text-[12px] text-one-grey">
           <span>Visszajelzés:</span>

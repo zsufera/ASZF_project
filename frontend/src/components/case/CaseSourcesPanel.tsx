@@ -34,7 +34,7 @@ export function UnresolvedReferencesPanel({ refs }: { refs: UnresolvedReference[
 
 export function CaseSourcesPanel({ sources, chunks, unresolvedRefs = [], sourceRefs }: CaseSourcesPanelProps) {
   return (
-    <Card title="Forrasok">
+    <Card title="Források">
       <UnresolvedReferencesPanel refs={unresolvedRefs} />
       {sources.length > 0 ? (
         sources.map((source) => (

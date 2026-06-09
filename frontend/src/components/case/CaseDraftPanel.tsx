@@ -52,9 +52,9 @@ export function CaseDraftPanel({
             onClick={onProcess}
             disabled={processing}
             className="text-[10px] text-one-turq-d border border-one-turq rounded-pill px-3 py-1 hover:bg-one-turq-l transition-colors disabled:opacity-50"
-            aria-label="Agent feldolgozas ujrafuttatasa"
+            aria-label="Agent feldolgozás újrafuttatása"
           >
-            {processing ? "Feldolgozas..." : "Feldolgozas ujra"}
+            {processing ? "Feldolgozás…" : "Feldolgozás újra"}
           </button>
         </div>
       ) : null}
@@ -84,7 +84,7 @@ export function CaseDraftPanel({
             disabled={processing}
             className="bg-one-turq text-[#04201f] font-bold text-[12px] px-5 py-2 rounded-pill hover:bg-one-turq-d transition-colors disabled:opacity-50"
           >
-            Agent feldolgozas inditasa
+            Agent feldolgozás indítása
           </button>
         </div>
       ) : (

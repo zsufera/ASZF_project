@@ -120,7 +120,7 @@ export function CaseWorkstation() {
       </div>
 
       {approvalResult ? (
-        <Modal title="Jovahagyott tartalom - Kuldesre kesz" onClose={() => setApprovalResult(null)}>
+        <Modal title="Jóváhagyott tartalom — Küldésre kész" onClose={() => setApprovalResult(null)}>
           <div className="text-[12px] space-y-3">
             <div>
               <label className="text-one-grey text-[10px] uppercase">Targy</label>
@@ -134,12 +134,12 @@ export function CaseWorkstation() {
             </div>
             <button
               onClick={() => {
-                show("Level kikuldve!");
+                show("Levél kiküldve!");
                 setApprovalResult(null);
               }}
               className="bg-one-turq text-[#04201f] font-bold text-[11px] px-4 py-2 rounded-pill hover:bg-one-turq-d transition-colors w-full"
             >
-              Kuldes megerositese
+              Küldés megerősítése
             </button>
           </div>
         </Modal>

@@ -10,7 +10,7 @@ interface CaseCustomerPanelProps {
 
 export function CaseCustomerPanel({ candidates, selected, onSelect }: CaseCustomerPanelProps) {
   return (
-    <Card title="Ugyfeltorzs-jeloltek">
+    <Card title="Ügyféltörzs-jelöltek">
       <CustomerCandidateList candidates={candidates} selected={selected} onSelect={onSelect} />
     </Card>
   );
