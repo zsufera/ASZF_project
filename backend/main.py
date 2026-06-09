@@ -34,6 +34,7 @@ from backend.db import init_db
 from backend.draft import synthesize_answer
 from backend.api.agent import router as agent_router
 from backend.api.cases import router as cases_router
+from backend.api.copilot import router as copilot_router
 from backend.api.history import router as history_router
 from agent.runner import run_agent
 from backend.acceptance_service import run_acceptance
@@ -61,6 +62,7 @@ POSTAL_PDF_DIR = Path("data/postal_pdfs")
 app.include_router(cases_router)
 app.include_router(history_router)
 app.include_router(agent_router)
+app.include_router(copilot_router)
 
 
 class ClassifyRequest(BaseModel):

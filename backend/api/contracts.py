@@ -109,3 +109,20 @@ class AgentRunResponse(FlexibleResponse):
     case_id: str | None = None
     timeline: list[dict[str, Any]] = Field(default_factory=list)
     error: str | None = None
+
+
+class CopilotChatRequest(BaseModel):
+    session_id: str
+    message: str
+    history: list[dict[str, str]] = Field(default_factory=list)
+    customer_facing: bool = False
+
+
+class CopilotChatResponse(FlexibleResponse):
+    reply: str | None = None
+    sources: list[dict[str, Any]] = Field(default_factory=list)
+    draft: dict[str, Any] | None = None
+    escalation: dict[str, Any] | None = None
+    timeline: list[dict[str, Any]] = Field(default_factory=list)
+    orchestrator_mode: str | None = None
+    error: str | None = None
