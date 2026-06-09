@@ -4,7 +4,7 @@ import { api } from "../lib/api";
 import { useSession } from "../state/session";
 import { useToast } from "../state/toast";
 import { ChatTurn } from "../components/ChatTurn";
-import type { SourceRef } from "../lib/types";
+import type { GenerationMode, SourceRef } from "../lib/types";
 import { InlineAnswer } from "../components/InlineAnswer";
 import { RichSourceCard } from "../components/SourceCard";
 import { ProcessingIndicator } from "../components/ProcessingIndicator";
@@ -13,7 +13,7 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   sources?: SourceRef[];
-  generationMode?: "llm" | "insufficient";
+  generationMode?: GenerationMode;
 }
 
 const STREAMING_DELAY = 40;
@@ -71,7 +71,7 @@ export function Copilot() {
         channel: "chat",
         input_text: text,
         output_mode: outputMode,
-      }) as { draft?: { body_masked?: string; sources?: SourceRef[]; generation_mode?: "llm" | "insufficient" } };
+      }) as { draft?: { body_masked?: string; sources?: SourceRef[]; generation_mode?: GenerationMode } };
 
       const body = res.draft?.body_masked ?? "Nincs válasz.";
       const sources = res.draft?.sources ?? [];

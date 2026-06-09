@@ -135,14 +135,15 @@ def test_synthesize_strips_invalid_markers(monkeypatch):
     assert "[S9]" not in result["body_masked"]
 
 
-def test_synthesize_insufficient_without_llm(monkeypatch):
+def test_synthesize_uses_template_fallback_without_llm_when_sources_exist(monkeypatch):
     monkeypatch.setattr(settings, "openai_api_key", "")  # llm unavailable
     result = draft.synthesize_answer(
         case_id="c", category="felmondas", channel="email",
         output_mode="hitl", policy_map=_PMAP, actions=[],
     )
-    assert result["generation_mode"] == "insufficient"
-    assert "(forrás:" not in result["body_masked"]
+    assert result["generation_mode"] == "template"
+    assert "(forrás: c1)" in result["body_masked"]
+    assert result["format"] == "email"
     assert len(result["sources"]) == 1  # megtalált forrás megjelenik
 
 
@@ -168,7 +169,7 @@ def test_synthesize_insufficient_when_llm_flags_uncovered(monkeypatch):
     assert result["generation_mode"] == "insufficient"
 
 
-def test_synthesize_insufficient_on_llm_exception(monkeypatch):
+def test_synthesize_uses_template_fallback_on_llm_exception_when_sources_exist(monkeypatch):
     _enable_llm(monkeypatch)
     def _boom(s, u):
         raise RuntimeError("api down")
@@ -177,7 +178,9 @@ def test_synthesize_insufficient_on_llm_exception(monkeypatch):
         case_id="c", category="felmondas", channel="email",
         output_mode="hitl", policy_map=_PMAP, actions=[],
     )
-    assert result["generation_mode"] == "insufficient"
+    assert result["generation_mode"] == "template"
+    assert "(forrás: c1)" in result["body_masked"]
+    assert result["sources"][0]["used"] is True
 
 
 def test_clean_outbound_text_strips_markers():

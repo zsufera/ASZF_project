@@ -29,3 +29,11 @@ def test_draft_editor_defaults_to_latest_version_first() -> None:
 
     assert "versions[versions.length - 1]" not in source
     assert "versions[0]?.id" in source
+
+
+def test_frontend_generation_mode_accepts_template_fallback() -> None:
+    types_source = (ROOT / "frontend/src/lib/types.ts").read_text(encoding="utf-8")
+    copilot_source = (ROOT / "frontend/src/screens/Copilot.tsx").read_text(encoding="utf-8")
+
+    assert 'GenerationMode = "llm" | "insufficient" | "template"' in types_source
+    assert "generation_mode?: GenerationMode" in copilot_source

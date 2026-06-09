@@ -173,6 +173,44 @@ def _insufficient_result(fmt: str, category: str, sources: list[dict[str, Any]])
     }
 
 
+def _template_synthesis_result(
+    case_id: str,
+    category: str,
+    fmt: str,
+    output_mode: str,
+    policy_map: dict[str, Any],
+    actions: list[dict[str, Any]],
+    sources: list[dict[str, Any]],
+) -> dict[str, Any]:
+    marked_sources = [{**source, "used": True} for source in sources]
+    citations = [source["chunk_id"] for source in marked_sources]
+    if fmt == "email":
+        result = build_draft_template(case_id, category, output_mode, policy_map, actions)
+        return {
+            **result,
+            "sources": marked_sources,
+            "citations": citations,
+            "generation_mode": "template",
+            "format": "email",
+        }
+
+    talking_points = [
+        f'- [{source["ref"]}] "{source.get("idezet", "")}" '
+        f'(forrás: {source["chunk_id"]})'
+        for source in marked_sources
+        if source.get("idezet")
+    ] or ["- Nincs elegendő forrás - eszkaláció javasolt."]
+    return {
+        "subject": f"Copilot jegyzet - {category}",
+        "body_masked": "Forrásolt ügyintézői összegzés:\n" + "\n".join(talking_points),
+        "sources": marked_sources,
+        "citations": citations,
+        "generation_mode": "template",
+        "format": "copilot",
+        "disclaimer_applied": False,
+    }
+
+
 def synthesize_answer(
     case_id: str,
     category: str,
@@ -185,8 +223,10 @@ def synthesize_answer(
     fmt = "copilot" if channel in {"chat", "phone"} else "email"
     sources = _build_sources(policy_map.get("policy_items", []))
 
-    if not llm_available() or not sources:
+    if not sources:
         return _insufficient_result(fmt, category, sources)
+    if not llm_available():
+        return _template_synthesis_result(case_id, category, fmt, output_mode, policy_map, actions, sources)
 
     try:
         sources_block = "\n".join(
@@ -211,7 +251,7 @@ def synthesize_answer(
             return _insufficient_result(fmt, category, sources)
         body = str(data.get("valasz", "")).strip()
         if not body:
-            return _insufficient_result(fmt, category, sources)
+            return _template_synthesis_result(case_id, category, fmt, output_mode, policy_map, actions, sources)
 
         valid_refs = {s["ref"] for s in sources}
         # Csak a ténylegesen létező [Sn] jelölők maradnak; az érvénytelent töröljük.
@@ -244,8 +284,8 @@ def synthesize_answer(
             "disclaimer_applied": disclaimer_applied,
         }
     except Exception:
-        logger.exception("synthesize_answer failed; falling back to insufficient")
-        return _insufficient_result(fmt, category, sources)
+        logger.exception("synthesize_answer failed; falling back to template synthesis")
+        return _template_synthesis_result(case_id, category, fmt, output_mode, policy_map, actions, sources)
 
 
 def build_draft(

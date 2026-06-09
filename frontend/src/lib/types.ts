@@ -52,7 +52,7 @@ export interface SourceRef {
   used: boolean;
 }
 
-export type GenerationMode = "llm" | "insufficient";
+export type GenerationMode = "llm" | "insufficient" | "template";
 
 export interface TimelineStep {
   step: string;

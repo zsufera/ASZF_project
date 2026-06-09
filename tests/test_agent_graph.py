@@ -114,7 +114,7 @@ def test_agent_run_copilot_channel(monkeypatch) -> None:
     assert result["draft"]["format"] == "copilot"
     assert result["draft"]["body_masked"]  # nem üres
     assert "sources" in result["draft"]
-    assert result["draft"]["generation_mode"] in {"llm", "insufficient"}
+    assert result["draft"]["generation_mode"] in {"llm", "insufficient", "template"}
     assert "Beszédpontok" not in result["draft"]["body_masked"]  # régi viselkedés megszűnt
 
 
