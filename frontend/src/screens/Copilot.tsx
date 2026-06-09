@@ -4,13 +4,12 @@ import { api } from "../lib/api";
 import { useSession } from "../state/session";
 import { useToast } from "../state/toast";
 import { ChatTurn } from "../components/ChatTurn";
-import type { GenerationMode, SourceRef } from "../lib/types";
+import type { CopilotSessionItem, GenerationMode, SourceRef, TimelineStep } from "../lib/types";
 import { InlineAnswer } from "../components/InlineAnswer";
 import { RichSourceCard } from "../components/SourceCard";
 import { ProcessingIndicator } from "../components/ProcessingIndicator";
 import { AgentTimeline } from "../components/AgentTimeline";
 import { COPILOT_STEPS } from "../lib/agentSteps";
-import type { TimelineStep } from "../lib/types";
 
 interface Message {
   role: "user" | "assistant";
@@ -42,6 +41,55 @@ function useStreamText(full: string, trigger: number) {
   return displayed;
 }
 
+function CopilotSessionList({
+  sessions,
+  loading,
+  activeSessionId,
+  onRefresh,
+  onSelect,
+  onOpenCase,
+}: {
+  sessions: CopilotSessionItem[];
+  loading: boolean;
+  activeSessionId: string;
+  onRefresh: () => void;
+  onSelect: (session: CopilotSessionItem) => void;
+  onOpenCase: (caseId: string) => void;
+}) {
+  return (
+    <div className="bg-one-surface border border-one-line rounded-one shadow-card p-3 text-[11px]">
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <h3 className="text-[10px] uppercase text-one-grey tracking-wider">Sessionök</h3>
+        <button onClick={onRefresh} className="text-one-turq-d text-[10px] hover:underline">Frissítés</button>
+      </div>
+      {loading ? (
+        <p className="text-one-grey">Betöltés...</p>
+      ) : sessions.length ? (
+        <div className="max-h-52 overflow-auto divide-y divide-one-line">
+          {sessions.map((session) => (
+            <div key={session.session_id} className="py-2">
+              <button
+                onClick={() => onSelect(session)}
+                className={`block w-full text-left font-mono text-[9px] ${session.session_id === activeSessionId ? "text-one-turq-d font-bold" : "text-one-ink"}`}
+              >
+                {session.session_id}
+              </button>
+              <div className="text-one-grey text-[10px]">{session.turn_count} turn</div>
+              {session.case_id && (
+                <button onClick={() => onOpenCase(session.case_id!)} className="text-one-turq-d text-[10px] hover:underline">
+                  Ügy megnyitása
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-one-grey">Nincs mentett session.</p>
+      )}
+    </div>
+  );
+}
+
 export function Copilot() {
   const navigate = useNavigate();
   const { user } = useSession();
@@ -53,8 +101,9 @@ export function Copilot() {
   const [createdCaseId, setCreatedCaseId] = useState<string | null>(() => {
     return sessionStorage.getItem("copilot.caseId");
   });
-  // Ideiglenes session_id a Copilot chat-munkamenethez.
-  const [sessionCaseId] = useState(() => `CHAT-${crypto.randomUUID()}`);
+  const [sessionCaseId, setSessionCaseId] = useState(() => `CHAT-${crypto.randomUUID()}`);
+  const [sessions, setSessions] = useState<CopilotSessionItem[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [streamTrigger, setStreamTrigger] = useState(0);
   const [lastAssistantFull, setLastAssistantFull] = useState("");
@@ -62,9 +111,25 @@ export function Copilot() {
 
   const streamedText = useStreamText(lastAssistantFull, streamTrigger);
 
+  const loadSessions = async () => {
+    setSessionsLoading(true);
+    try {
+      const res = await api.getCopilotSessions(user?.username);
+      setSessions(res.items);
+    } catch {
+      setSessions([]);
+    } finally {
+      setSessionsLoading(false);
+    }
+  };
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamedText]);
+
+  useEffect(() => {
+    loadSessions();
+  }, [user?.username]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return;
@@ -73,6 +138,12 @@ export function Copilot() {
     setInput("");
     setLoading(true);
     try {
+      await api.recordCopilotTurn({
+        session_id: sessionCaseId,
+        role: "user",
+        content: text,
+        username: user?.username,
+      });
       const res = await api.copilotChat({
         session_id: sessionCaseId,
         message: text,
@@ -83,6 +154,14 @@ export function Copilot() {
       const sources = res.sources ?? [];
       const draft: CopilotDraftMeta | null | undefined = res.draft;
       const generationMode = draft?.generation_mode;
+      await api.recordCopilotTurn({
+        session_id: sessionCaseId,
+        role: "assistant",
+        content: body,
+        username: user?.username,
+        sources,
+        timeline: res.timeline,
+      });
       setLastAssistantFull(body);
       setStreamTrigger((n) => n + 1);
       setMessages((prev) => [...prev, {
@@ -93,6 +172,7 @@ export function Copilot() {
         timeline: res.timeline,
         orchestratorMode: res.orchestrator_mode,
       }]);
+      loadSessions();
     } catch (e) {
       setMessages((prev) => [...prev, { role: "assistant", content: `Hiba: ${e instanceof Error ? e.message : "ismeretlen"}` }]);
     } finally {
@@ -109,12 +189,16 @@ export function Copilot() {
 
   const handleCreateCase = async () => {
     if (createdCaseId) { navigate(`/case/${createdCaseId}`); return; }
-    const fullText = messages.map((m) => `${m.role === "user" ? "Ügyintéző" : "Copilot"}: ${m.content}`).join("\n");
     try {
-      const res = await api.createCase({ channel: "chat", input_text: fullText });
+      const res = await api.handoffCopilotSession({
+        session_id: sessionCaseId,
+        username: user?.username,
+        selected_turn_ids: [],
+      });
       setCreatedCaseId(res.case_id);
       sessionStorage.setItem("copilot.caseId", res.case_id);
       show("Ügy létrehozva!");
+      loadSessions();
       navigate(`/case/${res.case_id}`);
     } catch (e) {
       show(e instanceof Error ? e.message : "Hiba", "error");
@@ -209,6 +293,18 @@ export function Copilot() {
           </div>
 
           <div className="w-56 flex flex-col gap-3">
+            <CopilotSessionList
+              sessions={sessions}
+              loading={sessionsLoading}
+              activeSessionId={sessionCaseId}
+              onRefresh={loadSessions}
+              onSelect={(session) => {
+                setSessionCaseId(session.session_id);
+                setCreatedCaseId(session.case_id ?? null);
+                if (session.case_id) sessionStorage.setItem("copilot.caseId", session.case_id);
+              }}
+              onOpenCase={(caseId) => navigate(`/case/${caseId}`)}
+            />
             {messages.length > 0 && (
               <div className="bg-one-surface border border-one-line rounded-one shadow-card p-3 text-[11px]">
                 <h3 className="text-[10px] uppercase text-one-grey tracking-wider mb-2">↗ Ügy létrehozása</h3>

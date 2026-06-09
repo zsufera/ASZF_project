@@ -3,13 +3,16 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 
 from backend.case_service import (
+    assign_case,
     approve_draft,
+    claim_case,
     create_ad_hoc_case,
     get_case_detail,
     get_supervisor_queue,
     get_supervisor_stats,
     list_inbox,
     process_case,
+    release_case,
     save_draft_version,
     seed_inbox_from_samples,
     submit_feedback,
@@ -20,10 +23,13 @@ from backend.workflow import WorkflowError
 from security.rbac import RBACError
 
 from .contracts import (
+    CaseAssignRequest,
+    CaseClaimRequest,
     CaseCreateRequest,
     CaseDetailResponse,
     CaseProcessRequest,
     CaseProcessResponse,
+    CaseReleaseRequest,
     DraftApproveRequest,
     DraftApproveResponse,
     DraftSaveRequest,
@@ -61,6 +67,56 @@ def inbox(
         sort_by=sort_by,
     )
     return {**response_meta(), "items": items, "count": len(items)}
+
+
+@router.post("/cases/claim")
+def case_claim(payload: CaseClaimRequest) -> dict:
+    actor_id, actor_role = resolve_actor(payload.username)
+    try:
+        result = claim_case(
+            case_code=payload.case_id,
+            username=payload.username or "",
+            actor_user_id=actor_id,
+            actor_role=actor_role,
+        )
+    except RBACError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    if result.get("error"):
+        raise HTTPException(status_code=404, detail=result["error"])
+    return {**response_meta(), **result}
+
+
+@router.post("/cases/assign")
+def case_assign(payload: CaseAssignRequest) -> dict:
+    actor_id, actor_role = resolve_actor(payload.username)
+    try:
+        result = assign_case(
+            case_code=payload.case_id,
+            assignee_username=payload.assignee_username,
+            actor_user_id=actor_id,
+            actor_role=actor_role,
+        )
+    except RBACError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    if result.get("error"):
+        raise HTTPException(status_code=404, detail=result["error"])
+    return {**response_meta(), **result}
+
+
+@router.post("/cases/release")
+def case_release(payload: CaseReleaseRequest) -> dict:
+    actor_id, actor_role = resolve_actor(payload.username)
+    try:
+        result = release_case(
+            case_code=payload.case_id,
+            actor_user_id=actor_id,
+            actor_role=actor_role,
+        )
+    except RBACError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    if result.get("error"):
+        raise HTTPException(status_code=404, detail=result["error"])
+    return {**response_meta(), **result}
 
 
 @router.get("/cases/{case_id}", response_model=CaseDetailResponse)
@@ -179,3 +235,4 @@ def case_status_transition(payload: StatusTransitionRequest) -> dict:
     if result.get("error"):
         raise HTTPException(status_code=404, detail=result["error"])
     return {**response_meta(), **result}
+

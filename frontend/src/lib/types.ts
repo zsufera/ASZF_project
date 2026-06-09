@@ -18,6 +18,11 @@ export interface InboxItem {
   channel_label: string;
   subject: string;
   sla_days_remaining: number;
+  sla_due_at?: string | null;
+  sla_breached_at?: string | null;
+  assignee_username?: string | null;
+  claimed_by_username?: string | null;
+  claimed_at?: string | null;
   escalated: boolean;
   confidence: number;
 }
@@ -134,6 +139,11 @@ export interface Case {
   channel_label: string;
   status_label: string;
   sla_days_remaining: number;
+  sla_due_at?: string | null;
+  sla_breached_at?: string | null;
+  assignee_username?: string | null;
+  claimed_by_username?: string | null;
+  claimed_at?: string | null;
   sender_email_masked: string;
   sender_email_key: string;
   sender_email_display: string;
@@ -155,6 +165,11 @@ export interface EscalatedItem {
   case_id: string;
   priority: Priority;
   sla_days_remaining: number;
+  sla_due_at?: string | null;
+  sla_breached_at?: string | null;
+  assignee_username?: string | null;
+  claimed_by_username?: string | null;
+  claimed_at?: string | null;
   subject: string;
   escalation_reason?: string;
 }
@@ -217,6 +232,28 @@ export interface TraceEvent {
   payload: Record<string, unknown>;
   created_at: string;
   backend?: string;
+}
+
+export interface AgentStreamEvent {
+  event: "start" | "step" | "complete" | "error" | string;
+  data: Record<string, unknown>;
+}
+
+export interface CaseAssignmentResult {
+  case_id: string;
+  assignee_username?: string | null;
+  claimed_by_username?: string | null;
+  claimed_at?: string | null;
+}
+
+export interface CopilotSessionItem {
+  session_id: string;
+  username?: string | null;
+  case_id?: string | null;
+  turn_count: number;
+  last_content_masked?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface AcceptanceResult {

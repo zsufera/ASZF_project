@@ -2,6 +2,7 @@ import type {
   User, InboxItem, Case, HistoryItem, CustomerCandidateItem,
   EvalResult, EscalatedItem, SupervisorStats, OcrResult, CopilotChatResponse,
   AuditCaseRecord, AuditCompleteness, AuditEvent, TraceEvent, AcceptanceResult,
+  AgentStreamEvent, CaseAssignmentResult, CopilotSessionItem,
 } from "./types";
 
 const BASE = (import.meta.env.VITE_BACKEND_URL ?? "/api") as string;
@@ -25,6 +26,47 @@ async function req<T>(method: string, path: string, body?: unknown, formData?: F
     throw new Error((data as { error?: string }).error);
   }
   return data;
+}
+
+function parseSseBlock(block: string): AgentStreamEvent | null {
+  const lines = block.split("\n").map((line) => line.trimEnd()).filter(Boolean);
+  const event = lines.find((line) => line.startsWith("event:"))?.slice("event:".length).trim() ?? "message";
+  const dataLine = lines.find((line) => line.startsWith("data:"));
+  if (!dataLine) return null;
+  try {
+    return { event, data: JSON.parse(dataLine.slice("data:".length).trim()) as Record<string, unknown> };
+  } catch {
+    return { event, data: { raw: dataLine.slice("data:".length).trim() } };
+  }
+}
+
+async function streamPost(path: string, body: unknown, onEvent: (event: AgentStreamEvent) => void): Promise<void> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok || !res.body) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error ?? err.detail ?? res.statusText);
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  while (true) {
+    const { value, done } = await reader.read();
+    buffer += decoder.decode(value ?? new Uint8Array(), { stream: !done });
+    const blocks = buffer.split(/\n\n/);
+    buffer = blocks.pop() ?? "";
+    for (const block of blocks) {
+      const event = parseSseBlock(block);
+      if (event) onEvent(event);
+    }
+    if (done) break;
+  }
+  const trailing = parseSseBlock(buffer);
+  if (trailing) onEvent(trailing);
 }
 
 export const api = {
@@ -77,8 +119,22 @@ export const api = {
   agentRun: (body: Record<string, unknown>) =>
     req<{ timeline: unknown[] }>("POST", "/agent/run", body),
 
+  streamAgentRun: (body: Record<string, unknown>, onEvent: (event: AgentStreamEvent) => void) =>
+    streamPost("/agent/run/stream", body, onEvent),
+
   copilotChat: (body: { session_id: string; message: string; history: { role: string; content: string }[]; customer_facing?: boolean }) =>
     req<CopilotChatResponse>("POST", "/copilot/chat", body),
+
+  getCopilotSessions: (username?: string) => {
+    const qs = username ? `?${new URLSearchParams({ username }).toString()}` : "";
+    return req<{ items: CopilotSessionItem[]; count: number }>("GET", `/copilot/sessions${qs}`);
+  },
+
+  recordCopilotTurn: (body: { session_id: string; role: string; content: string; username?: string; sources?: unknown[]; timeline?: unknown[] }) =>
+    req<Record<string, unknown>>("POST", "/copilot/sessions/turn", body),
+
+  handoffCopilotSession: (body: { session_id: string; username?: string; selected_turn_ids?: number[] }) =>
+    req<{ case_id: string; session_id: string; turn_count: number }>("POST", "/copilot/sessions/handoff", body),
 
   runEval: (body: { limit: number; category?: string; service_provider?: string; include_edge: boolean }) =>
     req<EvalResult>("POST", "/eval/run", body),
@@ -97,6 +153,15 @@ export const api = {
   getSupervisorQueue: () => req<{ items: EscalatedItem[] }>("GET", "/supervisor/queue"),
 
   getSupervisorStats: () => req<SupervisorStats>("GET", "/supervisor/stats"),
+
+  claimCase: (body: { case_id: string; username: string }) =>
+    req<CaseAssignmentResult>("POST", "/cases/claim", body),
+
+  assignCase: (body: { case_id: string; assignee_username: string; username: string }) =>
+    req<CaseAssignmentResult>("POST", "/cases/assign", body),
+
+  releaseCase: (body: { case_id: string; username: string }) =>
+    req<CaseAssignmentResult>("POST", "/cases/release", body),
 
   getAuditCase: (caseId: string, role: string) =>
     req<AuditCaseRecord>("GET", `/audit/cases/${caseId}?role=${role}`),

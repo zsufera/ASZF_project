@@ -29,8 +29,15 @@ CREATE TABLE IF NOT EXISTS cases (
     sender_email_key TEXT,
     service_provider TEXT,
     selected_customer_id TEXT,
+    assignee_user_id INTEGER,
+    claimed_by_user_id INTEGER,
+    claimed_at TEXT,
+    sla_due_at TEXT,
+    sla_breached_at TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(assignee_user_id) REFERENCES users(id),
+    FOREIGN KEY(claimed_by_user_id) REFERENCES users(id)
 );
 
 CREATE TABLE IF NOT EXISTS messages (
@@ -112,6 +119,27 @@ CREATE TABLE IF NOT EXISTS audit_events (
     FOREIGN KEY(actor_user_id) REFERENCES users(id)
 );
 
+CREATE TABLE IF NOT EXISTS copilot_sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT NOT NULL UNIQUE,
+    username TEXT,
+    case_code TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(case_code) REFERENCES cases(case_code)
+);
+
+CREATE TABLE IF NOT EXISTS copilot_turns (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT NOT NULL,
+    role TEXT NOT NULL CHECK(role IN ('user', 'assistant', 'system')),
+    content_masked TEXT NOT NULL,
+    sources TEXT,
+    timeline TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(session_id) REFERENCES copilot_sessions(session_id)
+);
+
 CREATE INDEX IF NOT EXISTS idx_cases_status_priority_updated_at
 ON cases(status, priority, updated_at DESC);
 
@@ -126,6 +154,9 @@ ON customer_candidates(case_id, selected);
 
 CREATE INDEX IF NOT EXISTS idx_audit_events_case_created_at
 ON audit_events(case_id, created_at);
+
+CREATE INDEX IF NOT EXISTS idx_copilot_turns_session_created_at
+ON copilot_turns(session_id, created_at);
 """
 
 
@@ -137,10 +168,25 @@ def init_db(db_path: str | None = None) -> None:
         columns = {row[1] for row in conn.execute("PRAGMA table_info(cases)").fetchall()}
         if "sender_email_key" not in columns:
             conn.execute("ALTER TABLE cases ADD COLUMN sender_email_key TEXT")
+        for column_name, column_type in {
+            "assignee_user_id": "INTEGER",
+            "claimed_by_user_id": "INTEGER",
+            "claimed_at": "TEXT",
+            "sla_due_at": "TEXT",
+            "sla_breached_at": "TEXT",
+        }.items():
+            if column_name not in columns:
+                conn.execute(f"ALTER TABLE cases ADD COLUMN {column_name} {column_type}")
         conn.execute(
             """
             CREATE INDEX IF NOT EXISTS idx_cases_sender_email_key_created_at
             ON cases(sender_email_key, created_at DESC)
+            """
+        )
+        conn.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_cases_assignment_status
+            ON cases(status, assignee_user_id, claimed_by_user_id)
             """
         )
         _backfill_sender_email_keys(conn)

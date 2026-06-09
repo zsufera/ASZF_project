@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -61,6 +61,39 @@ def _sla_days_remaining(created_at: str, fallback_days: int | None = None) -> in
     return max(0, days - elapsed)
 
 
+def _sla_due_at(created_at: str, fallback_days: int | None = None) -> str | None:
+    days = fallback_days or settings.sla_fallback_days
+    try:
+        created = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return (created.astimezone(timezone.utc) + timedelta(days=days)).isoformat()
+
+
+def _row_value(row: sqlite3.Row, key: str) -> Any:
+    return row[key] if key in row.keys() else None
+
+
+def _username_for_id(user_id: int | None) -> str | None:
+    if not user_id:
+        return None
+    with sqlite3.connect(settings.sqlite_path) as conn:
+        user = conn.execute(
+            "SELECT username FROM users WHERE id = ? AND is_active = 1 LIMIT 1",
+            (user_id,),
+        ).fetchone()
+    return str(user[0]) if user else None
+
+
+def _user_id_for_username(username: str) -> int | None:
+    with sqlite3.connect(settings.sqlite_path) as conn:
+        user = conn.execute(
+            "SELECT id FROM users WHERE username = ? AND is_active = 1 LIMIT 1",
+            (username,),
+        ).fetchone()
+    return int(user[0]) if user else None
+
+
 def _sender_email_display(masked_sender: str | None, stable_key: str | None) -> str:
     if stable_key:
         digest = stable_key.split(":", 1)[-1]
@@ -77,6 +110,9 @@ def _load_policies() -> dict[str, Any]:
 
 def _case_row_to_inbox_item(row: sqlite3.Row, payload: dict[str, Any]) -> dict[str, Any]:
     category = payload.get("category") or payload.get("expected_category")
+    assignee_user_id = _row_value(row, "assignee_user_id")
+    claimed_by_user_id = _row_value(row, "claimed_by_user_id")
+    sla_due_at = _row_value(row, "sla_due_at") or _sla_due_at(row["created_at"])
     return {
         "case_id": row["case_code"],
         "channel": row["channel"],
@@ -96,6 +132,13 @@ def _case_row_to_inbox_item(row: sqlite3.Row, payload: dict[str, Any]) -> dict[s
         "category_label": CATEGORY_LABELS.get(category, category or "—"),
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
+        "assignee_user_id": assignee_user_id,
+        "assignee_username": _username_for_id(assignee_user_id),
+        "claimed_by_user_id": claimed_by_user_id,
+        "claimed_by_username": _username_for_id(claimed_by_user_id),
+        "claimed_at": _row_value(row, "claimed_at"),
+        "sla_due_at": sla_due_at,
+        "sla_breached_at": _row_value(row, "sla_breached_at"),
         "sla_days_remaining": _sla_days_remaining(row["created_at"]),
     }
 
@@ -717,6 +760,102 @@ def transition_case_status(
         actor_user_id=actor_user_id,
     )
     return {"case_id": case_code, "status": target_status, "previous_status": current}
+
+
+def claim_case(
+    case_code: str,
+    username: str,
+    actor_user_id: int | None = None,
+    actor_role: str | None = None,
+) -> dict[str, Any]:
+    require_permission(actor_role, "change_status")
+    case_id = _get_case_db_id(case_code)
+    if not case_id:
+        return {"error": "Ăśgy nem talĂˇlhatĂł"}
+    claimed_by_user_id = _user_id_for_username(username)
+    if not claimed_by_user_id:
+        return {"error": "felhasznĂˇlĂł nem talĂˇlhatĂł"}
+    claimed_at = _utc_now()
+    with sqlite3.connect(settings.sqlite_path) as conn:
+        conn.execute(
+            """
+            UPDATE cases
+            SET claimed_by_user_id = ?, claimed_at = ?, updated_at = ?
+            WHERE id = ?
+            """,
+            (claimed_by_user_id, claimed_at, claimed_at, case_id),
+        )
+        conn.commit()
+    record_audit_event(
+        case_code,
+        "case_claimed",
+        {"claimed_by_username": username, "claimed_at": claimed_at},
+        actor_user_id=actor_user_id,
+    )
+    return {
+        "case_id": case_code,
+        "claimed_by_user_id": claimed_by_user_id,
+        "claimed_by_username": username,
+        "claimed_at": claimed_at,
+    }
+
+
+def assign_case(
+    case_code: str,
+    assignee_username: str,
+    actor_user_id: int | None = None,
+    actor_role: str | None = None,
+) -> dict[str, Any]:
+    require_permission(actor_role, "change_status")
+    case_id = _get_case_db_id(case_code)
+    if not case_id:
+        return {"error": "Ăśgy nem talĂˇlhatĂł"}
+    assignee_user_id = _user_id_for_username(assignee_username)
+    if not assignee_user_id:
+        return {"error": "felhasznĂˇlĂł nem talĂˇlhatĂł"}
+    now = _utc_now()
+    with sqlite3.connect(settings.sqlite_path) as conn:
+        conn.execute(
+            "UPDATE cases SET assignee_user_id = ?, updated_at = ? WHERE id = ?",
+            (assignee_user_id, now, case_id),
+        )
+        conn.commit()
+    record_audit_event(
+        case_code,
+        "case_assigned",
+        {"assignee_username": assignee_username},
+        actor_user_id=actor_user_id,
+    )
+    return {
+        "case_id": case_code,
+        "assignee_user_id": assignee_user_id,
+        "assignee_username": assignee_username,
+    }
+
+
+def release_case(
+    case_code: str,
+    actor_user_id: int | None = None,
+    actor_role: str | None = None,
+) -> dict[str, Any]:
+    require_permission(actor_role, "change_status")
+    case_id = _get_case_db_id(case_code)
+    if not case_id:
+        return {"error": "Ăśgy nem talĂˇlhatĂł"}
+    now = _utc_now()
+    with sqlite3.connect(settings.sqlite_path) as conn:
+        conn.execute(
+            "UPDATE cases SET claimed_by_user_id = NULL, claimed_at = NULL, updated_at = ? WHERE id = ?",
+            (now, case_id),
+        )
+        conn.commit()
+    record_audit_event(
+        case_code,
+        "case_released",
+        {},
+        actor_user_id=actor_user_id,
+    )
+    return {"case_id": case_code, "claimed_by_user_id": None, "claimed_by_username": None, "claimed_at": None}
 
 
 def submit_feedback(

@@ -30,6 +30,30 @@ export function Supervisor() {
       .finally(() => setLoading(false));
   }, [user, navigate]);
 
+  const refreshQueue = async () => {
+    const q = await api.getSupervisorQueue();
+    setQueue(q.items);
+  };
+
+  const handleQueueAction = async (action: "claim" | "assign" | "release", item: EscalatedItem) => {
+    if (!user) return;
+    try {
+      if (action === "claim") {
+        await api.claimCase({ case_id: item.case_id, username: user.username });
+        show("Ügy claimelve", "success");
+      } else if (action === "assign") {
+        await api.assignCase({ case_id: item.case_id, assignee_username: "ui_demo", username: user.username });
+        show("Ügy kiosztva", "success");
+      } else {
+        await api.releaseCase({ case_id: item.case_id, username: user.username });
+        show("Claim feloldva", "info");
+      }
+      await refreshQueue();
+    } catch (e) {
+      show(e instanceof Error ? e.message : "Supervisor művelet hiba", "error");
+    }
+  };
+
   const handleAudit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!auditCaseId.trim()) return;
@@ -116,6 +140,7 @@ export function Supervisor() {
                   <th className="text-left px-3 py-2 text-one-grey">Ügy ID</th>
                   <th className="text-left px-3 py-2 text-one-grey">Prioritás</th>
                   <th className="text-left px-3 py-2 text-one-grey">SLA</th>
+                  <th className="text-left px-3 py-2 text-one-grey">Tulajdonos</th>
                   <th className="text-left px-3 py-2 text-one-grey">Tárgy</th>
                   <th className="px-3 py-2" />
                 </tr>
@@ -125,10 +150,21 @@ export function Supervisor() {
                   <tr key={item.case_id}>
                     <td className="px-3 py-2 font-mono text-[10px]">{item.case_id}</td>
                     <td className="px-3 py-2">{item.priority === "surgos" ? <span className="text-status-urgent-fg font-bold">SÜRGŐS</span> : "Normál"}</td>
-                    <td className="px-3 py-2 text-one-grey">{item.sla_days_remaining} nap</td>
+                    <td className="px-3 py-2"><SlaCountdown item={item} /></td>
+                    <td className="px-3 py-2 text-[10px]">
+                      <div>{item.assignee_username ? `Kiosztva: ${item.assignee_username}` : "Nincs kiosztva"}</div>
+                      <div className="text-one-grey">{item.claimed_by_username ? `Claim: ${item.claimed_by_username}` : "Nincs claim"}</div>
+                    </td>
                     <td className="px-3 py-2">{item.subject}</td>
                     <td className="px-3 py-2">
-                      <button onClick={() => navigate(`/case/${item.case_id}`)} className="text-one-turq-d text-[10px] hover:underline">Megnyitás</button>
+                      <div className="flex flex-wrap justify-end gap-1">
+                        <button onClick={() => handleQueueAction("claim", item)} className="bg-white border border-one-line text-one-ink text-[10px] px-2 py-1 rounded-pill hover:bg-one-canvas">Claim</button>
+                        <button onClick={() => handleQueueAction("assign", item)} className="bg-white border border-one-line text-one-ink text-[10px] px-2 py-1 rounded-pill hover:bg-one-canvas">Assign</button>
+                        {item.claimed_by_username && (
+                          <button onClick={() => handleQueueAction("release", item)} className="bg-white border border-one-line text-one-grey text-[10px] px-2 py-1 rounded-pill hover:bg-one-canvas">Release</button>
+                        )}
+                        <button onClick={() => navigate(`/case/${item.case_id}`)} className="text-one-turq-d text-[10px] hover:underline">Megnyitás</button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -157,6 +193,19 @@ export function Supervisor() {
           <TraceViewer traces={traces} onLoad={handleLoadTraces} />
         </div>
       </div>
+    </div>
+  );
+}
+
+function SlaCountdown({ item }: { item: EscalatedItem }) {
+  const breached = Boolean(item.sla_breached_at) || item.sla_days_remaining <= 0;
+  const due = item.sla_due_at ? new Date(item.sla_due_at) : null;
+  return (
+    <div className={breached ? "text-status-urgent-fg font-semibold" : "text-one-grey"}>
+      <div>{breached ? "SLA breach" : `${item.sla_days_remaining} nap`}</div>
+      {due && !Number.isNaN(due.getTime()) && (
+        <div className="text-[9px] text-one-grey">{due.toLocaleDateString("hu-HU")}</div>
+      )}
     </div>
   );
 }
