@@ -7,7 +7,6 @@ from typing import Any
 import yaml
 
 from agent.state import AgentState
-from backend.classify import classify_message
 from backend.draft import strip_source_markers, synthesize_answer
 from backend.escalation import decide_escalation, llm_escalation_suggestion, merge_escalation
 from backend.llm import llm_available
@@ -18,6 +17,7 @@ from backend.policy_map import build_policy_map, load_mandatory_refs
 from backend.query_rewrite import rewrite_query
 from backend.retrieval import retrieve
 from backend.router import get_model_profile
+from backend.timeline import timeline_entry
 from backend.verify import verify_draft
 from config.settings import settings
 from integrations.customer_directory import MockCustomerDirectory
@@ -49,7 +49,7 @@ URGENT_HINTS = ("azonnal", "sürgős", "surgos", "hatóság", "hatosag", "bíró
 
 
 def _timeline_entry(step: str, payload: dict[str, Any]) -> dict[str, Any]:
-    return {"step": step, "output": payload}
+    return timeline_entry(step, output=payload)
 
 
 def _append_timeline(state: AgentState, step: str, payload: dict[str, Any]) -> list[dict[str, Any]]:
@@ -146,10 +146,20 @@ def load_context(state: AgentState) -> AgentState:
 
 
 def classify_node(state: AgentState) -> AgentState:
-    result = classify_message(
+    from backend.services import classification_service
+
+    svc = classification_service.classify(
         message_text_masked=_active_text(state),
         history_summary_masked=state.get("history_summary_masked"),
     )
+    result = {
+        "category": svc["category"],
+        "subtype": svc["subtype"],
+        "confidence": svc["confidence"],
+        "candidates": svc["candidates"],
+        "is_repeated": svc["is_repeated"],
+        "classify_mode": svc["mode"],
+    }
     if state.get("lang_type", {}).get("tipus") == "nem_panasz":
         result["category"] = "egyeb"
         result["subtype"] = "nem_panasz"
