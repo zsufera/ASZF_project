@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { DraftVersion, OutputMode } from "../lib/types";
 
 interface DraftEditorProps {
@@ -38,6 +38,7 @@ function renderBodyWithCitations(body: string, citations: string[], onClick: (c:
 }
 
 export function DraftEditor({ draft, versions, outputMode, onModeChange, onSave, onApprove, onFeedback, onCitationClick }: DraftEditorProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [mode, setMode] = useState<"free" | "template">("free");
   const [subject, setSubject] = useState(draft.subject ?? "");
   const [body, setBody] = useState(draft.body_masked ?? "");
@@ -45,6 +46,15 @@ export function DraftEditor({ draft, versions, outputMode, onModeChange, onSave,
   const [saving, setSaving] = useState(false);
   const [approving, setApproving] = useState(false);
   const [editMode, setEditMode] = useState(false);
+
+  const selectedVersionRecord = useMemo(
+    () => versions.find((x) => x.id === selectedVersion),
+    [selectedVersion, versions],
+  );
+  const previousVersion = useMemo(() => {
+    if (!selectedVersionRecord) return versions[1];
+    return versions.find((v) => v.version_no === selectedVersionRecord.version_no - 1) ?? versions[1];
+  }, [selectedVersionRecord, versions]);
 
   useEffect(() => {
     setSubject(draft.subject ?? "");
@@ -60,6 +70,24 @@ export function DraftEditor({ draft, versions, outputMode, onModeChange, onSave,
   const handleApprove = async () => {
     setApproving(true);
     try { await onApprove(subject, body, selectedVersion); } finally { setApproving(false); }
+  };
+
+  const insertCitation = (citation: string) => {
+    const token = citation.startsWith("[") ? citation : `[${citation}]`;
+    const textarea = textareaRef.current;
+    if (!textarea) {
+      setBody((current) => `${current}${current.endsWith(" ") || !current ? "" : " "}${token}`);
+      setEditMode(true);
+      return;
+    }
+    const start = textarea.selectionStart ?? body.length;
+    const end = textarea.selectionEnd ?? body.length;
+    const next = `${body.slice(0, start)}${token}${body.slice(end)}`;
+    setBody(next);
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + token.length, start + token.length);
+    }, 0);
   };
 
   return (
@@ -126,6 +154,7 @@ export function DraftEditor({ draft, versions, outputMode, onModeChange, onSave,
       <div className="border border-one-line rounded-md p-3 min-h-[120px] text-[12px] leading-relaxed bg-white mb-3">
         {editMode ? (
           <textarea
+            ref={textareaRef}
             value={body}
             onChange={(e) => setBody(e.target.value)}
             onBlur={() => setEditMode(false)}
@@ -145,6 +174,12 @@ export function DraftEditor({ draft, versions, outputMode, onModeChange, onSave,
             {renderBodyWithCitations(body, draft.citations, onCitationClick)}
           </div>
         )}
+      </div>
+
+      <div className="grid grid-cols-3 gap-3 mb-3">
+        <CitationInsertMenu citations={draft.citations} onInsert={insertCitation} onPreview={onCitationClick} />
+        <ApprovalChecklist subject={subject} body={body} citations={draft.citations} selectedVersion={selectedVersion} />
+        <DraftVersionDiff currentBody={body} previousBody={previousVersion?.body_masked ?? ""} previousLabel={previousVersion ? `v${previousVersion.version_no}` : "előző"} />
       </div>
 
       <div className="flex items-center gap-2 flex-wrap">
@@ -171,6 +206,93 @@ export function DraftEditor({ draft, versions, outputMode, onModeChange, onSave,
           <button onClick={() => onFeedback("rossz", true)} className="text-[10px] hover:text-kpi-bad transition-colors" aria-label="Rossz forrás">rossz forrás</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function CitationInsertMenu({
+  citations,
+  onInsert,
+  onPreview,
+}: {
+  citations: string[];
+  onInsert: (citation: string) => void;
+  onPreview: (citation: string) => void;
+}) {
+  return (
+    <div className="border border-one-line rounded-one bg-one-surface p-3">
+      <div className="text-[10px] uppercase text-one-grey font-semibold tracking-wider mb-2">Citation beszúrás</div>
+      {citations.length ? (
+        <div className="flex flex-wrap gap-1">
+          {citations.map((citation) => (
+            <span key={citation} className="inline-flex rounded-full border border-one-line overflow-hidden">
+              <button onClick={() => onInsert(citation)} className="px-2 py-1 text-[10px] bg-white hover:bg-one-canvas">{citation}</button>
+              <button onClick={() => onPreview(citation)} className="px-2 py-1 text-[10px] bg-one-canvas text-one-grey hover:text-one-ink">forrás</button>
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="text-[11px] text-one-grey">Nincs beszúrható hivatkozás.</p>
+      )}
+    </div>
+  );
+}
+
+function ApprovalChecklist({
+  subject,
+  body,
+  citations,
+  selectedVersion,
+}: {
+  subject: string;
+  body: string;
+  citations: string[];
+  selectedVersion: string;
+}) {
+  const items = [
+    { label: "Tárgy kitöltve", ok: subject.trim().length > 0 },
+    { label: "Válaszszöveg kitöltve", ok: body.trim().length > 0 },
+    { label: "Forráshivatkozás van", ok: citations.length > 0 },
+    { label: "Draft verzió kiválasztva", ok: Boolean(selectedVersion) },
+  ];
+  return (
+    <div className="border border-one-line rounded-one bg-one-surface p-3">
+      <div className="text-[10px] uppercase text-one-grey font-semibold tracking-wider mb-2">Jóváhagyási checklist</div>
+      <ul className="space-y-1">
+        {items.map((item) => (
+          <li key={item.label} className={item.ok ? "text-kpi-ok text-[11px]" : "text-status-urgent-fg text-[11px]"}>
+            {item.ok ? "✓" : "!"} {item.label}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function DraftVersionDiff({
+  currentBody,
+  previousBody,
+  previousLabel,
+}: {
+  currentBody: string;
+  previousBody: string;
+  previousLabel: string;
+}) {
+  const currentLines = currentBody.split("\n").filter((line) => line.trim());
+  const previous = new Set(previousBody.split("\n").map((line) => line.trim()).filter(Boolean));
+  const changed = currentLines.filter((line) => !previous.has(line.trim())).slice(0, 4);
+  return (
+    <div className="border border-one-line rounded-one bg-one-surface p-3">
+      <div className="text-[10px] uppercase text-one-grey font-semibold tracking-wider mb-2">Verzió-diff ({previousLabel})</div>
+      {changed.length ? (
+        <div className="space-y-1">
+          {changed.map((line, index) => (
+            <div key={`${line}-${index}`} className="rounded bg-[#eefaf4] text-kpi-ok text-[10px] px-2 py-1 line-clamp-2">+ {line}</div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-[11px] text-one-grey">Nincs látható szöveges eltérés.</p>
+      )}
     </div>
   );
 }

@@ -256,6 +256,27 @@ export interface CopilotSessionItem {
   updated_at: string;
 }
 
+export interface AszfKnowledgeItem {
+  chunk_id: string;
+  section: string;
+  paragrafus: string;
+  dok_tipus?: string;
+  dok_cim?: string;
+  oldalszam?: number;
+  quote: string;
+  text?: string;
+  cross_refs: string[];
+  source_file?: string;
+  score?: number;
+}
+
+export interface AszfKnowledgeGroup {
+  section: string;
+  label: string;
+  count: number;
+  items: AszfKnowledgeItem[];
+}
+
 export interface AcceptanceResult {
   passed: boolean;
   kpi_checks: Record<string, { value: number; rule: [string, number]; passed: boolean }>;

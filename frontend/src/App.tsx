@@ -10,6 +10,7 @@ import { Copilot } from "./screens/Copilot";
 import { Postal } from "./screens/Postal";
 import { Evaluation } from "./screens/Evaluation";
 import { Supervisor } from "./screens/Supervisor";
+import { Knowledge } from "./screens/Knowledge";
 
 function SupervisorGuard({ children }: { children: React.ReactNode }) {
   const { user } = useSession();
@@ -30,6 +31,7 @@ function AppRoutes() {
         <Route path="/copilot" element={<Copilot />} />
         <Route path="/postal" element={<Postal />} />
         <Route path="/eval" element={<Evaluation />} />
+        <Route path="/knowledge" element={<Knowledge />} />
         <Route path="/supervisor" element={
           <SupervisorGuard><Supervisor /></SupervisorGuard>
         } />

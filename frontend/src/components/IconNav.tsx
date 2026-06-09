@@ -14,6 +14,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/copilot", icon: "💬", label: "Copilot" },
   { to: "/postal", icon: "📮", label: "Postai levél" },
   { to: "/eval", icon: "📊", label: "Evaluation" },
+  { to: "/knowledge", icon: "§", label: "Tudás" },
   { to: "/supervisor", icon: "🛡️", label: "Superv.", roles: ["supervisor"] },
 ];
 

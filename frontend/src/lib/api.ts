@@ -3,6 +3,7 @@ import type {
   EvalResult, EscalatedItem, SupervisorStats, OcrResult, CopilotChatResponse,
   AuditCaseRecord, AuditCompleteness, AuditEvent, TraceEvent, AcceptanceResult,
   AgentStreamEvent, CaseAssignmentResult, CopilotSessionItem,
+  AszfKnowledgeGroup, AszfKnowledgeItem,
 } from "./types";
 
 const BASE = (import.meta.env.VITE_BACKEND_URL ?? "/api") as string;
@@ -178,6 +179,15 @@ export const api = {
 
   getTraces: (limit = 50) =>
     req<{ traces: TraceEvent[]; count: number }>("GET", `/observability/traces?limit=${limit}`),
+
+  getAszfTree: () =>
+    req<{ items: AszfKnowledgeGroup[]; count: number }>("GET", "/aszf/tree"),
+
+  getAszfSection: (chunkId: string) =>
+    req<{ item: AszfKnowledgeItem }>("GET", `/aszf/section/${encodeURIComponent(chunkId)}`),
+
+  searchAszf: (q: string) =>
+    req<{ items: AszfKnowledgeItem[]; count: number }>("GET", `/aszf/search?${new URLSearchParams({ q }).toString()}`),
 
   purgeGovernance: (body: { dry_run: boolean; username: string; role: string }) =>
     req<Record<string, unknown>>("POST", "/governance/purge", body),
