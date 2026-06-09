@@ -22,7 +22,7 @@
 | L1 | **Cross-ref feloldás CSAK azonos dokumentumon belül** — a más dokra mutató hivatkozások (Díjszabás, ESzSzF) elvesznek | `retrieval.py::resolve_cross_refs` (`by_doc.get(doc_id)`) |
 | L2 | A „dense" 64-dim **hash ≈ zaj** → fallback módban a keresés gyakorlatilag lexikai | `index.py::deterministic_embedding` |
 | L3 | **Nincs valódi reranker** | `retrieval.py::rerank_chunks` |
-| L4 | **Nincs query-rewrite**; a nyers, 400 karakterre vágott (maszkolt) üzenet a query | `agent/nodes.py::retrieve_node` |
+| L4 | ✅ **Megoldva** — query-rewrite: a `retrieve_node` fókuszált, jogi-kulcsszavas keresőkérdést gyárt (`backend/query_rewrite.py`, LLM + kategória-fallback) a nyers üzenet helyett. Igazoltan a felmondás-§ (7.16/60) bejön. | `agent/nodes.py::retrieve_node` |
 | L5 | A cross-ref bővítés **statikus** (query-független, fix +3), **1-hop** | `retrieval.py::resolve_cross_refs` |
 | L6 | **Nincs hatály/verzió-szűrés** — hatályon kívüli klauzula is bejöhet | retrieval egész |
 | L7 | A hierarchia (`paragrafus_szam`) **nincs kihasználva** keresésnél/kontextusnál | retrieval egész |
