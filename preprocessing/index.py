@@ -180,6 +180,16 @@ def ensure_collection(
     )
 
 
+def clear_collection_points(
+    client: QdrantClient,
+    collection_name: str = DEFAULT_COLLECTION,
+) -> None:
+    client.delete(
+        collection_name=collection_name,
+        points_selector=models.FilterSelector(filter=models.Filter(must=[])),
+    )
+
+
 def index_chunks(
     chunks: list[dict[str, Any]],
     collection_name: str = DEFAULT_COLLECTION,
@@ -192,9 +202,10 @@ def index_chunks(
     client = client or make_client()
     try:
         size = vector_size()
-        ensure_collection(client, collection_name, size)
         texts = [chunk.get("text", "") for chunk in chunks]
         vectors = embed_documents(texts, use_cache=not force)
+        ensure_collection(client, collection_name, size)
+        clear_collection_points(client, collection_name)
         points = []
         for chunk, vector in zip(chunks, vectors, strict=True):
             payload = dict(chunk)
