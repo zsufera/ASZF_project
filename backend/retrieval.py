@@ -32,6 +32,9 @@ from config.settings import settings
 
 HYBRID_SPARSE_WEIGHT = 0.55
 HYBRID_DENSE_WEIGHT = 0.45
+# Szignifikáns szám: többjegyű (15, 30, 60) VAGY tagolt §/decimális (5.5.1, 15,5).
+# Az egyjegyű számok túl gyakoriak (zaj) → kihagyva.
+_SIGNIFICANT_NUMBER = re.compile(r"\d+(?:[.,]\d+)+|\d{2,}")
 
 # ---------------------------------------------------------------------------
 # In-memory chunk cache — a 28,5 MB-os chunks.jsonl beolvasása és 51 049 JSON
@@ -181,6 +184,33 @@ def apply_category_boost(
     return boosted
 
 
+def _significant_numbers(text: str) -> set[str]:
+    return {match.group(0).replace(",", ".") for match in _SIGNIFICANT_NUMBER.finditer(str(text or ""))}
+
+
+def apply_numeric_boost(
+    query: str,
+    results: list[dict[str, Any]],
+    per_match: float = 0.1,
+    cap: float = 0.2,
+) -> list[dict[str, Any]]:
+    """A query szignifikáns számait (határidők, díjak, §-számok) tartalmazó találatokat
+    felsúlyozza és újrarendezi. Szám nélküli query esetén no-op (csak akkor hat, ha számít)."""
+    query_numbers = _significant_numbers(query)
+    if not query_numbers:
+        return results
+    boosted: list[dict[str, Any]] = []
+    for result in results:
+        haystack = f"{result.get('quote', '')} {result.get('paragrafus', '')}"
+        matches = len(query_numbers & _significant_numbers(haystack))
+        score = float(result.get("score", 0.0))
+        if matches:
+            score = min(score + min(matches * per_match, cap), 1.0)
+        boosted.append({**result, "score": round(score, 4)})
+    boosted.sort(key=lambda item: float(item.get("score", 0.0)), reverse=True)
+    return boosted
+
+
 def auto_merge_siblings(
     results: list[dict[str, Any]],
     all_chunks: list[dict[str, Any]],
@@ -247,8 +277,9 @@ def retrieve(
         if (not service_provider or chunk.get("szolgaltato") == service_provider)
         and (not dok_tipus or chunk.get("dok_tipus") == dok_tipus)
     ]
-    # Kategória-routinghoz nagyobb jelölt-pool, hogy a boost ténylegesen átrendezhessen.
-    candidate_limit = limit * 4 if category else limit
+    # Nagyobb jelölt-pool, ha kategória- vagy numerikus boost átrendezhet (különben felesleges).
+    needs_pool = bool(category) or bool(_significant_numbers(query))
+    candidate_limit = limit * 4 if needs_pool else limit
 
     qdrant_results = search_qdrant(query, service_provider, candidate_limit) if prefer_qdrant else []
     if qdrant_results:
@@ -288,6 +319,7 @@ def retrieve(
             category_section_prefixes(category),
             category_mandatory_paragraphs(category),
         )
+    primary = apply_numeric_boost(query, primary)  # C2: query-számok (határidő, díj, §) boost
     primary = primary[:limit]
     primary = auto_merge_siblings(primary, all_chunks)  # B2: testvér-leaf-ek a szülőbe
 
