@@ -190,7 +190,10 @@ def retrieve_node(state: AgentState) -> AgentState:
     )
     return {
         "retrieval": result,
-        "timeline": _append_timeline(state, "retrieve", {"result_count": result.get("result_count", 0)}),
+        "timeline": _append_timeline(state, "retrieve", {
+            "result_count": result.get("result_count", 0),
+            "unresolved_count": len(result.get("unresolved_refs", [])),
+        }),
     }
 
 

@@ -188,3 +188,13 @@ def test_draft_node_uses_synthesize_for_email(monkeypatch):
     assert captured["channel"] == "email"
     assert out["draft"]["format"] == "email"
     assert out["timeline"][-1]["output"]["generation_mode"] == "llm"
+
+
+def test_retrieve_node_timeline_includes_unresolved_count(monkeypatch):
+    monkeypatch.setattr(nodes, "retrieve", lambda **kw: {
+        "chunks": [], "retrieval_mode": "x", "result_count": 0,
+        "unresolved_refs": [{"raw": "3. számú melléklet", "doc_hint": "3. számú melléklet", "paragraph": None}],
+    })
+    state = {"case_id": "c", "classification": {"category": "szamlazas"}, "input_text": "x", "timeline": []}
+    out = nodes.retrieve_node(state)
+    assert out["timeline"][-1]["output"]["unresolved_count"] == 1
