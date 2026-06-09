@@ -57,8 +57,11 @@ export const api = {
   updateStatus: (body: Record<string, unknown>) =>
     req<Record<string, unknown>>("POST", "/cases/status", body),
 
-  getHistory: (address: string) =>
-    req<{ items: HistoryItem[]; is_repeated: boolean }>("GET", `/history?address=${encodeURIComponent(address)}`),
+  getHistory: (address: string, senderEmailKey?: string) => {
+    const params = new URLSearchParams({ address });
+    if (senderEmailKey) params.set("sender_email_key", senderEmailKey);
+    return req<{ items: HistoryItem[]; is_repeated: boolean }>("GET", `/history?${params.toString()}`);
+  },
 
   getCustomerLookup: (address: string) =>
     req<{ candidates: CustomerCandidateItem[] }>("GET", `/customer-lookup?address=${encodeURIComponent(address)}`),

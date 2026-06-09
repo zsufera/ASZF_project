@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -343,7 +344,7 @@ def create_ad_hoc_case(
     service_provider: str | None = None,
 ) -> str:
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
-    case_code = f"CASE-ADHOC-{stamp}"
+    case_code = f"CASE-ADHOC-{stamp}-{uuid.uuid4().hex[:8]}"
     masked_body = mask_text(case_code, input_text)["masked_text"]
     masked_sender = mask_text(case_code, sender_email)["masked_text"] if sender_email else None
     sender_key = sender_email_key(sender_email)
@@ -606,12 +607,24 @@ def approve_draft(
         conn.row_factory = sqlite3.Row
         if draft_version_id:
             row = conn.execute(
-                "SELECT subject, body_masked FROM draft_versions WHERE id = ? AND case_id = ?",
+                "SELECT subject, body_masked, verify_result FROM draft_versions WHERE id = ? AND case_id = ?",
                 (draft_version_id, case_id),
             ).fetchone()
-            if row:
-                subject_masked = row["subject"] or ""
-                body_masked = row["body_masked"] or ""
+            if not row:
+                return {"error": "Draft verziĂł nem talĂˇlhatĂł", "case_id": case_code}
+            verify_result = json.loads(row["verify_result"]) if row["verify_result"] else {}
+            if (
+                verify_result.get("warning")
+                or verify_result.get("ungrounded_count", 0)
+                or verify_result.get("missing_mandatory")
+            ):
+                return {
+                    "error": "A draft nem hagyhatĂł jĂłvĂˇ, mert a forrĂˇsoltsĂˇgi ellenĹ‘rzĂ©s hibĂˇt jelzett.",
+                    "case_id": case_code,
+                    "verify_result": verify_result,
+                }
+            subject_masked = row["subject"] or ""
+            body_masked = row["body_masked"] or ""
 
     record_pii_access(
         case_code,

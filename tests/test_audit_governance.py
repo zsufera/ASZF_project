@@ -1,4 +1,6 @@
 import pytest
+import json
+import sqlite3
 
 from backend.audit_service import check_audit_completeness, record_audit_event, record_iteration_audit
 from backend.case_service import approve_draft, process_case, save_draft_version, transition_case_status
@@ -95,3 +97,72 @@ def test_status_transition(tmp_path, monkeypatch) -> None:
     case_id = create_ad_hoc_case(channel="email", input_text="Teszt.")
     result = transition_case_status(case_id, "folyamatban", actor_user_id=1, actor_role="ui")
     assert result["status"] == "folyamatban"
+
+
+def test_approve_blocks_draft_with_verify_warning(tmp_path, monkeypatch) -> None:
+    db_path = tmp_path / "approval_gate.db"
+    monkeypatch.setattr("config.settings.settings.sqlite_path", str(db_path))
+    monkeypatch.setattr("backend.case_service.settings.sqlite_path", str(db_path))
+    monkeypatch.setattr("backend.masking.settings.sqlite_path", str(db_path))
+    monkeypatch.setattr("backend.audit_service.settings.sqlite_path", str(db_path))
+    init_db()
+
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            "INSERT INTO cases (case_code, channel, status, priority) VALUES ('CASE-BAD', 'email', 'jovahagyasra_var', 'normal')"
+        )
+        case_id = conn.execute("SELECT id FROM cases WHERE case_code = 'CASE-BAD'").fetchone()[0]
+        conn.execute(
+            """
+            INSERT INTO draft_versions (
+                case_id, version_no, subject, body_masked, output_mode, citations, verify_result
+            )
+            VALUES (?, 1, 'Targy', 'Nem forrasolt body', 'hitl', '[]', ?)
+            """,
+            (
+                case_id,
+                json.dumps(
+                    {
+                        "warning": "A draft nem teljesen forrasolt.",
+                        "ungrounded_count": 1,
+                        "missing_mandatory": ["c1"],
+                    },
+                    ensure_ascii=False,
+                ),
+            ),
+        )
+        draft_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        conn.commit()
+
+    result = approve_draft("CASE-BAD", draft_version_id=draft_id, actor_role="ui")
+
+    assert result["error"]
+    with sqlite3.connect(db_path) as conn:
+        status = conn.execute("SELECT status FROM cases WHERE case_code = 'CASE-BAD'").fetchone()[0]
+        outbound_count = conn.execute("SELECT COUNT(*) FROM messages WHERE direction = 'outbound_mock'").fetchone()[0]
+    assert status == "jovahagyasra_var"
+    assert outbound_count == 0
+
+
+def test_create_ad_hoc_case_generates_unique_ids_with_same_timestamp(tmp_path, monkeypatch) -> None:
+    db_path = tmp_path / "adhoc_unique.db"
+    monkeypatch.setattr("config.settings.settings.sqlite_path", str(db_path))
+    monkeypatch.setattr("backend.case_service.settings.sqlite_path", str(db_path))
+    monkeypatch.setattr("backend.masking.settings.sqlite_path", str(db_path))
+    init_db()
+
+    import backend.case_service as case_service
+
+    class FrozenDateTime:
+        @classmethod
+        def now(cls, tz=None):
+            from datetime import datetime
+
+            return datetime(2026, 6, 9, 12, 0, 0, tzinfo=tz)
+
+    monkeypatch.setattr(case_service, "datetime", FrozenDateTime)
+
+    first = case_service.create_ad_hoc_case(channel="email", input_text="Elso")
+    second = case_service.create_ad_hoc_case(channel="email", input_text="Masodik")
+
+    assert first != second

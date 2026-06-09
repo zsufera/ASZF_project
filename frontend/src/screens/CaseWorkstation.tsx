@@ -38,7 +38,7 @@ export function CaseWorkstation() {
       .then((c) => {
         setCaseData(c);
         setError("");
-        api.getHistory(c.sender_email_masked).then(setHistory).catch(() => {});
+        api.getHistory(c.sender_email_masked, c.sender_email_key).then(setHistory).catch(() => {});
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
