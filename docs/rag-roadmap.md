@@ -146,9 +146,9 @@
 > **Állapot (2026-06-08):** A1, A2, B3, B1 leszállítva (TDD + tesztek). Spec/terv: `docs/superpowers/specs|plans/2026-06-08-cross-reference-resolution-closure*`. Hátralévő Fázis 1: A4 (megjelenítésként, nem eszkalációként), C3 (verzió-család-párosítás kell).
 
 ### Fázis 2 — Közepes (némi infra / index-bővítés)
-**A3** gráf-bejárás · **B2** auto-merging ✅ · **B4** breadcrumb (re-index) · **C1** reranker · **C2** numerikus hibrid.
+**A3** gráf-bejárás · **B2** auto-merging ✅ · **B4** breadcrumb (re-index) · **C1** reranker · **C2** numerikus hibrid ✅.
 
-> **Állapot (2026-06-08):** B2 leszállítva (TDD). C3 kihagyva — a korpuszban nincs szuperszedált verzió (0 dok-család több dátummal), így nincs mit szűrni.
+> **Állapot (2026-06-08):** B2, C2 leszállítva (TDD). C3 kihagyva — a korpuszban nincs szuperszedált verzió (0 dok-család több dátummal), így nincs mit szűrni.
 
 ### Fázis 3 — Architekturális / nagyobb
 **D1** lokális embedding fallback (re-index) · **D2** multi-vector/HyDE (re-index) · **E1** agentic retrieval-loop.
