@@ -1,8 +1,7 @@
 import type { MutableRefObject } from "react";
-import type { Case, EscalationState, OutputMode, SourceRef, VerifyState } from "../../lib/types";
+import type { Case, EscalationState, SourceRef, VerifyState } from "../../lib/types";
 import { Card } from "../Card";
 import { DraftEditor } from "../DraftEditor";
-import { InlineAnswer } from "../InlineAnswer";
 import { ProcessingIndicator } from "../ProcessingIndicator";
 
 interface CaseDraftPanelProps {
@@ -15,10 +14,8 @@ interface CaseDraftPanelProps {
   missingMandatory?: string[];
   generationMode?: string;
   processing: boolean;
-  outputMode: OutputMode;
   sourceRefs: MutableRefObject<Record<string, HTMLDivElement | null>>;
   onProcess: () => void;
-  onModeChange: (mode: OutputMode) => void;
   onSave: (subject: string, body: string) => Promise<void>;
   onApprove: (subject: string, body: string, versionId: string) => Promise<void>;
   onFeedback: (rating: "jo" | "rossz", wrongSource?: boolean) => Promise<void>;
@@ -35,10 +32,8 @@ export function CaseDraftPanel({
   missingMandatory = [],
   generationMode,
   processing,
-  outputMode,
   sourceRefs,
   onProcess,
-  onModeChange,
   onSave,
   onApprove,
   onFeedback,
@@ -88,37 +83,15 @@ export function CaseDraftPanel({
           </button>
         </div>
       ) : (
-        <>
-          {draft.body_masked ? (
-            <div className="mb-3 bg-[#FbFdfd] border border-one-line rounded-md p-2">
-              <div className="text-[9px] uppercase text-one-grey tracking-wider mb-1">
-                Fedezet-elonezet
-              </div>
-              <InlineAnswer
-                body={draft.body_masked}
-                sources={sources}
-                onCite={(ref) => {
-                  const el = sourceRefs.current[ref];
-                  if (!el) return;
-                  el.scrollIntoView({ behavior: "smooth", block: "center" });
-                  el.classList.add("ring-2", "ring-one-turq");
-                  setTimeout(() => el.classList.remove("ring-2", "ring-one-turq"), 1500);
-                }}
-              />
-            </div>
-          ) : null}
-          <DraftEditor
-            draft={draft}
-            versions={caseData.draft_versions}
-            outputMode={outputMode}
-            caseId={caseData.case_id}
-            onModeChange={onModeChange}
-            onSave={onSave}
-            onApprove={onApprove}
-            onFeedback={onFeedback}
-            onCitationClick={onCitationClick}
-          />
-        </>
+        <DraftEditor
+          draft={draft}
+          versions={caseData.draft_versions}
+          caseId={caseData.case_id}
+          onSave={onSave}
+          onApprove={onApprove}
+          onFeedback={onFeedback}
+          onCitationClick={onCitationClick}
+        />
       )}
     </Card>
   );

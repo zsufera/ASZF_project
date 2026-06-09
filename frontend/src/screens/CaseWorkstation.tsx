@@ -100,10 +100,8 @@ export function CaseWorkstation() {
             missingMandatory={caseData.agent_state?.policy_map?.missing_mandatory ?? []}
             generationMode={generationMode}
             processing={processing}
-            outputMode={outputMode}
             sourceRefs={sourceRefs}
             onProcess={handleProcess}
-            onModeChange={(mode: OutputMode) => setOutputMode(mode)}
             onSave={handleSave}
             onApprove={handleApprove}
             onFeedback={handleFeedback}
