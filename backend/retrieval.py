@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import re
 import threading
+from collections import defaultdict
 from typing import Any
 
 from preprocessing.embedding import active_mode, embed_query
@@ -20,7 +21,12 @@ from preprocessing.index import (
 )
 
 from backend.policy_map import category_mandatory_paragraphs, category_section_prefixes
-from backend.reference_resolution import parent_context, reference_closure
+from backend.reference_resolution import (
+    build_paragraph_index,
+    normalize_paragraph,
+    parent_context,
+    reference_closure,
+)
 from config.settings import settings
 
 
@@ -175,6 +181,56 @@ def apply_category_boost(
     return boosted
 
 
+def auto_merge_siblings(
+    results: list[dict[str, Any]],
+    all_chunks: list[dict[str, Any]],
+    min_siblings: int = 2,
+) -> list[dict[str, Any]]:
+    """Ha a találatok közt >= min_siblings testvér-leaf van ugyanazon szülő alatt (és a
+    szülő § külön chunkként létezik), azokat a szülő egyetlen 'auto_merged' találatába vonja."""
+    by_id = {str(chunk.get("chunk_id")): chunk for chunk in all_chunks if chunk.get("chunk_id")}
+    paragraph_index = build_paragraph_index(all_chunks)
+
+    group_for_index: dict[int, tuple] = {}
+    parent_for_group: dict[tuple, dict[str, Any]] = {}
+    members: dict[tuple, list[int]] = defaultdict(list)
+    for i, result in enumerate(results):
+        source = by_id.get(str(result.get("chunk_id")))
+        if not source:
+            continue
+        paragraph = normalize_paragraph(source.get("paragrafus_szam") or source.get("paragrafus"))
+        if "." not in paragraph:
+            continue
+        parent_paragraph = paragraph.rsplit(".", 1)[0]
+        parent = paragraph_index.get((source.get("doc_id"), parent_paragraph))
+        if not parent:
+            continue
+        key = (source.get("doc_id"), parent_paragraph)
+        group_for_index[i] = key
+        parent_for_group[key] = parent
+        members[key].append(i)
+
+    merge_keys = {key for key, idxs in members.items() if len(idxs) >= min_siblings}
+
+    out: list[dict[str, Any]] = []
+    emitted_parents: set[str] = set()
+    for i, result in enumerate(results):
+        key = group_for_index.get(i)
+        if key in merge_keys:
+            parent = parent_for_group[key]
+            pid = str(parent.get("chunk_id"))
+            if pid in emitted_parents:
+                continue  # a további testvéreket eldobjuk
+            emitted_parents.add(pid)
+            out.append(
+                chunk_to_result(float(result.get("score", 0.0)), parent)
+                | {"retrieval_source": "auto_merged"}
+            )
+        else:
+            out.append(result)
+    return out
+
+
 def retrieve(
     query: str,
     service_provider: str | None = None,
@@ -233,6 +289,7 @@ def retrieve(
             category_mandatory_paragraphs(category),
         )
     primary = primary[:limit]
+    primary = auto_merge_siblings(primary, all_chunks)  # B2: testvér-leaf-ek a szülőbe
 
     added, unresolved = reference_closure(primary, all_chunks)
     parents = parent_context(primary, all_chunks)
