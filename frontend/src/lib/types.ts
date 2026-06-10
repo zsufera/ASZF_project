@@ -4,6 +4,12 @@ export type KpiStatus = "green" | "yellow" | "red";
 export type OutputMode = "hitl" | "automata";
 export type ModelProfile = "cloud" | "onprem";
 export type FeedbackRating = "jo" | "rossz";
+export type FeedbackReason =
+  | "pontatlan"
+  | "hianyos"
+  | "rossz_hangnem"
+  | "rossz_forras"
+  | "felesleges_eszkalacio";
 
 export interface User {
   username: string;
@@ -308,4 +314,37 @@ export interface CopilotChatResponse {
   draft?: { generation_mode?: GenerationMode } | null;
   timeline: TimelineStep[];
   orchestrator_mode: "llm" | "fallback";
+}
+
+export interface OperationalMetrics {
+  case_funnel: {
+    total_cases: number;
+    processed_cases: number;
+    closed_cases: number;
+    adoption_rate: number;
+  };
+  handling_time: {
+    avg_seconds: number | null;
+    median_seconds: number | null;
+    sample_size: number;
+  };
+  draft_acceptance: {
+    unchanged: number;
+    light_edit: number;
+    rewrite: number;
+    avg_edit_ratio: number | null;
+    sample_size: number;
+  };
+  feedback: {
+    good: number;
+    bad: number;
+    wrong_source: number;
+    positive_rate: number | null;
+    by_reason: Record<string, number>;
+    by_category: Array<{ category: string; good: number; bad: number }>;
+  };
+  escalation: {
+    escalated_cases: number;
+    escalation_rate: number;
+  };
 }

@@ -3,7 +3,7 @@ import type {
   EvalResult, EscalatedItem, SupervisorStats, OcrResult, CopilotChatResponse,
   AuditCaseRecord, AuditCompleteness, AuditEvent, TraceEvent, AcceptanceResult,
   AgentStreamEvent, CaseAssignmentResult, CopilotSessionItem,
-  AszfKnowledgeGroup, AszfKnowledgeItem,
+  AszfKnowledgeGroup, AszfKnowledgeItem, OperationalMetrics,
 } from "./types";
 
 const BASE = (import.meta.env.VITE_BACKEND_URL ?? "/api") as string;
@@ -95,7 +95,7 @@ export const api = {
   approveCase: (body: { case_id: string; subject_masked: string; body_masked: string; username: string; role: string; draft_version_id: string }) =>
     req<{ subject_unmasked: string; body_unmasked: string }>("POST", "/cases/approve", body),
 
-  sendFeedback: (body: { case_id: string; rating: string; wrong_source?: boolean; username: string }) =>
+  sendFeedback: (body: { case_id: string; rating: string; reason?: string; wrong_source?: boolean; username: string }) =>
     req<Record<string, unknown>>("POST", "/cases/feedback", body),
 
   updateStatus: (body: Record<string, unknown>) =>
@@ -154,6 +154,8 @@ export const api = {
   getSupervisorQueue: () => req<{ items: EscalatedItem[] }>("GET", "/supervisor/queue"),
 
   getSupervisorStats: () => req<SupervisorStats>("GET", "/supervisor/stats"),
+
+  getOperationalMetrics: () => req<OperationalMetrics>("GET", "/metrics/operational"),
 
   claimCase: (body: { case_id: string; username: string }) =>
     req<CaseAssignmentResult>("POST", "/cases/claim", body),
