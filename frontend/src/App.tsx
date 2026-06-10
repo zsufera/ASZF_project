@@ -9,6 +9,7 @@ import { CaseWorkstation } from "./screens/CaseWorkstation";
 import { NewCase } from "./screens/NewCase";
 import { Copilot } from "./screens/Copilot";
 import { Evaluation } from "./screens/Evaluation";
+import { Metrics } from "./screens/Metrics";
 import { Supervisor } from "./screens/Supervisor";
 import { Knowledge } from "./screens/Knowledge";
 
@@ -32,6 +33,7 @@ function AppRoutes() {
         {/* A postai import az „Új ügy" lapra olvadt össze — a régi útvonal átirányít. */}
         <Route path="/postal" element={<Navigate to="/new" replace />} />
         <Route path="/eval" element={<Evaluation />} />
+        <Route path="/metrics" element={<Metrics />} />
         <Route path="/knowledge" element={<Knowledge />} />
         <Route path="/supervisor" element={
           <SupervisorGuard><Supervisor /></SupervisorGuard>

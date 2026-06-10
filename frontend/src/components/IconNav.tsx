@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { Inbox as InboxIcon, PenSquare, MessageCircle, BarChart3, BookOpen, Shield } from "lucide-react";
+import { Inbox as InboxIcon, PenSquare, MessageCircle, BarChart3, BookOpen, Shield, TrendingUp } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Role } from "../lib/types";
 
@@ -15,6 +15,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/new", icon: PenSquare, label: "Új ügy" },
   { to: "/copilot", icon: MessageCircle, label: "Copilot" },
   { to: "/eval", icon: BarChart3, label: "Értékelés" },
+  { to: "/metrics", icon: TrendingUp, label: "Mérések" },
   { to: "/knowledge", icon: BookOpen, label: "Tudástár" },
   { to: "/supervisor", icon: Shield, label: "Superv.", roles: ["supervisor"] },
 ];
