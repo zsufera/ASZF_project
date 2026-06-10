@@ -144,3 +144,14 @@ def test_feedback_aggregation_with_reason_and_category(tmp_path, monkeypatch) ->
     assert fb["by_reason"] == {"rossz_forras": 1}
     assert fb["by_category"] == [{"category": "szamlazas", "good": 1, "bad": 1}]
     assert metrics["escalation"]["escalated_cases"] == 1
+
+
+def test_metrics_route_registered() -> None:
+    from fastapi.routing import APIRoute
+
+    from backend.main import app
+
+    assert any(
+        isinstance(route, APIRoute) and route.path == "/metrics/operational"
+        for route in app.routes
+    )
