@@ -73,6 +73,7 @@ Minden rendszerprompt külön fájlban él a `prompts/` mappában:
 | `prompts/escalation.txt` | `backend/escalation.py` |
 | `prompts/query_rewrite.txt` | `backend/query_rewrite.py` |
 | `prompts/orchestrator.txt` | `agent/copilot/orchestrator.py` |
+| `prompts/judge.txt` | `eval/llm_judge.py` |
 
 ## AI-használat indokoltsága
 
