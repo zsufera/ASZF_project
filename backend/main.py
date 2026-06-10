@@ -414,6 +414,7 @@ def case_feedback(payload: FeedbackRequest) -> dict:
             case_code=payload.case_id,
             rating=payload.rating,
             wrong_source=payload.wrong_source,
+            reason=payload.reason,
             actor_user_id=actor_id,
         ),
     }

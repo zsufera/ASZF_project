@@ -458,6 +458,7 @@ def submit_feedback(
     case_code: str,
     rating: str,
     wrong_source: bool = False,
+    reason: str | None = None,
     actor_user_id: int | None = None,
 ) -> dict[str, Any]:
     case_id = _get_case_db_id(case_code)
@@ -466,10 +467,10 @@ def submit_feedback(
     record_audit_event(
         case_code,
         "ui_feedback",
-        {"rating": rating, "wrong_source": wrong_source},
+        {"rating": rating, "wrong_source": wrong_source, "reason": reason},
         actor_user_id=actor_user_id,
     )
-    return {"case_id": case_code, "rating": rating, "wrong_source": wrong_source}
+    return {"case_id": case_code, "rating": rating, "wrong_source": wrong_source, "reason": reason}
 
 
 

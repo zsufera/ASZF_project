@@ -155,3 +155,16 @@ def test_metrics_route_registered() -> None:
         isinstance(route, APIRoute) and route.path == "/metrics/operational"
         for route in app.routes
     )
+
+
+def test_submit_feedback_records_reason(tmp_path, monkeypatch) -> None:
+    from backend.case_service import submit_feedback
+
+    _setup_db(tmp_path, monkeypatch)
+    with sqlite3.connect(settings.sqlite_path) as conn:
+        _insert_case(conn, "CASE-FB1")
+        conn.commit()
+    submit_feedback("CASE-FB1", rating="rossz", wrong_source=False, reason="hianyos")
+    metrics = get_operational_metrics()
+    assert metrics["feedback"]["bad"] == 1
+    assert metrics["feedback"]["by_reason"] == {"hianyos": 1}
