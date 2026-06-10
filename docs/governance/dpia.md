@@ -17,6 +17,20 @@
 | Audit | Döntési meta, eszkaláció ok | Redakció (`security/redaction.py`) |
 | OCR (postai) | PDF szöveg | Maszkolt OCR + szerkeszthető előnézet |
 
+## 2.b Adatosztályozási szintek (data classification)
+
+| Szint | Leírás | Példa | Kezelési szabály |
+|-------|--------|-------|------------------|
+| **Publikus** | Nyilvánosan elérhető tartalom | ÁSZF PDF-ek, szabályzat-szövegek | Korlátozás nélkül indexelhető, LLM-promptba kerülhet |
+| **Belső** | Üzleti, de nem személyes adat | Eszkalációs statisztikák, eval-riportok, kategória-címkék | Repo-ban tárolható, loggolható |
+| **Személyes adat (PII)** | Azonosított/azonosítható természetes személy adata | Név, email, telefonszám, ügyfélszám | KIZÁRÓLAG maszkolva hagyhatja el a rendszert; maszkolatlanul csak a `pii_token_map`-ben él |
+| **Maszkolt PII** | Tokenizált helyettesítő | `[NÉV_1]`, `[EMAIL_1]` | LLM-promptba, logba, auditba, tesztbe kerülhet; visszafejtés csak RBAC-védett `/unmask` úton |
+| **Hitelesítési titok** | Kulcsok, jelszavak | `OPENAI_API_KEY`, jelszó-hash | Csak `.env`-ben (gitignore alatt); repo-ba, logba SOHA |
+
+Érvényesítés: a maszkolás (`backend/masking.py`) a pipeline ELSŐ lépése, minden downstream
+modul (classify, retrieve, draft, verify, escalation) kizárólag maszkolt szöveget kap.
+Kapu-teszt: `tests/test_pii_gate.py`.
+
 ## 3. Adatáramlás
 
 ```mermaid
