@@ -36,6 +36,7 @@ from backend.api.agent import router as agent_router
 from backend.api.cases import router as cases_router
 from backend.api.copilot import router as copilot_router
 from backend.api.history import router as history_router
+from backend.api.knowledge import router as knowledge_router
 from agent.runner import run_agent
 from backend.acceptance_service import run_acceptance
 from backend.eval_service import export_run, run_eval, set_baseline_from_run
@@ -63,6 +64,7 @@ app.include_router(cases_router)
 app.include_router(history_router)
 app.include_router(agent_router)
 app.include_router(copilot_router)
+app.include_router(knowledge_router)
 
 
 class ClassifyRequest(BaseModel):

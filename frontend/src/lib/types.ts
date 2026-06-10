@@ -18,6 +18,11 @@ export interface InboxItem {
   channel_label: string;
   subject: string;
   sla_days_remaining: number;
+  sla_due_at?: string | null;
+  sla_breached_at?: string | null;
+  assignee_username?: string | null;
+  claimed_by_username?: string | null;
+  claimed_at?: string | null;
   escalated: boolean;
   confidence: number;
 }
@@ -37,7 +42,19 @@ export interface ChunkItem {
   idezet?: string;
   dok_tipus: string;
   kozertheto_magyarazat?: string;
+  score?: number;
+  retrieval_source?: RetrievalSource;
+  cross_refs?: string[];
 }
+
+export type RetrievalSource =
+  | "qdrant_semantic"
+  | "hybrid_local"
+  | "reference_closure"
+  | "parent_context"
+  | "auto_merged"
+  | "empty"
+  | string;
 
 export interface SourceRef {
   ref: string;            // "S1", "S2", ...
@@ -49,6 +66,7 @@ export interface SourceRef {
   idezet: string;
   magyarazat?: string;
   score?: number;
+  retrieval_source?: RetrievalSource;
   used: boolean;
 }
 
@@ -57,6 +75,10 @@ export type GenerationMode = "llm" | "insufficient" | "template";
 export interface TimelineStep {
   step: string;
   output: Record<string, unknown>;
+  mode?: string;
+  status?: string;
+  counts?: Record<string, unknown>;
+  warnings?: string[];
   summary?: string;
 }
 
@@ -65,10 +87,33 @@ export interface EscalationState {
   reasons: string[];
 }
 
+export interface VerifyClaim {
+  claim: string;
+  grounded: boolean;
+  chunk_id?: string;
+}
+
+export interface VerifyState {
+  claims: VerifyClaim[];
+  ungrounded_count: number;
+  missing_mandatory?: string[];
+  warning?: string;
+  verify_mode?: string;
+}
+
+export type UnresolvedReference = string | {
+  raw?: string;
+  doc_hint?: string;
+  paragraph?: string;
+  [key: string]: unknown;
+};
+
 export interface AgentState {
-  retrieval: { chunks: ChunkItem[] };
-  policy_map: { policy_items: unknown[] };
+  retrieval: { chunks: ChunkItem[]; unresolved_refs: UnresolvedReference[]; retrieval_mode?: string };
+  policy_map: { policy_items: unknown[]; missing_mandatory?: string[]; mandatory_refs?: unknown[] };
   timeline: TimelineStep[];
+  classification?: { category: string; confidence?: number; subtype?: string };
+  priority?: { value: string; reason?: string };
   draft: {
     subject: string;
     body_masked: string;
@@ -78,6 +123,7 @@ export interface AgentState {
     format?: "email" | "copilot";
   };
   escalation: EscalationState;
+  verify: VerifyState;
 }
 
 export interface CustomerCandidateItem {
@@ -95,6 +141,11 @@ export interface Case {
   channel_label: string;
   status_label: string;
   sla_days_remaining: number;
+  sla_due_at?: string | null;
+  sla_breached_at?: string | null;
+  assignee_username?: string | null;
+  claimed_by_username?: string | null;
+  claimed_at?: string | null;
   sender_email_masked: string;
   sender_email_key: string;
   sender_email_display: string;
@@ -116,6 +167,11 @@ export interface EscalatedItem {
   case_id: string;
   priority: Priority;
   sla_days_remaining: number;
+  sla_due_at?: string | null;
+  sla_breached_at?: string | null;
+  assignee_username?: string | null;
+  claimed_by_username?: string | null;
+  claimed_at?: string | null;
   subject: string;
   escalation_reason?: string;
 }
@@ -142,6 +198,94 @@ export interface EvalResult {
   };
   results: Array<{ email_id: string; [key: string]: unknown }>;
   baseline_diff: { has_baseline: boolean; diff: Record<string, unknown> };
+}
+
+export interface AuditEvent {
+  id: number;
+  case_id: string;
+  event_type: string;
+  actor_user_id?: number | null;
+  actor_username?: string | null;
+  payload: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface AuditCompleteness {
+  case_id: string;
+  complete: boolean;
+  missing: string[];
+  required_fields: string[];
+}
+
+export interface AuditCaseRecord {
+  case_id: string;
+  status?: string;
+  priority?: string;
+  events: AuditEvent[];
+  iterations: AuditEvent[];
+  latest_iteration?: Record<string, unknown>;
+  audit_meta?: Record<string, unknown>;
+}
+
+export interface TraceEvent {
+  name: string;
+  case_id?: string | null;
+  duration_ms?: number | null;
+  payload: Record<string, unknown>;
+  created_at: string;
+  backend?: string;
+}
+
+export interface AgentStreamEvent {
+  event: "start" | "step" | "complete" | "error" | string;
+  data: Record<string, unknown>;
+}
+
+export interface CaseAssignmentResult {
+  case_id: string;
+  assignee_username?: string | null;
+  claimed_by_username?: string | null;
+  claimed_at?: string | null;
+}
+
+export interface CopilotSessionItem {
+  session_id: string;
+  username?: string | null;
+  case_id?: string | null;
+  turn_count: number;
+  last_content_masked?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AszfKnowledgeItem {
+  chunk_id: string;
+  section: string;
+  paragrafus: string;
+  dok_tipus?: string;
+  dok_cim?: string;
+  oldalszam?: number;
+  quote: string;
+  text?: string;
+  cross_refs: string[];
+  source_file?: string;
+  score?: number;
+}
+
+export interface AszfKnowledgeGroup {
+  section: string;
+  label: string;
+  count: number;
+  items: AszfKnowledgeItem[];
+}
+
+export interface AcceptanceResult {
+  passed: boolean;
+  kpi_checks: Record<string, { value: number; rule: [string, number]; passed: boolean }>;
+  kpi_failures: string[];
+  demo_failures: string[];
+  eval_run_id?: string;
+  targets: Record<string, unknown>;
 }
 
 export interface SupervisorStats {

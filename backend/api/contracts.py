@@ -75,6 +75,22 @@ class StatusTransitionRequest(BaseModel):
     role: str | None = None
 
 
+class CaseClaimRequest(BaseModel):
+    case_id: str
+    username: str | None = None
+
+
+class CaseAssignRequest(BaseModel):
+    case_id: str
+    assignee_username: str
+    username: str | None = None
+
+
+class CaseReleaseRequest(BaseModel):
+    case_id: str
+    username: str | None = None
+
+
 class InboxResponse(FlexibleResponse):
     items: list[dict[str, Any]] = Field(default_factory=list)
     count: int = 0
@@ -116,6 +132,21 @@ class CopilotChatRequest(BaseModel):
     message: str
     history: list[dict[str, str]] = Field(default_factory=list)
     customer_facing: bool = False
+
+
+class CopilotTurnRecordRequest(BaseModel):
+    session_id: str
+    role: str
+    content: str
+    username: str | None = None
+    sources: list[dict[str, Any]] = Field(default_factory=list)
+    timeline: list[dict[str, Any]] = Field(default_factory=list)
+
+
+class CopilotHandoffRequest(BaseModel):
+    session_id: str
+    username: str | None = None
+    selected_turn_ids: list[int] = Field(default_factory=list)
 
 
 class CopilotChatResponse(FlexibleResponse):

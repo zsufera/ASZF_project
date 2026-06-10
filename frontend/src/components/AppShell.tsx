@@ -6,6 +6,7 @@ import { IconNav } from "./IconNav";
 import { OfflineBanner } from "./OfflineBanner";
 import { ToastContainer } from "./Toast";
 import { api } from "../lib/api";
+import { CommandPalette } from "./CommandPalette";
 
 export function AppShell() {
   const { user, modelProfile, setModelProfile, setAszfVersion, aszfVersion } = useSession();
@@ -28,6 +29,7 @@ export function AppShell() {
         offline={offline}
       />
       <OfflineBanner offline={offline} />
+      <CommandPalette role={user.role} />
       <div className="flex flex-1 overflow-hidden">
         <IconNav role={user.role} />
         <main className="flex-1 overflow-auto p-4">

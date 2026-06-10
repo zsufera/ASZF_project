@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Cloud, Server, User, LogOut, AlertTriangle } from "lucide-react";
 import type { ModelProfile } from "../lib/types";
 import { useSession } from "../state/session";
 
@@ -54,7 +55,9 @@ export function TopHeader({ aszfVersion, modelProfile, onProviderChange, offline
 
       <div className="flex items-center gap-2 ml-auto shrink-0">
         {offline && (
-          <span className="text-status-esc-fg text-[10px] font-semibold hidden md:block">⚠ Offline</span>
+          <span className="text-status-esc-fg text-[10px] font-semibold hidden md:block flex items-center gap-1">
+            <AlertTriangle size={12} className="inline" /> Offline
+          </span>
         )}
         <span className="text-[11px] bg-[#F4F8F7] border border-one-line rounded-xl px-3 py-1 hidden md:block">
           ÁSZF {aszfVersion}
@@ -64,17 +67,21 @@ export function TopHeader({ aszfVersion, modelProfile, onProviderChange, offline
           className="text-[11px] bg-[#F4F8F7] border border-one-line rounded-xl px-3 py-1 hover:bg-one-turq-l transition-colors"
           aria-label={`Modell profil: ${modelProfile === "cloud" ? "Felhő" : "On-prem"}`}
         >
-          {modelProfile === "cloud" ? "☁ Felhő" : "🖥 On-prem"}
+          {modelProfile === "cloud"
+            ? <><Cloud size={12} className="inline mr-1" />Felhő</>
+            : <><Server size={12} className="inline mr-1" />On-prem</>}
         </button>
         {user && (
           <div className="flex items-center gap-2 text-[11px]">
-            <span className="text-one-grey hidden md:block">👤 {user.username} · {user.role}</span>
+            <span className="text-one-grey hidden md:block flex items-center gap-1">
+              <User size={12} className="inline" /> {user.username} · {user.role}
+            </span>
             <button
               onClick={logout}
-              className="text-[10px] text-one-grey hover:text-one-ink border border-one-line rounded-full px-2 py-0.5 transition-colors"
+              className="text-[10px] text-one-grey hover:text-one-ink border border-one-line rounded-full px-2 py-0.5 transition-colors flex items-center gap-1"
               aria-label="Kijelentkezés"
             >
-              Kilép
+              <LogOut size={10} className="inline" />Kilép
             </button>
           </div>
         )}

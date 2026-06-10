@@ -1,20 +1,22 @@
 import { NavLink } from "react-router-dom";
+import { Inbox as InboxIcon, PenSquare, MessageCircle, BarChart3, BookOpen, Shield } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { Role } from "../lib/types";
 
 interface NavItem {
   to: string;
-  icon: string;
+  icon: LucideIcon;
   label: string;
   roles?: Role[];
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { to: "/inbox", icon: "📥", label: "Inbox" },
-  { to: "/new", icon: "✏️", label: "Új ügy" },
-  { to: "/copilot", icon: "💬", label: "Copilot" },
-  { to: "/postal", icon: "📮", label: "Postai levél" },
-  { to: "/eval", icon: "📊", label: "Evaluation" },
-  { to: "/supervisor", icon: "🛡️", label: "Superv.", roles: ["supervisor"] },
+  { to: "/inbox", icon: InboxIcon, label: "Bejövő" },
+  { to: "/new", icon: PenSquare, label: "Új ügy" },
+  { to: "/copilot", icon: MessageCircle, label: "Copilot" },
+  { to: "/eval", icon: BarChart3, label: "Értékelés" },
+  { to: "/knowledge", icon: BookOpen, label: "Tudástár" },
+  { to: "/supervisor", icon: Shield, label: "Superv.", roles: ["supervisor"] },
 ];
 
 export function IconNav({ role }: { role: Role }) {
@@ -41,7 +43,11 @@ export function IconNav({ role }: { role: Role }) {
         >
           {({ isActive }) => (
             <>
-              <span className="text-[17px]" aria-hidden="true">{item.icon}</span>
+              <item.icon
+                size={18}
+                className={isActive ? "text-one-turq-d" : "text-one-grey"}
+                aria-hidden="true"
+              />
               <span>{item.label}</span>
               {isActive && <span className="sr-only">(aktív)</span>}
             </>

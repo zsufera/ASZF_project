@@ -143,6 +143,27 @@ export function fieldLabel(key: string): string {
   return FIELD_LABELS[key] ?? key;
 }
 
+// Eszkalációs ok-kódok közérthető magyar megfelelői.
+const REASON_LABELS: Record<string, string> = {
+  hianyzo_kotelezo_hivatkozas: "Hiányzó kötelező hivatkozás",
+  konfidencia_a_kuszob_alatt: "Alacsony konfidencia",
+  "konfidencia a küszöb alatt": "Alacsony konfidencia",
+  llm_javaslat: "LLM javaslat",
+  vitatott_osszeg: "Vitatott összeg",
+  "vitatott összeg": "Vitatott összeg",
+  ugyfel_altal_nem_rendelt: "Ügyfél által nem rendelt",
+  "ügyfél által nem rendelt": "Ügyfél által nem rendelt",
+  ismetelt_panasz: "Ismételt panasz",
+  alacsony_fedezet: "Alacsony forrásfedezet",
+  manualis_ellenorzes: "Manuális ellenőrzés szükséges",
+};
+
+/** Egy eszkalációs ok-kód közérthető magyar címkéje (ismeretlen kód → szépített szöveg). */
+export function reasonLabel(code: string): string {
+  if (REASON_LABELS[code]) return REASON_LABELS[code];
+  return code.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+}
+
 const VALUE_MAPS: Record<string, Record<string, string>> = {
   generation_mode: { llm: "LLM-szintézis", insufficient: "nincs elég fedezet", template: "sablon" },
   format: { email: "e-mail levél", copilot: "beszédpont" },
@@ -154,6 +175,7 @@ const VALUE_MAPS: Record<string, Record<string, string>> = {
 export function formatFieldValue(key: string, value: unknown): string {
   if (value === null || value === undefined) return "—";
   if (typeof value === "boolean") return value ? "igen" : "nem";
+  if (key === "reasons" && Array.isArray(value)) return value.length ? value.map((v) => reasonLabel(String(v))).join(", ") : "nincs";
   if (Array.isArray(value)) return value.length ? value.map((v) => String(v)).join(", ") : "nincs";
   if (key === "confidence" && typeof value === "number") return `${Math.round(value * 100)}%`;
   const map = VALUE_MAPS[key];

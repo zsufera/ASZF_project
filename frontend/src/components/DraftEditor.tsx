@@ -1,12 +1,10 @@
-import { useEffect, useState } from "react";
-import type { DraftVersion, OutputMode } from "../lib/types";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { DraftVersion } from "../lib/types";
 
 interface DraftEditorProps {
   draft: { subject: string; body_masked: string; citations: string[] };
   versions: DraftVersion[];
-  outputMode: OutputMode;
   caseId: string;
-  onModeChange: (m: OutputMode) => void;
   onSave: (subject: string, body: string) => Promise<void>;
   onApprove: (subject: string, body: string, versionId: string) => Promise<void>;
   onFeedback: (rating: "jo" | "rossz", wrongSource?: boolean) => Promise<void>;
@@ -37,14 +35,24 @@ function renderBodyWithCitations(body: string, citations: string[], onClick: (c:
   return <>{parts}</>;
 }
 
-export function DraftEditor({ draft, versions, outputMode, onModeChange, onSave, onApprove, onFeedback, onCitationClick }: DraftEditorProps) {
-  const [mode, setMode] = useState<"free" | "template">("free");
+export function DraftEditor({ draft, versions, onSave, onApprove, onFeedback, onCitationClick }: DraftEditorProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [subject, setSubject] = useState(draft.subject ?? "");
   const [body, setBody] = useState(draft.body_masked ?? "");
   const [selectedVersion, setSelectedVersion] = useState(versions[0]?.id ?? "");
   const [saving, setSaving] = useState(false);
   const [approving, setApproving] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [showDiff, setShowDiff] = useState(false);
+
+  const selectedVersionRecord = useMemo(
+    () => versions.find((x) => x.id === selectedVersion),
+    [selectedVersion, versions],
+  );
+  const previousVersion = useMemo(() => {
+    if (!selectedVersionRecord) return versions[1];
+    return versions.find((v) => v.version_no === selectedVersionRecord.version_no - 1) ?? versions[1];
+  }, [selectedVersionRecord, versions]);
 
   useEffect(() => {
     setSubject(draft.subject ?? "");
@@ -62,24 +70,29 @@ export function DraftEditor({ draft, versions, outputMode, onModeChange, onSave,
     try { await onApprove(subject, body, selectedVersion); } finally { setApproving(false); }
   };
 
+  const insertCitation = (citation: string) => {
+    const token = citation.startsWith("[") ? citation : `[${citation}]`;
+    const textarea = textareaRef.current;
+    if (!textarea) {
+      setBody((current) => `${current}${current.endsWith(" ") || !current ? "" : " "}${token}`);
+      setEditMode(true);
+      return;
+    }
+    const start = textarea.selectionStart ?? body.length;
+    const end = textarea.selectionEnd ?? body.length;
+    const next = `${body.slice(0, start)}${token}${body.slice(end)}`;
+    setBody(next);
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + token.length, start + token.length);
+    }, 0);
+  };
+
+  const approvalReady = subject.trim().length > 0 && body.trim().length > 0 && Boolean(selectedVersion);
+
   return (
     <div>
       <div className="flex items-center gap-2 mb-3 flex-wrap">
-        <div className="flex border border-one-line rounded-md overflow-hidden text-[10px]">
-          <button
-            onClick={() => setMode("free")}
-            className={`px-3 py-1 ${mode === "free" ? "bg-one-turq text-[#04201f] font-bold" : "text-one-grey hover:bg-one-canvas"}`}
-          >
-            Szabad szöveg
-          </button>
-          <button
-            onClick={() => setMode("template")}
-            className={`px-3 py-1 ${mode === "template" ? "bg-one-turq text-[#04201f] font-bold" : "text-one-grey hover:bg-one-canvas"}`}
-          >
-            Sablonblokkok
-          </button>
-        </div>
-
         {versions.length > 0 && (
           <select
             value={selectedVersion}
@@ -96,22 +109,23 @@ export function DraftEditor({ draft, versions, outputMode, onModeChange, onSave,
             ))}
           </select>
         )}
-
-        <div className="ml-auto flex border border-one-line rounded-md overflow-hidden text-[10px]">
+        {versions.length >= 2 && (
           <button
-            onClick={() => onModeChange("hitl")}
-            className={`px-3 py-1 ${outputMode === "hitl" ? "bg-one-turq text-[#04201f] font-bold" : "text-one-grey hover:bg-one-canvas"}`}
+            onClick={() => setShowDiff((v) => !v)}
+            className="text-[10px] text-one-turq-d hover:underline"
           >
-            HITL
+            {showDiff ? "Diff elrejtése" : "Diff"}
           </button>
-          <button
-            onClick={() => onModeChange("automata")}
-            className={`px-3 py-1 ${outputMode === "automata" ? "bg-one-turq text-[#04201f] font-bold" : "text-one-grey hover:bg-one-canvas"}`}
-          >
-            Automata
-          </button>
-        </div>
+        )}
       </div>
+
+      {showDiff && versions.length >= 2 && (
+        <DraftVersionDiff
+          currentBody={body}
+          previousBody={previousVersion?.body_masked ?? ""}
+          previousLabel={previousVersion ? `v${previousVersion.version_no}` : "előző"}
+        />
+      )}
 
       <div className="mb-2">
         <label className="text-[10px] text-one-grey block mb-1">Tárgy</label>
@@ -126,6 +140,7 @@ export function DraftEditor({ draft, versions, outputMode, onModeChange, onSave,
       <div className="border border-one-line rounded-md p-3 min-h-[120px] text-[12px] leading-relaxed bg-white mb-3">
         {editMode ? (
           <textarea
+            ref={textareaRef}
             value={body}
             onChange={(e) => setBody(e.target.value)}
             onBlur={() => setEditMode(false)}
@@ -147,14 +162,27 @@ export function DraftEditor({ draft, versions, outputMode, onModeChange, onSave,
         )}
       </div>
 
+      {draft.citations.length > 0 && (
+        <div className="mb-3 flex flex-wrap gap-1">
+          <span className="text-[10px] text-one-grey mr-1 self-center">Hivatkozás-beszúrás:</span>
+          {draft.citations.map((citation) => (
+            <span key={citation} className="inline-flex rounded-full border border-one-line overflow-hidden">
+              <button onClick={() => insertCitation(citation)} className="px-2 py-1 text-[10px] bg-white hover:bg-one-canvas">{citation}</button>
+              <button onClick={() => onCitationClick(citation)} className="px-2 py-1 text-[10px] bg-one-canvas text-one-grey hover:text-one-ink">forrás</button>
+            </span>
+          ))}
+        </div>
+      )}
+
       <div className="flex items-center gap-2 flex-wrap">
         <button
           onClick={handleApprove}
-          disabled={approving}
-          className="bg-one-turq text-[#04201f] font-bold text-[11px] px-4 py-2 rounded-pill hover:bg-one-turq-d transition-colors disabled:opacity-50"
+          disabled={approving || !approvalReady}
+          title={!approvalReady ? "Tárgy, szöveg és verzió szükséges" : undefined}
+          className="bg-one-turq text-[#04201f] font-bold text-[11px] px-4 py-2 rounded-pill hover:bg-one-turq-d transition-colors disabled:opacity-50 btn-press"
           aria-label="Jóváhagyom kiküldésre"
         >
-          {approving ? "⏳ Jóváhagyás…" : "✓ Jóváhagyom kiküldésre"}
+          {approving ? "Jóváhagyás…" : "✓ Jóváhagyom kiküldésre"}
         </button>
         <button
           onClick={handleSave}
@@ -162,7 +190,7 @@ export function DraftEditor({ draft, versions, outputMode, onModeChange, onSave,
           className="bg-white border border-one-line text-one-ink text-[11px] px-3 py-2 rounded-pill hover:bg-one-canvas transition-colors disabled:opacity-50"
           aria-label="Draft mentése"
         >
-          {saving ? "…" : "💾 Draft mentése"}
+          {saving ? "…" : "Draft mentése"}
         </button>
         <div className="ml-auto flex items-center gap-3 text-[12px] text-one-grey">
           <span>Visszajelzés:</span>
@@ -171,6 +199,34 @@ export function DraftEditor({ draft, versions, outputMode, onModeChange, onSave,
           <button onClick={() => onFeedback("rossz", true)} className="text-[10px] hover:text-kpi-bad transition-colors" aria-label="Rossz forrás">rossz forrás</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function DraftVersionDiff({
+  currentBody,
+  previousBody,
+  previousLabel,
+}: {
+  currentBody: string;
+  previousBody: string;
+  previousLabel: string;
+}) {
+  const currentLines = currentBody.split("\n").filter((line) => line.trim());
+  const previous = new Set(previousBody.split("\n").map((line) => line.trim()).filter(Boolean));
+  const changed = currentLines.filter((line) => !previous.has(line.trim())).slice(0, 4);
+  return (
+    <div className="border border-one-line rounded-one bg-one-surface p-3 mb-3">
+      <div className="text-[10px] uppercase text-one-grey font-semibold tracking-wider mb-2">Verzió-diff ({previousLabel})</div>
+      {changed.length ? (
+        <div className="space-y-1">
+          {changed.map((line, index) => (
+            <div key={`${line}-${index}`} className="rounded bg-[#eefaf4] text-kpi-ok text-[10px] px-2 py-1 line-clamp-2">+ {line}</div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-[11px] text-one-grey">Nincs látható szöveges eltérés.</p>
+      )}
     </div>
   );
 }

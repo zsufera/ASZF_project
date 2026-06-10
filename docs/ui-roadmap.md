@@ -3,7 +3,7 @@
 > **Cél:** nagyobb, funkcionalitásbeli UI-fejlesztések specifikációja a React frontendhez (`frontend/`), a meglévő FastAPI backendre illesztve. Nem stílus/kozmetika: a use-case magját (auditálható, forrásolt, ember-kontrollált ügyintézői copilot) erősítő, működő funkciók.
 > **Forma:** stratégiai roadmap, tételenként implementálható spec-vázlat. Minden tétel külön implementációs tervvé (`docs/superpowers/plans/`) bontható.
 > **Kapcsolódó:** [`docs/archive/design-export/`](archive/design-export/) (archivált One arculat/tokenek), [`frontend/UX-DECISIONS.md`](../frontend/UX-DECISIONS.md), [`docs/rag-roadmap.md`](rag-roadmap.md), [`FEJLESZTESI_GUARDRAILS.md`](../FEJLESZTESI_GUARDRAILS.md) (§7 UI guardrailek).
-> **Frissítve:** 2026-06-09, a jelenlegi React frontend, Copilot orchestrator és backend endpointok alapján.
+> **Frissítve:** 2026-06-09, a Tier 1-3 implementáció után.
 
 ---
 
@@ -17,16 +17,16 @@
 
 | Backend-képesség | Végpont / adat | UI-állapot |
 |---|---|---|
-| Audit-esemény stream | `/audit/events` | **nincs bekötve** az `api.ts`-be |
-| Audit-completeness ügyenként | `/audit/completeness/{id}` | **nincs bekötve** |
-| Ügy-audit (iterációk) | `/audit/cases/{id}` | be van kötve (`getAuditCase`), de csak a Supervisorban nyers JSON-ként jelenik meg |
-| Observability trace-ek | `/observability/traces` | **nincs bekötve** |
-| Acceptance-kapu | `/acceptance/run` | **nincs bekötve** |
-| Governance/retention purge | `/governance/purge` | be van kötve, van Supervisor-kezdemény, de nincs használható dry-run előnézet vagy auditált megerősítési flow |
+| Audit-esemény stream | `/audit/events` | be van kötve a Supervisor audit-keresőbe |
+| Audit-completeness ügyenként | `/audit/completeness/{id}` | be van kötve CaseWorkstation és Supervisor nézetben |
+| Ügy-audit (iterációk) | `/audit/cases/{id}` | be van kötve a CaseWorkstation audit-panelbe |
+| Observability trace-ek | `/observability/traces` | be van kötve a Supervisor trace viewerbe |
+| Acceptance-kapu | `/acceptance/run` | be van kötve az Evaluation acceptance panelbe |
+| Governance/retention purge | `/governance/purge` | Supervisor dry-run/execute panellel használható |
 | Újraindexelés | `/reindex` | **nincs bekötve** |
-| Verify claim-szintű kimenet | `/verify` + `agent_state.verify.claims` | a timeline csak darabszámot mutat, a claim-szintű grounding nem jelenik meg |
-| Retrieval-provenance | `retrieval_source`, `unresolved_refs`, score | a forrás-kártyák megvannak, de a provenance/closure/unresolved státusz nem látszik |
-| Eval baseline és human score | `/eval/baseline`, `/eval/human-score` | be van kötve, de a baseline diff nyers JSON, nincs bukó-eset drill-down |
+| Verify claim-szintű kimenet | `/verify` + `agent_state.verify.claims` | megjelenik a draft-panel grounding részében |
+| Retrieval-provenance | `retrieval_source`, `unresolved_refs`, score | provenance badge, score és unresolved panel megjelenik |
+| Eval baseline és human score | `/eval/baseline`, `/eval/human-score` | emberi diff, score összegzés és drill-down nézet elkészült |
 
 ---
 
@@ -94,6 +94,7 @@
 - **Backend:** új streaming endpoint + fallback a szinkron útra.
 - **Frontend:** `lib/api.ts` streaming helper, `ProcessingIndicator`, `AgentTimeline`, `Copilot`, `CaseDraftPanel`.
 - **Erőfeszítés:** M-L. **Kockázat:** közepes (streaming/hibakezelés, timeout, fallback).
+- **Státusz 2026-06-09:** első implementáció elkészült: `/agent/run/stream` SSE endpoint, frontend `streamAgentRun` helper, `start`/`step`/`complete`/`error` eseménykezeléssel. Későbbi bővítés: tényleges LangGraph node-közbeni stream és opcionális `/copilot/chat/stream`.
 
 #### E — Supervisor operációs konzol
 
@@ -107,6 +108,7 @@
 - **Backend:** részben létezik (`/cases/status`), de assignee/claim/SLA breach mezők és endpointok új DB-sémát igényelnek.
 - **Frontend:** `screens/Supervisor`, `EscalationQueue`, `SlaCountdown`, bulk-akciósáv, assignee filter.
 - **Erőfeszítés:** M-L. **Kockázat:** közepes.
+- **Státusz 2026-06-09:** első implementáció elkészült: `cases` assignment/claim/SLA mezők, `/cases/claim`, `/cases/assign`, `/cases/release`, auditált claim/assign/release, Supervisor queue tulajdonos- és SLA-oszloppal. Későbbi bővítés: bulk műveletek, assignee filter, kategória/csatorna szerinti SLA policy.
 
 #### F — Copilot session és ügy-handoff UX
 
@@ -119,6 +121,7 @@
 - **Backend:** új vagy bővített session store; a UI első verziója lokális állapottal indulhat, de pilothoz perzisztencia kell.
 - **Frontend:** `Copilot`, `CopilotSessionList`, `CreateCaseFromCopilotModal`.
 - **Erőfeszítés:** M. **Kockázat:** közepes.
+- **Státusz 2026-06-09:** első implementáció elkészült: `copilot_sessions`/`copilot_turns` store, session lista, `/copilot/sessions`, `/copilot/sessions/turn`, `/copilot/sessions/handoff`, auditált ügy-handoff és Copilot session oldalsáv. Későbbi bővítés: turn-visszatöltés, handoff preview/modal, kiválasztott részletek szerkesztése.
 
 ### Tier 3 — produktivitás / új felületek
 
@@ -134,6 +137,7 @@
 - **Backend:** részben új (assignee/dedup/bulk endpointok), az első mentett nézet és billentyűs UX frontend-only lehet.
 - **Frontend:** `Inbox`, `SavedViewsBar`, `BulkActionBar`, keyboard hook.
 - **Erőfeszítés:** M. **Kockázat:** alacsony-közepes.
+- **Státusz 2026-06-09:** első implementáció elkészült: mentett nézetek, localStorage szűrőperzisztencia (`jogos.inbox.filters`), billentyűs lista-navigáció, kijelölés, bulk státuszművelet, SLA/assignee/claim metaadatok az Inbox sorokon. Későbbi bővítés: szerveroldali mentett nézetek, assignee filter, dedup jelzés.
 
 #### H — Command palette és gyorsbillentyűk
 
@@ -141,6 +145,7 @@
 - **Backend:** többnyire nincs új backend; csak meglévő route-ok és API-hívások összefűzése.
 - **Frontend:** `components/CommandPalette`, globális shortcut hook, route/action registry.
 - **Erőfeszítés:** S-M. **Kockázat:** alacsony.
+- **Státusz 2026-06-09:** első implementáció elkészült: globális `Ctrl+K` command palette, role-alapú route registry, Knowledge/Supervisor/Eval/Copilot gyorsnavigáció.
 
 #### I — Draft power-szerkesztés
 
@@ -154,6 +159,7 @@
 - **Backend:** részben létezik (draft verziók); bekezdés-újrageneráláshoz új endpoint kell.
 - **Frontend:** `DraftEditor`, `DraftVersionDiff`, `CitationInsertMenu`, `ApprovalChecklist`.
 - **Erőfeszítés:** M. **Kockázat:** alacsony-közepes.
+- **Státusz 2026-06-09:** első implementáció elkészült: draft verzió-diff panel, citation beszúró menü, forrás-preview gomb, jóváhagyási checklist. Későbbi bővítés: célzott bekezdés-újragenerálás backend endpointtal és fejlettebb side-by-side diff.
 
 #### J — ÁSZF-tudásböngésző
 
@@ -161,6 +167,7 @@
 - **Backend:** új kis böngésző/keresés-végpont (`/aszf/tree`, `/aszf/section/{id}`, opcionálisan `/aszf/search`) a meglévő chunk-adatból.
 - **Frontend:** új `screens/Knowledge.tsx` (+ nav), fa- és gráf-komponens.
 - **Erőfeszítés:** M. **Kockázat:** alacsony.
+- **Státusz 2026-06-09:** első implementáció elkészült: `/aszf/tree`, `/aszf/section/{chunk_id}`, `/aszf/search`, új Knowledge képernyő, nav elem, szakaszfa, keresési találatok és `cross_refs` megjelenítés. Későbbi bővítés: vizuális hivatkozási gráf és mélyebb §-szintű dokumentumhierarchia.
 
 ---
 

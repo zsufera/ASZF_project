@@ -9,7 +9,7 @@ interface CaseHistoryPanelProps {
 
 export function CaseHistoryPanel({ items, isRepeated }: CaseHistoryPanelProps) {
   return (
-    <Card title="Elozmenyek">
+    <Card title="Előzmények">
       <HistoryCard items={items} isRepeated={isRepeated} />
     </Card>
   );

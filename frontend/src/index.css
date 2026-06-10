@@ -78,3 +78,33 @@ mark {
 .animate-fade-in {
   animation: fadeIn 150ms ease both;
 }
+
+/* ── Hover lift — subtle card hover ── */
+.hover-lift {
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(14, 18, 18, 0.08);
+}
+
+/* ── Button press feedback ── */
+.btn-press {
+  transition: transform 80ms ease, box-shadow 80ms ease;
+}
+.btn-press:active {
+  transform: scale(0.97);
+  box-shadow: none;
+}
+
+/* ── Staggered children ── */
+.stagger-children > * {
+  animation: fadeUp 160ms ease-out both;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 40ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 80ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 160ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 200ms; }
+.stagger-children > *:nth-child(n+7) { animation-delay: 240ms; }
