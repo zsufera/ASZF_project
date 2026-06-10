@@ -68,7 +68,6 @@ Minden rendszerprompt külön fájlban él a `prompts/` mappában:
 |------|---------------|
 | `prompts/preamble.txt` | `backend/llm.py` — minden LLM-hívás elé fűzött biztonsági prefixum |
 | `prompts/classify.txt` | `backend/classify.py` |
-| `prompts/draft_generate.txt` | `backend/draft.py` (deprecated) |
 | `prompts/draft_synthesize.txt` | `backend/draft.py` |
 | `prompts/verify.txt` | `backend/verify.py` |
 | `prompts/escalation.txt` | `backend/escalation.py` |

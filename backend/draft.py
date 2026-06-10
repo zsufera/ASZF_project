@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import re
-import warnings
 from pathlib import Path
 from typing import Any
 
@@ -48,8 +47,6 @@ def _build_sources(policy_items: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 DEFAULT_DISCLAIMER_PATH = Path("config/disclaimer.yaml")
-
-GENERATE_SYSTEM = load_prompt("draft_generate")
 
 
 def load_disclaimer(path: Path = DEFAULT_DISCLAIMER_PATH) -> str:
@@ -273,60 +270,3 @@ def synthesize_answer(
         logger.exception("synthesize_answer failed; falling back to template synthesis")
         return _template_synthesis_result(case_id, category, fmt, output_mode, policy_map, actions, sources)
 
-
-def build_draft(
-    case_id: str,
-    category: str,
-    output_mode: str,
-    policy_map: dict[str, Any],
-    actions: list[dict[str, Any]],
-    disclaimer_text: str | None = None,
-) -> dict[str, Any]:
-    warnings.warn(
-        "build_draft() is deprecated; active answer generation uses synthesize_answer().",
-        DeprecationWarning,
-        stacklevel=2,
-    )
-    policy_items = policy_map.get("policy_items", [])
-    if not llm_available() or not policy_items:
-        result = build_draft_template(case_id, category, output_mode, policy_map, actions, disclaimer_text)
-        result["generation_mode"] = "template"
-        return result
-    try:
-        available_ids = {item.get("chunk_id") for item in policy_items if item.get("chunk_id")}
-        sources_block = "\n".join(
-            f"- [{item.get('chunk_id')}] \"{item.get('idezet', '')}\""
-            for item in policy_items
-            if item.get("idezet")
-        )
-        action_block = "\n".join(
-            f"- {action.get('tipus')}: {action.get('indok', '')}"
-            for action in actions
-            if action.get("tipus")
-        )
-        disclaimer = disclaimer_text if disclaimer_text is not None else load_disclaimer()
-        user = (
-            f"Kimeneti mód: {output_mode}\n"
-            f"Kategória: {category}\n"
-            f"Források:\n{sources_block}\n"
-            f"Javasolt intézkedés:\n{action_block or '- (nincs)'}\n"
-            f"Disclaimer (ha a mód automata): {disclaimer}"
-        )
-        data = chat_json(GENERATE_SYSTEM, user)
-        body = str(data.get("level_szoveg", "")).strip()
-        if not body:
-            raise ValueError("empty body")
-        subject = str(data.get("targy") or f"Válaszjavaslat {category} ügyben")
-        citations = [c for c in (data.get("felhasznalt_forrasok") or []) if c in available_ids]
-        body, disclaimer_applied = ensure_disclaimer(body, output_mode)
-        return {
-            "subject": subject,
-            "body_masked": body,
-            "citations": citations,
-            "disclaimer_applied": disclaimer_applied,
-            "generation_mode": "llm",
-        }
-    except Exception:
-        result = build_draft_template(case_id, category, output_mode, policy_map, actions, disclaimer_text)
-        result["generation_mode"] = "template"
-        return result
