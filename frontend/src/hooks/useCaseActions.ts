@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { api } from "../lib/api";
-import type { Case, OutputMode, User } from "../lib/types";
+import type { Case, FeedbackReason, OutputMode, User } from "../lib/types";
 
 interface UseCaseActionsParams {
   caseData: Case | null;
@@ -68,12 +68,13 @@ export function useCaseActions({
   );
 
   const handleFeedback = useCallback(
-    async (rating: "jo" | "rossz", wrongSource?: boolean) => {
+    async (rating: "jo" | "rossz", reason?: FeedbackReason) => {
       if (!caseData || !user) return;
       await api.sendFeedback({
         case_id: caseData.case_id,
         rating,
-        wrong_source: wrongSource,
+        reason,
+        wrong_source: reason === "rossz_forras",
         username: user.username,
       });
       show(rating === "jo" ? "Koszonjuk a visszajelzest!" : "Visszajelzes elkuldve");

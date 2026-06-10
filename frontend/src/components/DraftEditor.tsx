@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { DraftVersion } from "../lib/types";
+import { FEEDBACK_REASON_LABELS } from "../lib/feedbackReasons";
+import type { DraftVersion, FeedbackReason } from "../lib/types";
 
 interface DraftEditorProps {
   draft: { subject: string; body_masked: string; citations: string[] };
@@ -7,7 +8,7 @@ interface DraftEditorProps {
   caseId: string;
   onSave: (subject: string, body: string) => Promise<void>;
   onApprove: (subject: string, body: string, versionId: string) => Promise<void>;
-  onFeedback: (rating: "jo" | "rossz", wrongSource?: boolean) => Promise<void>;
+  onFeedback: (rating: "jo" | "rossz", reason?: FeedbackReason) => Promise<void>;
   onCitationClick: (citation: string) => void;
 }
 
@@ -41,6 +42,7 @@ export function DraftEditor({ draft, versions, onSave, onApprove, onFeedback, on
   const [body, setBody] = useState(draft.body_masked ?? "");
   const [selectedVersion, setSelectedVersion] = useState(versions[0]?.id ?? "");
   const [saving, setSaving] = useState(false);
+  const [reasonOpen, setReasonOpen] = useState(false);
   const [approving, setApproving] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [showDiff, setShowDiff] = useState(false);
@@ -192,11 +194,37 @@ export function DraftEditor({ draft, versions, onSave, onApprove, onFeedback, on
         >
           {saving ? "…" : "Draft mentése"}
         </button>
-        <div className="ml-auto flex items-center gap-3 text-[12px] text-one-grey">
+        <div className="ml-auto flex items-center gap-3 text-[12px] text-one-grey relative">
           <span>Visszajelzés:</span>
-          <button onClick={() => onFeedback("jo")} className="hover:text-kpi-ok transition-colors" aria-label="Jó visszajelzés">👍</button>
-          <button onClick={() => onFeedback("rossz")} className="hover:text-kpi-bad transition-colors" aria-label="Rossz visszajelzés">👎</button>
-          <button onClick={() => onFeedback("rossz", true)} className="text-[10px] hover:text-kpi-bad transition-colors" aria-label="Rossz forrás">rossz forrás</button>
+          <button
+            onClick={() => { setReasonOpen(false); onFeedback("jo"); }}
+            className="hover:text-kpi-ok transition-colors"
+            aria-label="Jó visszajelzés"
+          >
+            👍
+          </button>
+          <button
+            onClick={() => setReasonOpen((v) => !v)}
+            className="hover:text-kpi-bad transition-colors"
+            aria-label="Rossz visszajelzés"
+            aria-expanded={reasonOpen}
+          >
+            👎
+          </button>
+          {reasonOpen && (
+            <div className="absolute bottom-7 right-0 z-10 bg-one-surface border border-one-line rounded-one shadow-card p-1 flex flex-col min-w-[180px]">
+              <div className="text-[10px] text-one-grey px-2 py-1">Mi volt a probléma?</div>
+              {(Object.entries(FEEDBACK_REASON_LABELS) as Array<[FeedbackReason, string]>).map(([code, label]) => (
+                <button
+                  key={code}
+                  onClick={() => { setReasonOpen(false); onFeedback("rossz", code); }}
+                  className="text-left text-[11px] px-2 py-1.5 rounded-md hover:bg-one-canvas transition-colors"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

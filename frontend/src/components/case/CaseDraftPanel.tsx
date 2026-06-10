@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { MutableRefObject } from "react";
 import { AlertTriangle, CheckCircle2, ChevronDown, ShieldCheck, XCircle } from "lucide-react";
-import type { Case, EscalationState, SourceRef, VerifyState } from "../../lib/types";
+import type { Case, EscalationState, FeedbackReason, SourceRef, VerifyState } from "../../lib/types";
 import { Card } from "../Card";
 import { DraftEditor } from "../DraftEditor";
 import { ProcessingIndicator } from "../ProcessingIndicator";
@@ -21,7 +21,7 @@ interface CaseDraftPanelProps {
   onProcess: () => void;
   onSave: (subject: string, body: string) => Promise<void>;
   onApprove: (subject: string, body: string, versionId: string) => Promise<void>;
-  onFeedback: (rating: "jo" | "rossz", wrongSource?: boolean) => Promise<void>;
+  onFeedback: (rating: "jo" | "rossz", reason?: FeedbackReason) => Promise<void>;
   onCitationClick: (citation: string) => void;
 }
 
