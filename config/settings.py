@@ -35,6 +35,9 @@ class Settings:
     # LLM-alapú groundedness-ellenőrzés (faithfulness judge) a verify lépésben.
     # +1 LLM-hívás/futás; kikapcsolható, ha a latencia fontosabb a pontos verify-jelzésnél.
     llm_verify_enabled: bool = os.getenv("LLM_VERIFY_ENABLED", "true").lower() == "true"
+    # LLM-as-judge in the reference-free eval: dimension-level draft scoring.
+    # +1 LLM call per eval sample; disabled runs keep only the heuristic judge.
+    llm_judge_enabled: bool = os.getenv("LLM_JUDGE_ENABLED", "true").lower() == "true"
     openai_temperature: float = float(os.getenv("OPENAI_TEMPERATURE", "0.2"))
     langfuse_enabled: bool = os.getenv("LANGFUSE_ENABLED", "false").lower() == "true"
     langfuse_host: str = os.getenv("LANGFUSE_HOST", "http://localhost:3000")

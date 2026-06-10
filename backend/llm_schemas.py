@@ -40,3 +40,12 @@ class EscalationResponse(BaseModel):
 
 class QueryRewriteResponse(BaseModel):
     query: str = ""
+
+
+class JudgeResponse(BaseModel):
+    pontszam: float = 3.0
+    forrashuseg: float = 3.0
+    teljesseg: float = 3.0
+    hangnem: float = 3.0
+    kozerthetoseg: float = 3.0
+    indoklas: str = ""
