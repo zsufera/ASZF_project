@@ -66,3 +66,24 @@ def test_disabled_flag_returns_none(monkeypatch) -> None:
 def test_empty_draft_returns_none(monkeypatch) -> None:
     _enable_llm(monkeypatch)
     assert llm_judge.llm_judge_review("kerdes", "   ", CHUNKS) is None
+
+
+def test_aggregate_includes_llm_judge_when_present() -> None:
+    from eval.report import aggregate_kpis
+
+    results = [
+        {"llm_judge_score": 4.0, "time_to_answer_ms": 100},
+        {"llm_judge_score": 5.0, "time_to_answer_ms": 100},
+        {"llm_judge_score": None, "time_to_answer_ms": 100},
+    ]
+    kpis = aggregate_kpis(results, targets={})
+    assert kpis["values"]["llm_judge_score"] == 4.5
+    assert kpis["values"]["llm_judge_coverage"] == 0.667
+
+
+def test_aggregate_omits_llm_judge_when_absent() -> None:
+    from eval.report import aggregate_kpis
+
+    results = [{"time_to_answer_ms": 100}]
+    kpis = aggregate_kpis(results, targets={})
+    assert "llm_judge_score" not in kpis["values"]
