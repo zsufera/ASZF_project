@@ -40,5 +40,11 @@ class Settings:
     langfuse_host: str = os.getenv("LANGFUSE_HOST", "http://localhost:3000")
     trace_dir: str = os.getenv("TRACE_DIR", "data/traces")
 
+    grounding_token_overlap: float = float(os.getenv("GROUNDING_TOKEN_OVERLAP", "0.3"))
+    retrieval_sparse_weight: float = float(os.getenv("RETRIEVAL_SPARSE_WEIGHT", "0.55"))
+    retrieval_dense_weight: float = float(os.getenv("RETRIEVAL_DENSE_WEIGHT", "0.45"))
+    retrieval_category_boost: float = float(os.getenv("RETRIEVAL_CATEGORY_BOOST", "0.2"))
+    retrieval_section_boost: float = float(os.getenv("RETRIEVAL_SECTION_BOOST", "0.1"))
+
 
 settings = Settings()

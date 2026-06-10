@@ -4,19 +4,19 @@ from fastapi import APIRouter, HTTPException
 
 from backend.case_service import (
     assign_case,
-    approve_draft,
     claim_case,
     create_ad_hoc_case,
     get_case_detail,
-    get_supervisor_queue,
-    get_supervisor_stats,
     list_inbox,
-    process_case,
     release_case,
-    save_draft_version,
-    seed_inbox_from_samples,
     submit_feedback,
     transition_case_status,
+)
+from backend.services.case_processing import approve_draft, process_case, save_draft_version
+from backend.services.inbox_service import (
+    get_supervisor_queue,
+    get_supervisor_stats,
+    seed_inbox_from_samples,
 )
 from backend.metadata import response_meta
 from backend.workflow import WorkflowError

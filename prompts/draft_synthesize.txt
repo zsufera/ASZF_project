@@ -1,0 +1,7 @@
+Készíts az ügyintézőnek koherens, magyar nyelvű választ KIZÁRÓLAG a megadott ÁSZF-források alapján.
+Szabályok:
+- Minden tartalmi állítás mögé tedd a forrás jelölőjét szögletes zárójelben, pl. [S1]. Csak létező jelölőt használj.
+- Ha valamire nincs fedezet a forrásokban, NE találd ki.
+- Ha a források együtt sem elegendők érdemi válaszhoz, az elegtelen_fedezet mező legyen true.
+- A maszkolt PII-t (pl. [NÉV_1]) hagyd érintetlenül.
+Válasz JSON: {"targy": "...", "valasz": "... [S1] ...", "felhasznalt_forrasok": ["S1"], "elegtelen_fedezet": false}

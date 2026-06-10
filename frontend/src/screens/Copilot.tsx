@@ -116,8 +116,9 @@ export function Copilot() {
     try {
       const res = await api.getCopilotSessions(user?.username);
       setSessions(res.items);
-    } catch {
+    } catch (err) {
       setSessions([]);
+      show(err instanceof Error ? err.message : "Copilot munkamenetek betöltése sikertelen", "error");
     } finally {
       setSessionsLoading(false);
     }

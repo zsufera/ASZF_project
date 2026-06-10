@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SessionProvider, useSession } from "./state/session";
 import { ToastProvider } from "./state/toast";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { AppShell } from "./components/AppShell";
 import { Login } from "./screens/Login";
 import { Inbox } from "./screens/Inbox";
@@ -46,7 +47,9 @@ export default function App() {
     <BrowserRouter>
       <SessionProvider>
         <ToastProvider>
-          <AppRoutes />
+          <ErrorBoundary>
+            <AppRoutes />
+          </ErrorBoundary>
         </ToastProvider>
       </SessionProvider>
     </BrowserRouter>

@@ -3,21 +3,12 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from backend.llm import chat_json, llm_available
+from backend.llm import chat_json, llm_available, load_prompt
 from config.settings import settings
 
 logger = logging.getLogger(__name__)
 
-GROUNDING_TOKEN_OVERLAP = 0.3
-
-VERIFY_SYSTEM = (
-    "Ellenőrző vagy. Döntsd el, hogy a VÁLASZ rá hivatkozó állításait alátámasztják-e a FORRÁSOK. "
-    "Egy forrás 'megalapozott', ha a hozzá tartozó állítás tartalmilag levezethető a forrás szövegéből "
-    "— a parafrázis is elfogadott, NEM kell szó szerinti egyezés. "
-    "Egy forrás akkor 'nem megalapozott', ha a válasz olyat állít a nevében, amit a forrás nem támaszt alá. "
-    'Válasz JSON: {"nem_megalapozott": ["chunk_id", ...]} — csak azok a chunk_id-k, amelyekre a válasz '
-    "hivatkozik, de a forrásuk NEM támasztja alá. Ha minden rendben, üres lista."
-)
+VERIFY_SYSTEM = load_prompt("verify")
 
 
 def normalize(text: str) -> str:
@@ -93,7 +84,7 @@ def verify_draft(
             cid = str(citation)
             chunk = chunk_by_id.get(cid)
             quote = str(chunk.get("quote", "")) if chunk else ""
-            grounded = chunk is not None and _token_overlap(quote, draft_tokens) >= GROUNDING_TOKEN_OVERLAP
+            grounded = chunk is not None and _token_overlap(quote, draft_tokens) >= settings.grounding_token_overlap
             if grounded:
                 grounded_chunk_ids.add(cid)
             claims.append({"claim": quote or cid, "grounded": grounded, "chunk_id": cid})

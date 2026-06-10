@@ -3,17 +3,11 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from backend.llm import chat_json, llm_available
+from backend.llm import chat_json, llm_available, load_prompt
 
 logger = logging.getLogger(__name__)
 
-ESCALATION_SYSTEM = (
-    "Döntsd el, javasolsz-e eszkalációt supervisorhoz. Triggerek: egyedi szerződés gyanúja, "
-    "vitatott összeg, ismétlődő panasz, jogi/hatósági/média, konfidencia a küszöb alatt, "
-    "SLA-lejárat, vagy ha a kérdés a forrásokból nem válaszolható meg. "
-    "Soha ne adj biztos állítást fedezet nélkül. "
-    'Válasz JSON: {"eszkalacio": true|false, "okok": ["string"]}'
-)
+ESCALATION_SYSTEM = load_prompt("escalation")
 
 
 def decide_escalation(

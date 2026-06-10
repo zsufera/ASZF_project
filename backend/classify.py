@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from backend.llm import chat_json, llm_available
+from backend.llm import chat_json, llm_available, load_prompt
 from preprocessing.index import fold_text
 
 logger = logging.getLogger(__name__)
@@ -20,14 +20,7 @@ ALLOWED_CATEGORIES = {
     "egyeb",
 }
 
-CLASSIFY_SYSTEM = (
-    "Sorold be a panaszt a következő fix kategóriákba (egy fő + szükség esetén több jelölt): "
-    "számlázás, díjemelés, hibabejelentés_szolgáltatáskiesés, szerződésfelmondás_módosítás, "
-    "lefedettség, eszköz_készülék, adatvédelem, egyéb. Ha van rá jel, adj szabályzati altípust is. "
-    "Vedd figyelembe a korábbi azonos-című ügyek összegzését, ha adott. "
-    'Válasz JSON: {"fo_kategoria": "...", "altipus": "string|null", '
-    '"tobb_jelolt": [{"kategoria": "...", "konfidencia": 0.0}], "konfidencia": 0.0}'
-)
+CLASSIFY_SYSTEM = load_prompt("classify")
 
 
 CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {

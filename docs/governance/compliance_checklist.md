@@ -8,6 +8,7 @@
 - [x] Unmask csak RBAC mögött, naplózva (`pii_unmask_access`)
 - [x] Audit payload redakció (`security/redaction.py`)
 - [x] PII-szivárgás kapu teszt (`tests/test_pii_gate.py`)
+- [x] Logokba csak maszkolt szöveg kerül — a `backend/masking.py` maszkolás a pipeline elején fut, minden downstream modul (classify, draft, verify, escalation) kizárólag maszkolt szöveget kap és logol
 - [x] DPIA dokumentálva (`docs/governance/dpia.md`)
 
 ## GDPR Art. 22

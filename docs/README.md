@@ -10,6 +10,8 @@ Ez a mappa tartalmazza az aktív termék-, fejlesztési, governance és működ�
 - [Contract specifikáció](specs/ASZF_QnA_Agent_contract_spec.md)
 - [Frontend specifikáció](specs/ASZF_QnA_Agent_frontend_spec.md)
 - [Prompt katalógus](specs/ASZF_QnA_Agent_prompt_katalogus.md)
+- [Agent workflow és AI/szabályalapú elválasztás](specs/AGENT_WORKFLOW.md)
+- [Sikerességi kritériumok és KPI-ok](specs/KPI.md)
 
 ## Roadmaps
 
@@ -27,6 +29,7 @@ Ez a mappa tartalmazza az aktív termék-, fejlesztési, governance és működ�
 ## Operations
 
 - [Demó forgatókönyv](operations/demo_script.md)
+- [Fejlesztői útmutató](operations/development_guide.md)
 - [Bug-audit és javítási terv](operations/bugfix_plan.md)
 
 ## Agentic munkatervek

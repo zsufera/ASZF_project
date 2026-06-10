@@ -5,8 +5,31 @@ import sqlite3
 from pathlib import Path
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from pydantic import BaseModel, Field
-
+from backend.api.schemas import (
+    AcceptanceRequest,
+    AgentRunRequest,
+    CaseCreateRequest,
+    CaseProcessRequest,
+    ClassifyRequest,
+    DemoRunRequest,
+    DraftApproveRequest,
+    DraftRequest,
+    DraftSaveRequest,
+    EvalBaselineRequest,
+    EvalHumanScoreRequest,
+    EvalRequest,
+    FeedbackRequest,
+    LoginRequest,
+    MaskRequest,
+    PolicyMapRequest,
+    PurgeRequest,
+    ReindexRequest,
+    RetrieveRequest,
+    SeedRequest,
+    StatusTransitionRequest,
+    UnmaskRequest,
+    VerifyRequest,
+)
 from backend.audit_service import (
     build_case_audit_record,
     check_audit_completeness,
@@ -15,17 +38,17 @@ from backend.audit_service import (
 )
 from backend.auth import ensure_users_in_db, get_user_id, get_user_role, verify_login
 from backend.case_service import (
-    approve_draft,
     create_ad_hoc_case,
     get_case_detail,
-    get_supervisor_queue,
-    get_supervisor_stats,
     list_inbox,
-    process_case,
-    save_draft_version,
-    seed_inbox_from_samples,
     submit_feedback,
     transition_case_status,
+)
+from backend.services.case_processing import approve_draft, process_case, save_draft_version
+from backend.services.inbox_service import (
+    get_supervisor_queue,
+    get_supervisor_stats,
+    seed_inbox_from_samples,
 )
 from backend.retention_service import purge_expired_records
 from backend.workflow import WorkflowError
@@ -56,183 +79,13 @@ from integrations.customer_directory import MockCustomerDirectory
 from security.prompt_guard import detect_prompt_injection
 from security.rbac import RBACError, require_permission
 
-
 app = FastAPI(title="ASZF QnA Agent API", version="0.4.0")
 POSTAL_PDF_DIR = Path("data/postal_pdfs")
-
 app.include_router(cases_router)
 app.include_router(history_router)
 app.include_router(agent_router)
 app.include_router(copilot_router)
 app.include_router(knowledge_router)
-
-
-class ClassifyRequest(BaseModel):
-    case_id: str
-    message_text_masked: str
-    history_summary_masked: str | None = None
-
-
-class RetrieveRequest(BaseModel):
-    case_id: str
-    query_masked: str
-    service_provider: str | None = None
-    customer_id: str | None = None
-    limit: int = 5
-
-
-class PolicyMapRequest(BaseModel):
-    case_id: str
-    category: str
-    chunks: list[dict]
-
-
-class DraftRequest(BaseModel):
-    case_id: str
-    category: str
-    output_mode: str
-    policy_map: dict
-    actions: list[dict] = Field(default_factory=list)
-    channel: str = "email"
-    input_text_masked: str | None = None
-
-
-class VerifyRequest(BaseModel):
-    case_id: str
-    draft_body_masked: str
-    chunks: list[dict]
-    mandatory_refs: list[str]
-
-
-class MaskRequest(BaseModel):
-    case_id: str
-    text: str
-
-
-class UnmaskRequest(BaseModel):
-    case_id: str
-    draft_version_id: int | None = None
-    subject_masked: str | None = None
-    body_masked: str | None = None
-    username: str | None = None
-    role: str | None = None
-
-
-class ReindexRequest(BaseModel):
-    force: bool = False
-
-
-class EvalRequest(BaseModel):
-    limit: int = 10
-    category: str | None = None
-    service_provider: str | None = None
-    include_edge: bool = True
-    save_report: bool = True
-
-
-class EvalBaselineRequest(BaseModel):
-    run_id: str
-
-
-class EvalHumanScoreRequest(BaseModel):
-    run_id: str
-    email_id: str
-    score: int = Field(ge=1, le=5)
-
-
-class AgentRunRequest(BaseModel):
-    case_id: str
-    channel: str = "email"
-    input_text: str | None = None
-    input_text_masked: str | None = None
-    sender_email: str | None = None
-    service_provider: str | None = None
-    output_mode: str = "hitl"
-    selected_customer_id: str | None = None
-    history_summary_masked: str | None = None
-    sla_expired: bool = False
-
-
-class LoginRequest(BaseModel):
-    username: str
-    password: str
-
-
-class InboxQuery(BaseModel):
-    category: str | None = None
-    priority: str | None = None
-    status: str | None = None
-    channel: str | None = None
-    search: str | None = None
-    sort_by: str = "priority"
-
-
-class CaseProcessRequest(BaseModel):
-    case_id: str
-    output_mode: str = "hitl"
-    username: str | None = None
-    selected_customer_id: str | None = None
-    service_provider: str | None = None
-    input_text_masked: str | None = None
-    sla_expired: bool = False
-
-
-class CaseCreateRequest(BaseModel):
-    channel: str = "email"
-    input_text: str
-    sender_email: str | None = None
-    service_provider: str | None = None
-
-
-class DraftSaveRequest(BaseModel):
-    case_id: str
-    subject: str
-    body_masked: str
-    output_mode: str = "hitl"
-    citations: list[str] = Field(default_factory=list)
-    username: str | None = None
-
-
-class DraftApproveRequest(BaseModel):
-    case_id: str
-    draft_version_id: int | None = None
-    subject_masked: str | None = None
-    body_masked: str | None = None
-    username: str | None = None
-
-
-class FeedbackRequest(BaseModel):
-    case_id: str
-    rating: str
-    wrong_source: bool = False
-    username: str | None = None
-
-
-class SeedRequest(BaseModel):
-    force: bool = False
-
-
-class StatusTransitionRequest(BaseModel):
-    case_id: str
-    target_status: str
-    username: str | None = None
-    role: str | None = None
-
-
-class PurgeRequest(BaseModel):
-    dry_run: bool = True
-    username: str | None = None
-    role: str | None = None
-
-
-class AcceptanceRequest(BaseModel):
-    eval_limit: int = 10
-    include_edge: bool = True
-    run_demo: bool = True
-
-
-class DemoRunRequest(BaseModel):
-    save_report: bool = True
 
 
 def _resolve_actor(username: str | None) -> tuple[int | None, str | None]:

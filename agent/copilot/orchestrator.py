@@ -7,23 +7,14 @@ from typing import Any
 from agent.copilot import tools_spec
 from agent.copilot.session import CopilotSession
 from agent.copilot.subagents import SUBAGENTS
-from backend.llm import chat_json, llm_available
+from backend.llm import chat_json, llm_available, load_prompt
 from backend.modes import OrchestratorMode
 
 logger = logging.getLogger(__name__)
 
 MAX_ITERATIONS = 8
 
-ORCHESTRATOR_SYSTEM = (
-    "You are an internal customer-service Copilot orchestrator. Decide exactly one next step as JSON:\n"
-    '{"action":"call_tool","tool":"<name>","args":{...}}\n'
-    '{"action":"respond","reply":"<final internal answer>"}\n'
-    '{"action":"ask_user","question":"<clarifying question>"}\n'
-    'If you want to use a tool, action MUST be "call_tool" and tool MUST contain the tool name.\n'
-    "Only call listed tools. Do not invent facts. Preserve source markers like [S1]. "
-    "Keep masked PII tokens unchanged.\n"
-    + tools_spec.tools_prompt()
-)
+ORCHESTRATOR_SYSTEM = load_prompt("orchestrator") + "\n" + tools_spec.tools_prompt()
 
 
 def _observation_block(observations: list[dict[str, Any]]) -> str:

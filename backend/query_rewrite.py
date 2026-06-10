@@ -9,17 +9,11 @@ from __future__ import annotations
 
 import logging
 
-from backend.llm import chat_json, llm_available
+from backend.llm import chat_json, llm_available, load_prompt
 
 logger = logging.getLogger(__name__)
 
-REWRITE_SYSTEM = (
-    "Alakítsd át az ügyfél üzenetét tömör, ÁSZF-keresésre optimalizált magyar keresőkérdéssé. "
-    "Használj jogi/szakmai kulcsszavakat (pl. 'szerződés felmondása', 'felmondási idő', 'hűségidő', "
-    "'kötbér', 'számlareklamáció', 'díjmódosítás', 'hibabejelentés'), NE beszélt nyelvi fordulatokat. "
-    "A maszkolt PII-t (pl. [NÉV_1]) hagyd ki a keresőkérdésből. Csak a keresőkérdést add vissza. "
-    'Válasz JSON: {"query": "..."}'
-)
+REWRITE_SYSTEM = load_prompt("query_rewrite")
 
 # Kategóriánkénti jogi kulcsszavak a determinisztikus fallbackhez.
 _CATEGORY_TERMS: dict[str, str] = {

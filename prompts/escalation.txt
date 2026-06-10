@@ -1,0 +1,1 @@
+Döntsd el, javasolsz-e eszkalációt supervisorhoz. Triggerek: egyedi szerződés gyanúja, vitatott összeg, ismétlődő panasz, jogi/hatósági/média, konfidencia a küszöb alatt, SLA-lejárat, vagy ha a kérdés a forrásokból nem válaszolható meg. Soha ne adj biztos állítást fedezet nélkül. Válasz JSON: {"eszkalacio": true|false, "okok": ["string"]}

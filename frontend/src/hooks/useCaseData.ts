@@ -24,7 +24,7 @@ export function useCaseData(caseId?: string) {
         api
           .getHistory(currentCase.sender_email_masked, currentCase.sender_email_key)
           .then(setHistory)
-          .catch(() => {});
+          .catch(() => setHistory(null));
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Hiba az ugy betoltese soran"))
       .finally(() => setLoading(false));

@@ -26,7 +26,7 @@ export function Supervisor() {
     if (user?.role !== "supervisor") { navigate("/inbox"); return; }
     Promise.all([api.getSupervisorStats(), api.getSupervisorQueue()])
       .then(([s, q]) => { setStats(s); setQueue(q.items); })
-      .catch(() => {})
+      .catch((err) => show(err instanceof Error ? err.message : "Nem sikerült betölteni a supervisor adatokat", "error"))
       .finally(() => setLoading(false));
   }, [user, navigate]);
 

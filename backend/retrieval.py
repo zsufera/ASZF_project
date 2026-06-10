@@ -30,8 +30,8 @@ from backend.reference_resolution import (
 from config.settings import settings
 
 
-HYBRID_SPARSE_WEIGHT = 0.55
-HYBRID_DENSE_WEIGHT = 0.45
+HYBRID_SPARSE_WEIGHT = settings.retrieval_sparse_weight
+HYBRID_DENSE_WEIGHT = settings.retrieval_dense_weight
 # Szignifikáns szám: többjegyű (15, 30, 60) VAGY tagolt §/decimális (5.5.1, 15,5).
 # Az egyjegyű számok túl gyakoriak (zaj) → kihagyva.
 _SIGNIFICANT_NUMBER = re.compile(r"\d+(?:[.,]\d+)+|\d{2,}")
@@ -185,9 +185,9 @@ def apply_category_boost(
         top = paragraph.split(".")[0].strip()
         score = float(result.get("score", 0.0))
         if paragraph in mandatory_paras:
-            score = min(score + 0.2, 1.0)
+            score = min(score + settings.retrieval_category_boost, 1.0)
         elif top and top in section_prefixes:
-            score = min(score + 0.1, 1.0)
+            score = min(score + settings.retrieval_section_boost, 1.0)
         boosted.append({**result, "score": round(score, 4)})
     boosted.sort(key=lambda item: float(item.get("score", 0.0)), reverse=True)
     return boosted

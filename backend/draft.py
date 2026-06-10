@@ -8,7 +8,7 @@ from typing import Any
 
 import yaml
 
-from backend.llm import chat_json, llm_available
+from backend.llm import chat_json, llm_available, load_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -49,13 +49,7 @@ def _build_sources(policy_items: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 DEFAULT_DISCLAIMER_PATH = Path("config/disclaimer.yaml")
 
-GENERATE_SYSTEM = (
-    "Írj hivatalos, udvarias magyar válaszlevelet a maszkolt adatok megtartásával. "
-    "Szerkezet: tárgy, megszólítás, törzs, javasolt intézkedés, aláírás. "
-    "Minden tartalmi állításhoz hivatkozz a megadott forrásokra (chunk_id). "
-    "Csak a megadott forrásokra alapozz; ha nincs fedezet, jelezd és javasolj eszkalációt. "
-    'Válasz JSON: {"targy": "...", "level_szoveg": "... (maszkolt)", "felhasznalt_forrasok": ["chunk_id"]}'
-)
+GENERATE_SYSTEM = load_prompt("draft_generate")
 
 
 def load_disclaimer(path: Path = DEFAULT_DISCLAIMER_PATH) -> str:
@@ -129,16 +123,7 @@ def build_draft_template(
     }
 
 
-SYNTH_SYSTEM = (
-    "Készíts az ügyintézőnek koherens, magyar nyelvű választ KIZÁRÓLAG a megadott ÁSZF-források alapján.\n"
-    "Szabályok:\n"
-    "- Minden tartalmi állítás mögé tedd a forrás jelölőjét szögletes zárójelben, pl. [S1]. Csak létező jelölőt használj.\n"
-    "- Ha valamire nincs fedezet a forrásokban, NE találd ki.\n"
-    "- Ha a források együtt sem elegendők érdemi válaszhoz, az elegtelen_fedezet mező legyen true.\n"
-    "- A maszkolt PII-t (pl. [NÉV_1]) hagyd érintetlenül.\n"
-    'Válasz JSON: {"targy": "...", "valasz": "... [S1] ...", '
-    '"felhasznalt_forrasok": ["S1"], "elegtelen_fedezet": false}'
-)
+SYNTH_SYSTEM = load_prompt("draft_synthesize")
 
 _EMAIL_INSTRUCTION = (
     "Formátum: hivatalos magyar ügyfél-válaszlevél (megszólítás, törzs, "
