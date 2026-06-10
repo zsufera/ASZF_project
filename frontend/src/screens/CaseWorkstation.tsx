@@ -2,7 +2,9 @@ import { useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { CaseCustomerPanel } from "../components/case/CaseCustomerPanel";
 import { CaseDraftPanel } from "../components/case/CaseDraftPanel";
+import { CaseDecisionSummary } from "../components/case/CaseDecisionSummary";
 import { CaseHeader } from "../components/case/CaseHeader";
+import { PipelineStepper } from "../components/case/PipelineStepper";
 import { CaseHistoryPanel } from "../components/case/CaseHistoryPanel";
 import { CaseInboundMessage } from "../components/case/CaseInboundMessage";
 import { CaseSourcesPanel } from "../components/case/CaseSourcesPanel";
@@ -70,6 +72,8 @@ export function CaseWorkstation() {
   return (
     <div>
       <CaseHeader caseData={caseData} onBack={() => navigate("/inbox")} />
+      <CaseDecisionSummary caseData={caseData} />
+      <PipelineStepper steps={caseData.agent_state?.timeline ?? []} />
 
       <div className={`grid gap-3 transition-all duration-200 ${cols}`}>
         <div className="flex flex-col gap-3 min-w-0">

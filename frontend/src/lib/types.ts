@@ -112,6 +112,8 @@ export interface AgentState {
   retrieval: { chunks: ChunkItem[]; unresolved_refs: UnresolvedReference[]; retrieval_mode?: string };
   policy_map: { policy_items: unknown[]; missing_mandatory?: string[]; mandatory_refs?: unknown[] };
   timeline: TimelineStep[];
+  classification?: { category: string; confidence?: number; subtype?: string };
+  priority?: { value: string; reason?: string };
   draft: {
     subject: string;
     body_masked: string;

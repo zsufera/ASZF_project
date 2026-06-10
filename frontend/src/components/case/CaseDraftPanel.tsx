@@ -56,13 +56,13 @@ export function CaseDraftPanel({
 
       {escalation?.required ? (
         <div className="mb-3 bg-status-esc-bg border border-status-esc-fg rounded-md p-2 text-[11px] text-status-esc-fg">
-          Eszkalacio supervisorhoz szukseges: {escalation.reasons.join(", ")}
+          Eszkaláció supervisorhoz szükséges: {escalation.reasons.join(", ")}
         </div>
       ) : null}
 
       {generationMode === "insufficient" && !processing ? (
         <div className="mb-3 bg-status-esc-bg border border-status-esc-fg rounded-md p-2 text-[11px] text-status-esc-fg">
-          Nincs eleg ASZF-fedezet automatikus valaszhoz; emberi ellenorzes javasolt.
+          Nincs elég ÁSZF-fedezet automatikus válaszhoz; emberi ellenőrzés javasolt.
         </div>
       ) : null}
 

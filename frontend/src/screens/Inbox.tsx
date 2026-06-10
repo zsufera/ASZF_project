@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
 import type { InboxItem } from "../lib/types";
 import { CaseBadgeRow } from "../components/CaseBadgeRow";
+import { InboxSkeleton } from "../components/Skeleton";
 import { useSession } from "../state/session";
 import { useToast } from "../state/toast";
 
@@ -159,9 +160,27 @@ export function Inbox() {
 
   const selectClass = "text-[12px] border border-one-line rounded-md px-2 py-1.5 bg-white text-one-ink focus:outline-none focus:ring-2 focus:ring-one-turq";
 
+  const kpi = useMemo(() => {
+    const total = items.length;
+    const urgent = items.filter((i) => i.priority === "surgos").length;
+    const escalated = items.filter((i) => i.escalated).length;
+    const slaBreached = items.filter((i) => i.sla_days_remaining <= 0).length;
+    return { total, urgent, escalated, slaBreached };
+  }, [items]);
+
   return (
     <div>
-      <h1 className="text-[16px] font-bold text-one-ink mb-4">Inbox - bejövő ügyek</h1>
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <h1 className="text-[16px] font-bold text-one-ink">Inbox</h1>
+        {!loading && items.length > 0 && (
+          <div className="flex gap-3 text-[11px]">
+            <KpiBadge label="összes" value={kpi.total} color="text-one-grey" />
+            <KpiBadge label="sürgős" value={kpi.urgent} color="text-status-urgent-fg" />
+            <KpiBadge label="eszkalált" value={kpi.escalated} color="text-status-esc-fg" />
+            <KpiBadge label="SLA-sértés" value={kpi.slaBreached} color={kpi.slaBreached > 0 ? "text-kpi-bad" : "text-one-grey"} />
+          </div>
+        )}
+      </div>
 
       <SavedViewsBar onApply={applySavedView} />
       <BulkActionBar selectedCount={selectedCaseIds.length} onClear={() => setSelectedCaseIds([])} onStatus={handleBulkStatus} />
@@ -206,17 +225,25 @@ export function Inbox() {
       </div>
 
       {error && <div className="text-status-urgent-fg text-[12px] mb-3">{error}</div>}
-      {loading && <div className="text-one-grey text-[12px]">Betöltés...</div>}
 
-      {!loading && items.length === 0 && (
-        <div className="text-one-grey text-center py-12 text-[13px]">Nincs megjeleníthető üzenet.</div>
-      )}
+      {loading ? (
+        <InboxSkeleton />
+      ) : items.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-one-grey">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" className="mb-4 opacity-30">
+            <rect x="6" y="10" width="36" height="28" rx="3" stroke="currentColor" strokeWidth="2" />
+            <path d="M6 18l18 12 18-12" stroke="currentColor" strokeWidth="2" />
+          </svg>
+          <p className="text-[14px] font-semibold mb-1">Nincs megjeleníthető ügy</p>
+          <p className="text-[12px]">Próbáld meg törölni a szűrőket.</p>
+        </div>
+      ) : null}
 
-      <div className="flex flex-col gap-2">
-        {items.map((item, index) => (
+      <div className="flex flex-col gap-2 stagger-children">
+        {!loading && items.map((item, index) => (
           <div
             key={item.case_id}
-            className={`bg-one-surface border rounded-one shadow-card p-3 flex items-start justify-between gap-3 hover:border-one-turq transition-colors ${activeIndex === index ? "border-one-turq" : "border-one-line"}`}
+            className={`bg-one-surface border rounded-one shadow-card p-3 flex items-start justify-between gap-3 hover:border-one-turq transition-colors hover-lift ${activeIndex === index ? "border-one-turq" : "border-one-line"}`}
           >
             <input
               type="checkbox"
@@ -236,7 +263,7 @@ export function Inbox() {
             </div>
             <button
               onClick={() => openCase(item.case_id)}
-              className="bg-one-turq text-[#04201f] font-bold text-[11px] px-3 py-1.5 rounded-pill hover:bg-one-turq-d transition-colors shrink-0"
+              className="bg-one-turq text-[#04201f] font-bold text-[11px] px-3 py-1.5 rounded-pill hover:bg-one-turq-d transition-colors shrink-0 btn-press"
               aria-label={`Megnyitás: ${item.subject}`}
             >
               Megnyitás
@@ -280,6 +307,15 @@ function BulkActionBar({
       <button onClick={() => onStatus("folyamatban")} className="bg-white border border-one-line rounded-pill px-3 py-1 hover:bg-one-canvas">Folyamatban</button>
       <button onClick={() => onStatus("eszkalalva")} className="bg-white border border-one-line rounded-pill px-3 py-1 hover:bg-one-canvas">Eszkalálás</button>
       <button onClick={onClear} className="ml-auto text-one-grey hover:text-one-ink">Kijelölés törlése</button>
+    </div>
+  );
+}
+
+function KpiBadge({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div className="flex items-baseline gap-1">
+      <span className={`font-bold text-[15px] ${color}`}>{value}</span>
+      <span className="text-one-grey">{label}</span>
     </div>
   );
 }
