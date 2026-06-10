@@ -8,6 +8,7 @@ from typing import Any
 import yaml
 
 from backend.llm import chat_json, llm_available, load_prompt
+from backend.llm_schemas import SynthesizeResponse
 
 logger = logging.getLogger(__name__)
 
@@ -229,10 +230,10 @@ def synthesize_answer(
             f"Források:\n{sources_block}\n"
             f"Javasolt intézkedés:\n{action_block}"
         )
-        data = chat_json(SYNTH_SYSTEM, user)
-        if data.get("elegtelen_fedezet"):
+        parsed = SynthesizeResponse.model_validate(chat_json(SYNTH_SYSTEM, user))
+        if parsed.elegtelen_fedezet:
             return _insufficient_result(fmt, category, sources)
-        body = str(data.get("valasz", "")).strip()
+        body = parsed.valasz.strip()
         if not body:
             return _template_synthesis_result(case_id, category, fmt, output_mode, policy_map, actions, sources)
 
@@ -243,13 +244,12 @@ def synthesize_answer(
             lambda m: m.group(0) if f"S{m.group(1)}" in valid_refs else "",
             body,
         )
-        used_refs = {r for r in (data.get("felhasznalt_forrasok") or []) if r in valid_refs}
+        used_refs = {r for r in parsed.felhasznalt_forrasok if r in valid_refs}
         for s in sources:
             s["used"] = s["ref"] in used_refs or f'[{s["ref"]}]' in body
 
-        subject = str(
-            data.get("targy")
-            or (f"Válaszjavaslat {category} ügyben" if fmt == "email" else f"Copilot jegyzet – {category}")
+        subject = parsed.targy or (
+            f"Válaszjavaslat {category} ügyben" if fmt == "email" else f"Copilot jegyzet – {category}"
         )
 
         disclaimer_applied = False
