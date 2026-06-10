@@ -17,7 +17,7 @@ export function Knowledge() {
         const first = res.items.flatMap((group) => group.items)[0];
         if (first) return api.getAszfSection(first.chunk_id).then((section) => setSelected(section.item));
       })
-      .catch((e) => setError(e instanceof Error ? e.message : "Tudásböngésző hiba"))
+      .catch((e) => setError(e instanceof Error ? e.message : "Tudástár hiba"))
       .finally(() => setLoading(false));
   }, []);
 
@@ -50,7 +50,7 @@ export function Knowledge() {
     <div>
       <div className="flex items-center justify-between gap-3 mb-4">
         <div>
-          <h1 className="text-[16px] font-bold text-one-ink">ÁSZF tudásböngésző</h1>
+          <h1 className="text-[16px] font-bold text-one-ink">Tudástár</h1>
           <p className="text-[11px] text-one-grey">{groups.length} szakaszcsoport · {total} chunk</p>
         </div>
         <form onSubmit={handleSearch} className="flex gap-2">
@@ -103,13 +103,13 @@ export function Knowledge() {
                 <code className="text-[10px] text-one-grey bg-one-canvas rounded px-2 py-1">{selected.chunk_id}</code>
               </div>
               <div className="whitespace-pre-wrap text-[12px] leading-relaxed text-one-ink">
-                {selected.text || selected.quote}
+                {selected.text || selected.quote || "Nincs elérhető szöveg ehhez a szakaszhoz."}
               </div>
-              {selected.cross_refs.length > 0 && (
+              {(selected.cross_refs?.length ?? 0) > 0 && (
                 <div className="mt-4 border-t border-one-line pt-3">
                   <div className="text-[10px] uppercase text-one-grey font-semibold tracking-wider mb-2">Kereszthivatkozások</div>
                   <div className="flex flex-wrap gap-1">
-                    {selected.cross_refs.map((ref) => (
+                    {(selected.cross_refs ?? []).map((ref) => (
                       <span key={ref} className="rounded-full bg-one-canvas border border-one-line px-2 py-0.5 text-[10px] text-one-grey">
                         {ref}
                       </span>

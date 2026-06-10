@@ -1,5 +1,6 @@
 import { AlertTriangle, CheckCircle2, FileSearch, ShieldAlert, Tag } from "lucide-react";
 import type { Case } from "../../lib/types";
+import { reasonLabel } from "../../lib/agentSteps";
 
 interface CaseDecisionSummaryProps {
   caseData: Case;
@@ -25,7 +26,8 @@ export function CaseDecisionSummary({ caseData }: CaseDecisionSummaryProps) {
   const priorityStep = state.timeline.find((s) => s.step === "priority_triage");
   const retrievalStep = state.timeline.find((s) => s.step === "retrieve");
 
-  const category = (classifyStep?.output?.category as string | undefined) ?? caseData.category_label ?? "—";
+  // A category_label a közérthető magyar megnevezés (pl. „Számlázás"); a timeline raw kódja (pl. „szamlazas") csak fallback.
+  const category = caseData.category_label || (classifyStep?.output?.category as string | undefined) || "—";
   const subtype = classifyStep?.output?.subtype as string | undefined;
   const confidence = (classifyStep?.output?.confidence as number | undefined) ?? caseData.confidence;
 
@@ -69,7 +71,7 @@ export function CaseDecisionSummary({ caseData }: CaseDecisionSummaryProps) {
         label="Státusz"
         value={escalation?.required ? "Eszkaláció" : priorityValue}
         valueClass={escalation?.required ? "text-status-esc-fg" : priorityValue === "sürgős" ? "text-status-urgent-fg" : "text-kpi-ok"}
-        sub={escalation?.required ? (escalation.reasons[0] ?? undefined) : priorityReason}
+        sub={escalation?.required ? (escalation.reasons[0] ? reasonLabel(escalation.reasons[0]) : undefined) : priorityReason}
         accentClass={escalation?.required ? "border-l-status-esc-fg" : "border-l-one-line"}
       />
     </div>

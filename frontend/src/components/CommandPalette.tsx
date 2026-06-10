@@ -11,12 +11,12 @@ interface CommandItem {
 }
 
 export const commandRegistry: CommandItem[] = [
-  { id: "inbox", label: "Inbox megnyitása", hint: "Ügylista", path: "/inbox" },
-  { id: "new-case", label: "Új ügy", hint: "Kézi ügyfelvétel", path: "/new" },
+  { id: "inbox", label: "Bejövő ügyek", hint: "Ügylista", path: "/inbox" },
+  { id: "new-case", label: "Új ügy", hint: "Kézi ügyfelvétel és postai import", path: "/new" },
   { id: "copilot", label: "Copilot", hint: "Chat és telefon támogatás", path: "/copilot" },
-  { id: "postal", label: "Postai levél", hint: "OCR workflow", path: "/postal" },
-  { id: "eval", label: "Evaluation", hint: "Minőségmérés", path: "/eval" },
-  { id: "knowledge", label: "ÁSZF tudásböngésző", hint: "/knowledge", path: "/knowledge" },
+  { id: "postal", label: "Postai levél import", hint: "OCR — új ügy", path: "/new" },
+  { id: "eval", label: "Értékelés", hint: "Minőségmérés", path: "/eval" },
+  { id: "knowledge", label: "Tudástár", hint: "/knowledge", path: "/knowledge" },
   { id: "supervisor", label: "Supervisor", hint: "Audit és operáció", path: "/supervisor", roles: ["supervisor"] },
 ];
 

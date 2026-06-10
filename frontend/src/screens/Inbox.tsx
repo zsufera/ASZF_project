@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronRight } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../lib/api";
 import type { InboxItem } from "../lib/types";
@@ -171,7 +172,7 @@ export function Inbox() {
   return (
     <div>
       <div className="flex items-center justify-between gap-3 mb-4">
-        <h1 className="text-[16px] font-bold text-one-ink">Inbox</h1>
+        <h1 className="text-[16px] font-bold text-one-ink">Bejövő ügyek</h1>
         {!loading && items.length > 0 && (
           <div className="flex gap-3 text-[11px]">
             <KpiBadge label="összes" value={kpi.total} color="text-one-grey" />
@@ -243,16 +244,23 @@ export function Inbox() {
         {!loading && items.map((item, index) => (
           <div
             key={item.case_id}
-            className={`bg-one-surface border rounded-one shadow-card p-3 flex items-start justify-between gap-3 hover:border-one-turq transition-colors hover-lift ${activeIndex === index ? "border-one-turq" : "border-one-line"}`}
+            onClick={() => openCase(item.case_id)}
+            role="button"
+            tabIndex={0}
+            onFocus={() => setActiveIndex(index)}
+            onMouseEnter={() => setActiveIndex(index)}
+            className={`bg-one-surface border rounded-one shadow-card p-3 flex items-start gap-3 cursor-pointer hover:border-one-turq transition-colors hover-lift focus-visible:ring-2 focus-visible:ring-one-turq ${activeIndex === index ? "border-one-turq" : "border-one-line"}`}
+            aria-label={`Ügy megnyitása: ${item.subject}`}
           >
             <input
               type="checkbox"
               checked={selectedCaseIds.includes(item.case_id)}
+              onClick={(e) => e.stopPropagation()}
               onChange={() => toggleSelected(item.case_id)}
               className="mt-1 accent-one-turq"
               aria-label={`Kijelölés: ${item.subject}`}
             />
-            <div className="flex-1 min-w-0" onClick={() => setActiveIndex(index)}>
+            <div className="flex-1 min-w-0">
               <CaseBadgeRow item={item} />
               <div className="mt-1 font-semibold text-[13px] text-one-ink truncate">{item.subject}</div>
               <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-one-grey">
@@ -261,13 +269,7 @@ export function Inbox() {
                 {item.claimed_by_username && <span>Claim: {item.claimed_by_username}</span>}
               </div>
             </div>
-            <button
-              onClick={() => openCase(item.case_id)}
-              className="bg-one-turq text-[#04201f] font-bold text-[11px] px-3 py-1.5 rounded-pill hover:bg-one-turq-d transition-colors shrink-0 btn-press"
-              aria-label={`Megnyitás: ${item.subject}`}
-            >
-              Megnyitás
-            </button>
+            <ChevronRight size={18} className="text-one-grey self-center shrink-0" aria-hidden="true" />
           </div>
         ))}
       </div>

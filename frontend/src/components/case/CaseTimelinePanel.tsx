@@ -5,7 +5,7 @@ interface CaseTimelinePanelProps {
   hasTimeline: boolean;
   steps: TimelineStep[];
   escalation: EscalationState | null;
-  onToggle: (open: boolean) => void;
+  onToggle?: (open: boolean) => void;
 }
 
 export function CaseTimelinePanel({ hasTimeline, steps, escalation, onToggle }: CaseTimelinePanelProps) {

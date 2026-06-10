@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AlertTriangle, Check, ChevronDown, Loader2, X } from "lucide-react";
 import type { TimelineStep as TStep } from "../lib/types";
 import { STEP_META, stepLabel, fieldLabel, formatFieldValue } from "../lib/agentSteps";
 
@@ -11,10 +12,11 @@ function stepStatus(step: TStep): "ok" | "warn" | "run" | "error" {
 }
 
 function DotIcon({ status }: { status: "ok" | "warn" | "run" | "error" }) {
-  if (status === "ok") return <span className="w-[18px] h-[18px] rounded-full bg-one-turq text-[#04201f] text-[10px] flex items-center justify-center font-bold flex-none" aria-label="Kész">✓</span>;
-  if (status === "warn") return <span className="w-[18px] h-[18px] rounded-full bg-[#f5a623] text-[#3a2400] text-[10px] flex items-center justify-center font-bold flex-none" aria-label="Figyelmeztetés">!</span>;
-  if (status === "run") return <span className="w-[18px] h-[18px] rounded-full bg-one-turq-l text-one-turq-d text-[10px] flex items-center justify-center flex-none animate-spin" aria-label="Fut">⟳</span>;
-  return <span className="w-[18px] h-[18px] rounded-full bg-status-urgent-bg text-status-urgent-fg text-[10px] flex items-center justify-center font-bold flex-none" aria-label="Hiba">✗</span>;
+  const base = "w-[18px] h-[18px] rounded-full flex items-center justify-center flex-none";
+  if (status === "ok") return <span className={`${base} bg-one-turq text-[#04201f]`} aria-label="Kész"><Check size={11} strokeWidth={3} /></span>;
+  if (status === "warn") return <span className={`${base} bg-[#f5a623] text-[#3a2400]`} aria-label="Figyelmeztetés"><AlertTriangle size={11} strokeWidth={2.5} /></span>;
+  if (status === "run") return <span className={`${base} bg-one-turq-l text-one-turq-d`} aria-label="Fut"><Loader2 size={11} className="animate-spin" /></span>;
+  return <span className={`${base} bg-status-urgent-bg text-status-urgent-fg`} aria-label="Hiba"><X size={11} strokeWidth={3} /></span>;
 }
 
 export function TimelineStepItem({ step }: { step: TStep }) {
@@ -39,16 +41,17 @@ export function TimelineStepItem({ step }: { step: TStep }) {
   return (
     <div className="py-1.5">
       <button
-        className="flex gap-2 items-start w-full text-left focus-visible:ring-2 focus-visible:ring-one-turq rounded"
+        className="flex gap-2 items-start w-full text-left focus-visible:ring-2 focus-visible:ring-one-turq rounded group"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-label={`${label} lépés részletei`}
       >
         <DotIcon status={status} />
-        <div>
+        <div className="min-w-0 flex-1">
           <div className="text-[11px] font-semibold">{label}</div>
-          {summary && <div className="text-[10px] text-one-grey">{summary}</div>}
+          {summary && <div className="text-[10px] text-one-grey truncate">{summary}</div>}
         </div>
+        <ChevronDown size={13} className={`shrink-0 mt-0.5 text-one-line group-hover:text-one-grey transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
         <div className="mt-1 ml-6 text-[10px] bg-one-canvas border border-one-line rounded p-2 animate-fade-in">

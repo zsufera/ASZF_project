@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { Maximize2 } from "lucide-react";
 import type { ChunkItem, RetrievalSource, SourceRef } from "../lib/types";
+import { SourceDetailModal } from "./SourceDetailModal";
 
 interface SourceCardProps {
   chunk: ChunkItem;
@@ -77,49 +79,32 @@ interface RichSourceCardProps {
   id?: string;
 }
 
-/** Gazdag, lenyitható forrás-kártya a SourceRef adatokból. */
+/** Kompakt forrás-kártya — kattintásra felugró ablakban mutatja a teljes szöveget. */
 export function RichSourceCard({ source, id }: RichSourceCardProps) {
-  const [open, setOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const rel = relevanceLabel(source.score);
-
-  const copyId = () => {
-    navigator.clipboard?.writeText(source.chunk_id).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1200);
-    }).catch(() => {});
-  };
 
   return (
     <div
       id={id}
-      className={`border-l-2 rounded-r-md px-3 py-2 mb-2 text-[11px] transition-all duration-150 ${source.used ? "border-one-turq bg-[#FbFdfd]" : "border-one-line bg-white opacity-70"}`}
+      className={`border-l-2 rounded-r-md mb-2 text-[11px] transition-all duration-150 ${source.used ? "border-one-turq bg-[#FbFdfd]" : "border-one-line bg-white opacity-70"}`}
     >
-      <button onClick={() => setOpen((v) => !v)} className="w-full flex items-center justify-between text-left" aria-expanded={open}>
+      <button
+        onClick={() => setModalOpen(true)}
+        className="w-full flex items-center justify-between text-left px-3 py-2 hover:bg-one-turq-l/50 rounded-r-md transition-colors group"
+        aria-label={`${source.ref} forrás teljes szövegének megnyitása`}
+      >
         <span className="flex items-center gap-2 min-w-0">
           <span className="text-[9px] font-bold bg-one-turq-l text-one-turq-d border border-one-turq rounded-full px-1.5 py-0.5 flex-none">{source.ref}</span>
           <span className="font-semibold text-one-ink truncate">{source.dok_cim ?? source.dok_tipus ?? "Forrás"}{source.paragrafus ? ` · §${source.paragrafus}` : ""}</span>
         </span>
-        <span className="flex items-center gap-1 flex-none ml-2">
+        <span className="flex items-center gap-1.5 flex-none ml-2">
           {rel && <span className="text-[9px] text-one-grey">{rel}</span>}
-          <span className="text-one-grey">{open ? "▾" : "▸"}</span>
+          <Maximize2 size={12} className="text-one-grey group-hover:text-one-turq-d transition-colors" />
         </span>
       </button>
 
-      {open && (
-        <div className="mt-2 animate-fade-in">
-          <div className="flex flex-wrap gap-2 text-[9px] text-one-grey mb-1">
-            <ProvenanceBadge source={source.retrieval_source} score={source.score} />
-            {source.dok_tipus && <span>{source.dok_tipus}</span>}
-            {source.oldalszam !== undefined && <span>· {source.oldalszam}. oldal</span>}
-          </div>
-          {source.idezet && <p className="italic text-[#33403f] mb-1">„{source.idezet}"</p>}
-          {source.magyarazat && <p className="text-one-grey text-[10px] mb-1">{source.magyarazat}</p>}
-          <button onClick={copyId} className="text-[9px] text-one-turq-d hover:underline" aria-label="chunk_id másolása">
-            {copied ? "✓ másolva" : `id: ${source.chunk_id}`}
-          </button>
-        </div>
-      )}
+      {modalOpen && <SourceDetailModal source={source} onClose={() => setModalOpen(false)} />}
     </div>
   );
 }

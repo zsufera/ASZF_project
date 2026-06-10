@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { ChevronDown, ChevronUp, Workflow } from "lucide-react";
 import type { TimelineStep } from "../lib/types";
 import { TimelineStepItem } from "./TimelineStep";
 
@@ -24,10 +25,10 @@ export function AgentTimeline({ steps, defaultOpen = true, onToggle }: AgentTime
         className="w-full flex items-center justify-between px-3 py-2 text-[10px] uppercase tracking-wider text-one-grey font-semibold border-b border-one-line focus-visible:ring-2 focus-visible:ring-one-turq"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        aria-label="Agent-idővonal ki/becsukása"
+        aria-label="Agent-folyamat ki/becsukása"
       >
-        <span>⚙ Agent-idővonal</span>
-        <span>{open ? "▲" : "▼"}</span>
+        <span className="flex items-center gap-1.5"><Workflow size={12} /> Agent-folyamat</span>
+        {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
       </button>
       {open && (
         <div className="p-3 divide-y divide-one-line animate-fade-in">
