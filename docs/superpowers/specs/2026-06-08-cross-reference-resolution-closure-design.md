@@ -2,7 +2,7 @@
 
 > **Dátum:** 2026-06-08
 > **Cél:** Az ÁSZF-korpusz **kereszthivatkozásait** kihasználni a retrievalben: a visszakeresett §-ok által hivatkozott (lokális ÉS más dokumentumban lévő) szakaszokat **determinisztikusan behúzni** (reference-closure), hogy a válasz ne támaszkodjon olyan szabályra, aminek kivétele/feltétele egy be-nem-húzott §-ban van. A feloldhatatlan hivatkozás **completeness-jelként** jelenik meg.
-> **Roadmap-tétel:** [`docs/rag-roadmap.md`](../../rag-roadmap.md) A1 + A2 (+ A4 horog).
+> **Roadmap-tétel:** [`docs/roadmaps/rag-roadmap.md`](../../roadmaps/rag-roadmap.md) A1 + A2 (+ A4 horog).
 > **Backend HTTP-szerződés:** nem változik (a `/retrieve` válasz bővül `unresolved_refs`-szel; a `chunks[]` elemei `reference_closure` `retrieval_source`-szal jelölve).
 
 ---

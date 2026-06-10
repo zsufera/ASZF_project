@@ -2,7 +2,7 @@
 
 > **Cél:** nagyobb, funkcionalitásbeli UI-fejlesztések specifikációja a React frontendhez (`frontend/`), a meglévő FastAPI backendre illesztve. Nem stílus/kozmetika: a use-case magját (auditálható, forrásolt, ember-kontrollált ügyintézői copilot) erősítő, működő funkciók.
 > **Forma:** stratégiai roadmap, tételenként implementálható spec-vázlat. Minden tétel külön implementációs tervvé (`docs/superpowers/plans/`) bontható.
-> **Kapcsolódó:** [`docs/archive/design-export/`](archive/design-export/) (archivált One arculat/tokenek), [`frontend/UX-DECISIONS.md`](../frontend/UX-DECISIONS.md), [`docs/rag-roadmap.md`](rag-roadmap.md), [`FEJLESZTESI_GUARDRAILS.md`](../FEJLESZTESI_GUARDRAILS.md) (§7 UI guardrailek).
+> **Kapcsolódó:** [`docs/archive/design-export/`](../archive/design-export/) (archivált One arculat/tokenek), [`frontend/UX-DECISIONS.md`](../../frontend/UX-DECISIONS.md), [`docs/roadmaps/rag-roadmap.md`](rag-roadmap.md), [`docs/specs/FEJLESZTESI_GUARDRAILS.md`](../specs/FEJLESZTESI_GUARDRAILS.md) (§7 UI guardrailek).
 > **Frissítve:** 2026-06-09, a Tier 1-3 implementáció után.
 
 ---

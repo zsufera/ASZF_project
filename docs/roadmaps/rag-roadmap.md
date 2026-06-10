@@ -2,7 +2,7 @@
 
 > **Cél:** a retrieval pipeline okosítása **kifejezetten erre a use-case-re**: a forrásdokumentumok (ÁSZF + mellékletek + ESzSzF + Díjszabás) **egymásra hivatkoznak** (`cross_refs`) és **hierarchikus bekezdésekből** állnak (`paragrafus_szam`, pl. `5.5.1 ⊂ 5.5 ⊂ 5`). Ez a két strukturális tulajdonság ma nagyrészt **kihasználatlan**.
 > **Forma:** stratégiai roadmap, tételenként a meglévő kódra illesztve. Minden tétel külön implementációs tervvé (`docs/superpowers/plans/`) bontható.
-> **Kapcsolódó:** [`FEJLESZTESI_GUARDRAILS.md`](../FEJLESZTESI_GUARDRAILS.md) (termék-elvek), [`.claude/skills/rag-pipeline`](../.claude/skills/rag-pipeline/SKILL.md) (pipeline-leírás), [`docs/superpowers/specs/2026-06-08-agentic-answer-synthesis-design.md`](superpowers/specs/2026-06-08-agentic-answer-synthesis-design.md).
+> **Kapcsolódó:** [`docs/specs/FEJLESZTESI_GUARDRAILS.md`](../specs/FEJLESZTESI_GUARDRAILS.md) (termék-elvek), [`.claude/skills/rag-pipeline`](../../.claude/skills/rag-pipeline/SKILL.md) (pipeline-leírás), [`docs/superpowers/specs/2026-06-08-agentic-answer-synthesis-design.md`](../superpowers/specs/2026-06-08-agentic-answer-synthesis-design.md).
 
 ---
 

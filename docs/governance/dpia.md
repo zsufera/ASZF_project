@@ -21,7 +21,8 @@
 
 ```mermaid
 flowchart LR
-    UI[Streamlit_UI] --> API[FastAPI]
+    UI[React_SPA] --> API[FastAPI]
+    Legacy[Legacy_Streamlit_UI] --> API
     API --> Mask[PII_maszkolas]
     Mask --> Agent[LangGraph_agent]
     Agent --> Retrieve[Lokalis_ASZF_index]
@@ -54,10 +55,10 @@ Konfig: `config/retention.yaml`
 
 ## 6. Biztonsági kontrollok (POC)
 
-- RBAC: `security/rbac.py` — unmask, approve, audit, purge szerepkör szerint.
+- RBAC: `security/rbac.py` - unmask, approve, audit, purge szerepkör szerint.
 - Napló-redakció: audit payloadok PII-mentesítése tárolás előtt.
 - Prompt-injection detektálás: `security/prompt_guard.py` a `/classify` ágon.
-- Disclaimer: `config/disclaimer.yaml` — automata módban kötelező.
+- Disclaimer: `config/disclaimer.yaml` - automata módban kötelező.
 
 ## 7. Tudatos prod-hiányok
 

@@ -1,7 +1,7 @@
 # Nem UI fókuszú fejlesztési roadmap
 
 > **Cél:** azoknak a fejlesztési irányoknak a rögzítése, amelyek nem elsődlegesen UI-használhatósági tételek, de a rendszer agentic érettségét, üzleti használhatóságát, integrálhatóságát, auditálhatóságát vagy üzemeltethetőségét javítják.
-> **Kapcsolódó:** [`docs/ui-roadmap.md`](ui-roadmap.md), [`docs/agentic_refactor_roadmap.md`](agentic_refactor_roadmap.md), [`docs/codebase_simplification_roadmap.md`](codebase_simplification_roadmap.md), [`FEJLESZTESI_GUARDRAILS.md`](../FEJLESZTESI_GUARDRAILS.md).
+> **Kapcsolódó:** [`docs/roadmaps/ui-roadmap.md`](ui-roadmap.md), [`docs/roadmaps/agentic_refactor_roadmap.md`](agentic_refactor_roadmap.md), [`docs/roadmaps/codebase_simplification_roadmap.md`](codebase_simplification_roadmap.md), [`docs/specs/FEJLESZTESI_GUARDRAILS.md`](../specs/FEJLESZTESI_GUARDRAILS.md).
 > **Frissítve:** 2026-06-09.
 
 ---
@@ -183,6 +183,6 @@
 
 ## 7. Nem cél ebben a roadmapben
 
-- UI komponensek, képernyők és felületi ergonómia részletes tervei: ezek a [`docs/ui-roadmap.md`](ui-roadmap.md) részei.
+- UI komponensek, képernyők és felületi ergonómia részletes tervei: ezek a [`docs/roadmaps/ui-roadmap.md`](ui-roadmap.md) részei.
 - Autonóm ügyfélkommunikáció vagy felügyelet nélküli kiküldés: továbbra is tiltott a guardrailek szerint.
 - Éles CRM/email integráció teljes implementációja POC-scope-ban: csak adapter contract és mock/controlled handoff.

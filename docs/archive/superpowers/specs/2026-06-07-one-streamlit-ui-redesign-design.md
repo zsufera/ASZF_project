@@ -1,7 +1,7 @@
 # ÁSZF Q&A Agent — One-arculatú UI újratervezés (design spec)
 
 > Dátum: 2026-06-07 · Ág: `advanced_ui`
-> Kapcsolódó: [ASZF_QnA_Agent_frontend_spec.md](../../../ASZF_QnA_Agent_frontend_spec.md) (eredeti wireframe-spec), [README.md](../../../README.md) (Fázis 4 UI), [FEJLESZTESI_GUARDRAILS.md](../../../FEJLESZTESI_GUARDRAILS.md).
+> Kapcsolódó: [ASZF_QnA_Agent_frontend_spec.md](../../../specs/ASZF_QnA_Agent_frontend_spec.md) (eredeti wireframe-spec), [README.md](../../../../README.md) (Fázis 4 UI), [FEJLESZTESI_GUARDRAILS.md](../../../specs/FEJLESZTESI_GUARDRAILS.md).
 
 ## 1. Cél és hatókör
 

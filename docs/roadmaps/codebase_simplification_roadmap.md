@@ -8,11 +8,11 @@ Ez a dokumentum az agentic/RAG rétegen kívüli egyszerűsítési lehetőségek
 
 ### 1. Legacy Streamlit UI leválasztása vagy archiválása
 
-A repo-ban jelenleg egyszerre él a React frontend és a régi `ui/` Streamlit app. A README szerint a React frontend váltja le a Streamlit UI-t, de a Streamlit kód, tesztek, dependencyk és dokumentációk továbbra is aktív zajt okoznak.
+A repo-ban jelenleg egyszerre él a React frontend és a régi `legacy/ui/` Streamlit app. A README szerint a React frontend az aktív UI, a legacy Streamlit kód, tesztek, dependencyk és dokumentációk pedig csak referenciaként maradhatnak.
 
 Javasolt opciók:
 
-- `ui/` áthelyezése `legacy/ui/` alá.
+- `legacy/ui/` megtartása elkülönített referenciafelületként.
 - Streamlit tesztek külön legacy tesztprofilba mozgatása.
 - Streamlit dependency külön `requirements-legacy.txt` fájlba.
 - Ha már nincs üzleti szükség rá, a Streamlit UI teljes eltávolítása.
@@ -29,7 +29,7 @@ Javasolt struktúra:
   - `README.md`
   - aktuális API contract
   - aktuális architektúra
-  - `docs/agentic_refactor_roadmap.md`
+  - `docs/roadmaps/agentic_refactor_roadmap.md`
   - ez a roadmap
 - archív dokumentáció:
   - régi Streamlit specifikációk
@@ -210,4 +210,3 @@ Elvárt eredmény: kevesebb környezeti meglepetés, könnyebb lokális és prod
 - Frontend komponensbontás ne változtasson viselkedést első körben.
 - Generated/runtime fájlok ignore-olása előtt ellenőrizni kell, hogy nincs-e valóban szükséges fixture köztük.
 - Minden lépés legyen kis PR-kompatibilis egység, külön verifikációval.
-

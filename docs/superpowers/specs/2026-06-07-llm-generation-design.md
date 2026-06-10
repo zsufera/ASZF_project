@@ -3,7 +3,7 @@
 - **Dátum:** 2026-06-07
 - **Branch:** `vector_search`
 - **Státusz:** jóváhagyott terv (implementáció előtt)
-- **Kapcsolódó:** [Docker-mentes vektoros keresés](2026-06-07-docker-free-vector-search-design.md), prompt-katalógus (`ASZF_QnA_Agent_prompt_katalogus.md`)
+- **Kapcsolódó:** [Docker-mentes vektoros keresés](2026-06-07-docker-free-vector-search-design.md), [prompt-katalógus](../../specs/ASZF_QnA_Agent_prompt_katalogus.md)
 
 ## 1. Probléma és cél
 

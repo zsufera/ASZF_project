@@ -145,7 +145,7 @@ forrást hívják (lásd §5 refactor #1).
 
 ## 5. Előfeltétel-refactor (sorrend)
 
-A [agentic_refactor_roadmap.md](../../agentic_refactor_roadmap.md) pontjai erősen
+A [agentic_refactor_roadmap.md](../../roadmaps/agentic_refactor_roadmap.md) pontjai erősen
 átfedik az új agent alapjait. Ajánlott sorrend: **célzott köztes út** — nem az egész
 refactor előbb, és nem is a nyers alapra épített agent.
 

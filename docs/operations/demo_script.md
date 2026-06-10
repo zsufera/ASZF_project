@@ -2,10 +2,12 @@
 
 ## Előkészítés
 
-1. `docker compose up -d` (Qdrant)
-2. `python -m backend.db`
-3. `uvicorn backend.main:app --reload`
-4. Opcionális legacy UI: `streamlit run legacy/ui/app.py` (`ui_demo` / `ui_demo`)
+1. `python -m backend.db`
+2. Fejlesztői backend: `uvicorn backend.main:app --reload`
+3. Fejlesztői frontend: `cd frontend`, majd `npm install`, `npm run dev`
+4. Egyfolyamatos demóhoz: `start.bat` vagy `start.ps1` a repo gyökeréből
+
+Docker nem kötelező. Külső Qdrant csak akkor kell, ha `.env` alatt `QDRANT_MODE=server` van beállítva.
 
 ## Automatizált demó-szcenáriók
 
@@ -28,25 +30,25 @@ Riport: `data/demo/latest_demo_report.json`
 
 ### 1. Számlázási panasz (5 perc)
 
-1. Inbox → `email-001-szamlazas-one`
-2. Feldolgozás → források panel, draft, idővonal
+1. Inbox -> `email-001-szamlazas-one`
+2. Feldolgozás -> források panel, draft, idővonal
 3. Jóváhagyás mock küldéssel
 
 ### 2. Egyedi szerződés eszkaláció (4 perc)
 
-1. Inbox → `email-edge-001-egyedi-szerzodes`
-2. Feldolgozás → eszkalációs okok (`egyedi_szerzodes_gyanu`)
-3. Supervisor nézet → eszkalált sor
+1. Inbox -> `email-edge-001-egyedi-szerzodes`
+2. Feldolgozás -> eszkalációs okok (`egyedi_szerzodes_gyanu`)
+3. Supervisor nézet -> eszkalált sor
 
 ### 3. SLA eszkaláció (3 perc)
 
 1. Szabad bevitel → SLA lejárt jelölő bekapcsolása
-2. Feldolgozás → `sla_lejart` az eszkalációs okok között
+2. Feldolgozás -> `sla_lejart` az eszkalációs okok között
 
 ### 4. Telefon copilot (3 perc)
 
 1. Csatornák → Telefon
-2. Számlázási kérdés bevitele → Beszédpontok + forráshivatkozások
+2. Számlázási kérdés bevitele -> Beszédpontok + forráshivatkozások
 
 ## Elfogadási kapu
 
@@ -54,7 +56,7 @@ Riport: `data/demo/latest_demo_report.json`
 python scripts/run_quality_gate.py
 ```
 
-API: `POST /acceptance/run` — eval KPI-k + demó-szcenáriók együtt.
+API: `POST /acceptance/run` - eval KPI-k + demó-szcenáriók együtt.
 
 ## Observability
 

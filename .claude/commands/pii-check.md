@@ -2,7 +2,7 @@
 description: Átnézi az aktuális diffet a use-case kritikus kockázataira (PII-egress, LLM-fallback/temperature, forrásolás, eszkaláció-auditálhatóság).
 ---
 
-Nézd át az **aktuális, még nem commitolt változtatásokat** (`git diff` + `git diff --staged`) ennek a szabályozott, PII-érzékeny copilotnak a kritikus kockázataira. Ez NEM általános code review — a guardrails (`FEJLESZTESI_GUARDRAILS.md` §10–11) kapuit és a repo-specifikus buktatókat ellenőrzöd.
+Nézd át az **aktuális, még nem commitolt változtatásokat** (`git diff` + `git diff --staged`) ennek a szabályozott, PII-érzékeny copilotnak a kritikus kockázataira. Ez NEM általános code review — a guardrails (`docs/specs/FEJLESZTESI_GUARDRAILS.md` §10–11) kapuit és a repo-specifikus buktatókat ellenőrzöd.
 
 Menj végig és jelezz minden találatot fájl:sor hivatkozással:
 

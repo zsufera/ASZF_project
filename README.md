@@ -1,203 +1,195 @@
 # ASZF Q&A Agent (POC)
 
-POC-level belső copilot telekom ügyfélszolgálathoz:
-- ÁSZF-alapú forráshivatkozás
-- válaszlevél-javaslat
-- eszkalációs döntéstámogatás
-- auditálható, human-in-the-loop működés
+Belső ügyintézői copilot telekom ügyfélszolgálati munkához. A rendszer ÁSZF-forrásokból keres, válaszlevél-draftot készít, eszkalációt javasol, és auditálható human-in-the-loop folyamatot tart fenn. Nem autonóm ügyfélkommunikációs agent.
 
-Fejlesztés közben kötelező iránytű: [FEJLESZTESI_GUARDRAILS.md](FEJLESZTESI_GUARDRAILS.md).
+Fejlesztés közben kötelező iránytű: [docs/specs/FEJLESZTESI_GUARDRAILS.md](docs/specs/FEJLESZTESI_GUARDRAILS.md).
+
+## Aktív rendszer
+
+- **Backend:** FastAPI API a `backend/` mappában, SQLite perzisztenciával, RBAC/audit/governance endpointokkal.
+- **Agent:** LangGraph-alapú, lineáris ügyfeldolgozási pipeline az `agent/` mappában.
+- **Frontend:** React + TypeScript + Tailwind SPA a `frontend/` mappában; ez az aktív UI.
+- **RAG/ingest:** PDF manifest, parse, chunkolás, embedding és indexelés a `preprocessing/` mappában.
+- **Evaluation/demo:** referencia-mentes eval harness az `eval/`, automatizált demók a `demo/` alatt.
+- **Legacy UI:** a régi Streamlit felület `legacy/ui/` alatt maradt referenciának.
 
 ## Gyors indulás
 
-1. Python környezet és csomagok:
-   - `python -m venv .venv`
-   - `.venv\Scripts\activate`
-   - `pip install -r requirements.txt`
+1. Python környezet:
+
+   ```powershell
+   python -m venv .venv
+   .venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
+
 2. Környezeti változók:
-   - másold: `.env.example` -> `.env`
-   - **Vektortár:** alapból `QDRANT_MODE=local` (beágyazott, helyi fájl: `QDRANT_PATH=data/qdrant_local`) — **nem kell Docker**. Külső szerverhez: `QDRANT_MODE=server` + `QDRANT_URL`.
-   - **Embedding:** valódi szemantikus kereséshez állítsd be az `OPENAI_API_KEY`-t (modell: `OPENAI_EMBED_MODEL`, alap `text-embedding-3-large`; opcionális dimenzió-csökkentés: `OPENAI_EMBED_DIM`). Kulcs nélkül a rendszer determinisztikus hash-fallbackre vált — lásd lentebb az „Embedding mód" részt.
-   - **LLM generálás:** ugyanaz az `OPENAI_API_KEY` + `OPENAI_MODEL` (alap `gpt-4.1`) hajtja az osztályozást, a draft-generálást és az eszkalációs javaslatot. Hőmérséklet: `OPENAI_TEMPERATURE` (alap `0.2`). Kulcs nélkül (vagy `LLM_ENABLED=false`) szabályalapú / sablon-fallback aktivál csendben — lásd lentebb a „LLM generálás mód" részt.
-3. Infrastruktúra (opcionális — Docker nélkül is fut a teljes RAG pipeline):
-   - **Docker nélkül (ajánlott):** nincs teendő. A vektor-indexelés beágyazott, helyi Qdrant-ba ír (`data/qdrant_local/`), a retrieval pedig vagy abból (OpenAI mód), vagy a lokális `data/processed/chunks.jsonl` fallbackből (kulcs nélkül) szolgál ki. Docker egyik úthoz sem kell.
-   - **Dockerrel (csak ha `QDRANT_MODE=server`, ill. opcionális Ollama / Langfuse):**
-     - telepítsd a [Docker Desktop for Windows](https://docs.docker.com/desktop/setup/install/windows-install/) alkalmazást, indítsd el, majd:
-     - `docker compose --profile server up -d` (Qdrant szerver), vagy `docker compose up -d` az alap szolgáltatásokhoz.
-     - ha a `docker` parancs nem ismert: Docker Desktop nincs telepítve vagy nincs a PATH-ban — használd a Docker nélküli (beágyazott) útvonalat fent.
-4. Adatbázis inicializálás:
-   - `python -m backend.db`
-5. Backend indítás:
-   - `uvicorn backend.main:app --reload`
-6. **Frontend (React — ajánlott, a Streamlit UI leváltása):**
-   - **Fejlesztéshez** (HMR): `cd frontend && npm install && npm run dev` (a backend fusson a 8000 porton)
-   - **Egykattintásos futtatás (Docker nélkül, nem CLI):** a repo gyökerében **dupla kattintás a `start.bat`-ra** (vagy `start.ps1`). Ez az első indításkor buildeli a frontendet, majd a backend **egyetlen folyamatban** kiszolgálja az API-t ÉS a felületet a `http://localhost:8000` címen (a böngésző automatikusan megnyílik). Belül: `uvicorn backend.serve:app`.
-   - demo belépés: `ui_demo` / `ui_demo` vagy `supervisor_demo` / `supervisor_demo`
-   - részletek: [frontend/README.md](frontend/README.md), [frontend/UX-DECISIONS.md](frontend/UX-DECISIONS.md)
-7. Streamlit UI (Fázis 4 — **legacy**, a React frontend váltja le):
-   - `streamlit run legacy/ui/app.py`
-   - demo belépés: `ui_demo` / `ui_demo` vagy `supervisor_demo` / `supervisor_demo`
 
-## ÁSZF ingest első lépései
+   ```powershell
+   copy .env.example .env
+   ```
 
-Másold a PDF-eket a `data/raw_pdfs/` mappába (POC elsődleges út).
+   Alapértelmezésben nincs szükség Dockerre. A `QDRANT_MODE=local` beágyazott, helyi Qdrant-indexet használ (`data/qdrant_local/`). OpenAI-kulcs nélkül a rendszer determinisztikus embedding, osztályozási és draft fallbackekkel fut.
 
-1. Manifest generálás:
-   - `python -m preprocessing.manifest`
-   - kimenet: `data/ingest_manifest.json`
-2. PDF parse + hierarchikus chunkolás:
-   - `python -m preprocessing.parse`
-   - kimenetek:
-     - `data/processed/parsed_pages.jsonl`
-     - `data/processed/chunks.jsonl`
-3. Indexelés (vektoradatbázis, Docker nélkül):
-   - `python -m preprocessing.index` — beágyazott helyi Qdrant-ba indexel (`data/qdrant_local/`), nem kell futó compose. OpenAI-kulccsal valódi embedding, kulcs nélkül determinisztikus hash.
-   - `python -m preprocessing.index --skip-qdrant` — csak a chunkokat tölti be, indexelés nélkül (gyors ellenőrzés).
-   - külső szerverhez: `QDRANT_MODE=server` az `.env`-ben, majd a fenti parancs a `QDRANT_URL`-re indexel.
-4. Dok-paraméterezés (Fázis 1b):
-   - `python -m preprocessing.derive_params`
-   - kimenetek: `config/policies.yaml`, `config/mandatory_refs.yaml`, `config/disclaimer.yaml`, `data/derived/derive_report.json`
-5. Minta-emailek:
-   - `python -m preprocessing.gen_emails`
-   - kimenet: `data/sample_emails/`
-6. Smoke ellenőrzés:
-   - `python -m preprocessing.smoke_retrieve "számlázási kifogás" --service-provider ONE`
-   - `python -m preprocessing.smoke_ingest --query "számlázási kifogás" --service-provider ONE`
+3. Adatbázis inicializálás:
 
-Opcionális letöltő: `python -m preprocessing.download` (WAF esetén nem megbízható).
+   ```powershell
+   python -m backend.db
+   ```
 
-Ha nincs PDF a `data/raw_pdfs/` alatt, a manifest üres dokumentumlistával jön létre.
-A `/retrieve` endpoint a `data/processed/chunks.jsonl` alapján lokális fallback keresést ad, így OpenAI-kulcs nélkül is tesztelhető a forráshivatkozásos találat.
+4. Backend fejlesztői futtatás:
 
-## Embedding mód (felhő / fallback)
+   ```powershell
+   uvicorn backend.main:app --reload
+   ```
 
-A vektoros keresés közös embedding-interfészen át megy (`preprocessing/embedding.py`):
+5. Frontend fejlesztői futtatás:
 
-- **OpenAI mód** (`PROVIDER != onprem` és van `OPENAI_API_KEY`): valódi szemantikus embedding (`text-embedding-3-large`), az indexelés a beágyazott helyi Qdrant-ba ír, a `/retrieve` onnan keres (`qdrant_semantic`). Az embeddingek sqlite cache-be kerülnek (`data/processed/embedding_cache.db`), így az újraindexelés nem fizet újra ugyanazért a szövegért.
-- **Determinisztikus fallback** (nincs kulcs vagy `PROVIDER=onprem`): a régi 64-dimenziós hash-alapú vektor, és a `/retrieve` a lokális `hybrid_local` (sparse+dense) keresést használja a `chunks.jsonl` fölött. Offline és tesztekben is működik.
+   ```powershell
+   cd frontend
+   npm install
+   npm run dev
+   ```
 
-A `/reindex` válasza jelenti az aktív `embedding_mode`-ot és `embedding_dim`-et.
+   A Vite dev szerver `http://localhost:5173` címen indul, és a `/api` hívásokat a `http://127.0.0.1:8000` backendre proxyzza.
 
-> Megjegyzés: a beágyazott (helyi) Qdrant 20 000 pont fölött teljesítmény-figyelmeztetést ír (a teljes ÁSZF-korpusz ~51 ezer chunk). A POC-hoz működik; nagy léptékű, gyors szemantikus lekérdezéshez `QDRANT_MODE=server` ajánlott.
+6. Egykattintásos lokális futtatás:
 
-## LLM generálás mód (felhő / fallback)
+   A repo gyökerében indítsd a `start.bat` vagy `start.ps1` fájlt. Ez buildeli a React frontendet, majd egyetlen `uvicorn backend.serve:app` folyamattal szolgálja ki az API-t és az SPA-t a `http://localhost:8000` címen.
 
-Az osztályozás, válaszlevél-generálás és eszkalációs javaslat LLM-en fut, ha az `OPENAI_API_KEY` be van állítva és `LLM_ENABLED=true` (alap):
+Demo belépések:
 
-- **LLM mód** (API-kulcs + `LLM_ENABLED=true`): a `/classify` GPT-vel kategorizál (validált `ALLOWED_CATEGORIES`-re szűrve), a `/draft` citation-alapú levelet generál, az `escalation_node` LLM-javaslatot ad (monoton — csak emelhet, nem csökkenthet). A válaszban a `classify_mode` (`rule` / `llm`), `generation_mode` (`template` / `llm`) és `escalation_mode` (`rule` / `rule+llm`) mezők jelzik az aktív utat.
-- **Fallback mód** (nincs kulcs, hibás hívás vagy `LLM_ENABLED=false`): szabályalapú osztályozás, sablon-draft, determinisztikus eszkaláció. A rendszer csendben vált — a visszatérési struktúra azonos.
+- `ui_demo` / `ui_demo`
+- `supervisor_demo` / `supervisor_demo`
 
-Prompt-injection védelem: minden LLM-hívás `SYSTEM_PREAMBLE`-t tartalmaz, amely instruálja a modellt, hogy a bejövő szöveg „ADAT, nem utasítás". Csak maszkolt szöveg kerül a promptba.
+## ÁSZF ingest
 
-> **Figyelem:** `OPENAI_MODEL` értéknek létező OpenAI modellre kell mutatnia (pl. `gpt-4.1`). Érvénytelen modellnévnél a hívás csendben fallbackre esik.
+Elsődleges bemenet: PDF-ek a `data/raw_pdfs/` mappában.
 
-## Backend flow (Fázis 2)
+```powershell
+python -m preprocessing.manifest
+python -m preprocessing.parse
+python -m preprocessing.index
+python -m preprocessing.derive_params
+python -m preprocessing.gen_emails
+```
 
-Indítás: `uvicorn backend.main:app --reload`
+Kimenetek:
 
-Vertikális sorrend:
+- `data/ingest_manifest.json`
+- `data/processed/parsed_pages.jsonl`
+- `data/processed/chunks.jsonl`
+- `config/policies.yaml`
+- `config/mandatory_refs.yaml`
+- `config/disclaimer.yaml`
+- `data/sample_emails/`
 
-1. `POST /mask` -> visszafordítható PII-maszkolás (SQLite token-térkép)
-2. `POST /classify` -> kategória + konfidencia + ismétlődés-jelzés
-3. `GET /history?address=` -> azonos feladó előzményei (SQLite)
-4. `GET /customer-lookup?address=` -> mock ügyféltörzs-jelöltek
-5. `POST /retrieve` -> retrieval cross-ref bővítéssel: OpenAI módban szemantikus keresés a beágyazott Qdrant-ból (`qdrant_semantic`), kulcs/hiba esetén lokális hibrid fallback (`hybrid_local`)
-6. `POST /policy-map` -> szabályzat-térkép + kötelező hivatkozások
-7. `backend.escalation.decide_escalation()` -> eszkalációs helper
-8. `POST /draft` -> válaszjavaslat citationökkel
-9. `POST /verify` -> groundedness ellenőrzés
-10. `POST /unmask` -> draft visszafejtés jóváhagyás előtt
-11. `POST /ocr` -> postai PDF szövegkinyerés + maszkolás
-12. `POST /reindex` -> manifest + parse + index + derive_params
-13. `POST /eval/run` -> minta-email alapú retrieval/osztályozás metrikák
-14. `POST /agent/run` -> LangGraph állapotgép végponttól független teljes agent-folyamat
+Smoke ellenőrzés:
 
-Minden válasz tartalmazza: `request_id`, `model_profile`, `prompt_version`, `aszf_version`.
+```powershell
+python -m preprocessing.smoke_retrieve "számlázási kifogás" --service-provider ONE
+python -m preprocessing.smoke_ingest --query "számlázási kifogás" --service-provider ONE
+```
 
-## Agent flow (Fázis 3)
+## Fő API-folyamat
 
-`POST /agent/run` mezők: `case_id`, `channel` (`email|chat|phone|postal`), `input_text` vagy `input_text_masked`, opcionálisan `sender_email`, `service_provider`, `output_mode`.
+Fejlesztői indítás: `uvicorn backend.main:app --reload`
 
-Lépések: nyelv/típus → maszkolás → kontextus → osztályozás → prioritás → retrieval → policy-map → eszkaláció → intézkedés → draft → verify → unmask-előkészítés.
+Tipikus vertikális flow:
 
-Válasz tartalmazza a `timeline` listát UI-idővonalhoz.
+1. `POST /mask` - visszafordítható PII-maszkolás
+2. `POST /classify` - kategória, konfidencia, prompt-injection jelzés
+3. `GET /history` és `GET /customer-lookup` - előzmény és mock ügyféltörzs
+4. `POST /retrieve` - forráskeresés Qdrant vagy lokális hybrid fallback alapján
+5. `POST /policy-map` - szabályzat-térkép és kötelező hivatkozások
+6. `POST /draft` - forrásolt válaszjavaslat
+7. `POST /verify` - groundedness ellenőrzés
+8. `POST /unmask` - RBAC-védett visszafejtés jóváhagyás előtt
+9. `POST /agent/run` - teljes LangGraph ügyfeldolgozás
 
-## Frontend (React) — a Streamlit UI leváltása
+Minden API-válasz tartalmazza a közös metaadatokat: `request_id`, `model_profile`, `prompt_version`, `aszf_version`.
 
-A `frontend/` egy önálló **React + TypeScript + Tailwind** SPA, amely a One Magyarország arculatot követi és a meglévő FastAPI backendre épül (nincs új végpont). Ez váltja le a Streamlit UI-t.
+## Frontend
 
-- Indítás: `cd frontend && npm install && npm run dev` (backend a 8000 porton; a Vite a `/api`-t a backendre proxyzza).
-- Build: `npm run build`. Backend URL felülírása: `VITE_BACKEND_URL`.
-- Dokumentáció: [frontend/README.md](frontend/README.md), archivált tervezési forrás: [docs/archive/design-export/](docs/archive/design-export/), eltérések/indoklás: [frontend/UX-DECISIONS.md](frontend/UX-DECISIONS.md).
-- Nézetek: Bejelentkezés · Inbox · Ügy-munkaállomás (háromhasábos, becsukható agent-idővonal) · Új ügy · Copilot (chat/telefon) · Postai levél · Evaluation · Supervisor.
+A `frontend/` az aktív ügyintézői felület. Fő nézetek:
 
-## Streamlit UI (Fázis 4 — legacy)
+- Login
+- Inbox
+- Ügy-munkaállomás
+- Új ügy
+- Copilot
+- Postai import
+- Evaluation
+- Supervisor
+- Knowledge
 
-> A React frontend (lásd fent) váltja le. Az alábbi Streamlit-felület referenciaként marad.
+Kapcsolódó dokumentumok:
 
-Indítás: `streamlit run legacy/ui/app.py` (a backend fusson: `uvicorn backend.main:app --reload`).
+- [frontend/README.md](frontend/README.md)
+- [frontend/UX-DECISIONS.md](frontend/UX-DECISIONS.md)
+- [docs/archive/design-export/](docs/archive/design-export/)
 
-Nézetek:
-- **Inbox** — minta-emailek listája, szűrés/rendezés, ügy nézet
-- **Szabad bevitel** — ad-hoc feldolgozás
-- **Csatornák** — email / chat / telefon copilot / postai PDF+OCR
-- **Evaluation** — `/eval/run` KPI-k
-- **Supervisor** — eszkalált sor + aggregált statisztika
+## Audit, governance, evaluation
 
-Ügy nézet: háromhasábos elrendezés (források, draft-szerkesztő, agent-idővonal), jóváhagyás mock küldéssel, ÜI-visszajelzés.
-
-Backend ügy-endpointok: `GET /inbox`, `GET /cases/{id}`, `POST /cases/process`, `POST /cases/draft`, `POST /cases/approve`, `POST /cases/feedback`, `GET /supervisor/*`.
-
-## Audit és governance (Fázis 5)
-
-- Strukturált audit: `GET /audit/cases/{id}`, `GET /audit/events`, `GET /audit/completeness/{id}`
+- Audit endpointok: `GET /audit/cases/{id}`, `GET /audit/events`, `GET /audit/completeness/{id}`
 - Státusz workflow: `POST /cases/status`
-- RBAC: `/unmask` és jóváhagyás `role` + `username` mellett; minden PII-hozzáférés naplózva
-- Megőrzés: `config/retention.yaml`, `POST /governance/purge` (supervisor, dry-run alap)
-- DPIA: [docs/dpia.md](docs/dpia.md)
+- Megőrzés: `config/retention.yaml`, `POST /governance/purge`
+- Evaluation API: `POST /eval/run`, `GET /eval/runs/{run_id}`, `POST /eval/baseline`, `POST /eval/human-score`
+- Acceptance kapu: `python scripts/run_quality_gate.py` vagy `POST /acceptance/run`
+- Demó: `python -m demo` vagy `POST /demo/run`
 
-## Evaluation harness (Fázis 6)
+Kapcsolódó docs:
 
-CLI: `python -m eval.run_eval --limit 10`
+- [docs/governance/dpia.md](docs/governance/dpia.md)
+- [docs/governance/compliance_checklist.md](docs/governance/compliance_checklist.md)
+- [docs/operations/demo_script.md](docs/operations/demo_script.md)
 
-API:
-- `POST /eval/run` — teljes KPI riport (szűrők: kategória, szolgáltató, edge esetek)
-- `GET /eval/runs/{run_id}` — mentett futás
-- `POST /eval/baseline` + `GET /eval/baseline` — regresszió diff
-- `POST /eval/human-score` — emberi 1–5 spot-check
+## Tesztelés
 
-KPI célértékek: `config/eval_targets.yaml`. Riportok: `data/eval/runs/`.
+Backend:
 
-## POC lezárás (Fázis 7)
+```powershell
+python -m pytest tests/ -q
+```
 
-Demó-szcenáriók:
-- `python -m demo` vagy `POST /demo/run`
-- Forgatókönyv: [docs/demo_script.md](docs/demo_script.md)
+Frontend:
 
-Elfogadási kapu:
-- `python scripts/run_quality_gate.py` (pytest + eval KPI + demó)
-- `POST /acceptance/run`
+```powershell
+cd frontend
+npx tsc --noEmit
+npm run build
+```
 
-Observability:
-- `GET /observability/traces` — lokális trace (`data/traces/`)
-- Opcionális Langfuse: `docker compose --profile observability up -d`, `.env`: `LANGFUSE_ENABLED=true`
+A `tests/conftest.py` hermetikusan offline OpenAI-környezetet állít be. LLM-viselkedést igénylő tesztek explicit monkeypatch-csel opt-inelnek.
 
-Integrációs adapterek (mock):
-- `integrations/sqlite_case_store.py` — `CaseStore` Protocol
-- `integrations/mock_email_adapter.py` — outbound mock küldés
+## Projektstruktúra
 
-Compliance: [docs/compliance_checklist.md](docs/compliance_checklist.md)
+- `agent/` - LangGraph állapotgép és node-ok
+- `backend/` - FastAPI API, üzleti szolgáltatások, DB, audit, governance
+- `backend/api/` - témakör szerinti routerek
+- `backend/services/` - újabb service-határok
+- `config/` - runtime, policy, retention és eval konfiguráció
+- `data/` - lokális PDF-ek, feldolgozott chunkok, mintaüzenetek, eval/demo riportok
+- `demo/` - automatizált demó-szcenáriók
+- `docs/` - rendezett termék-, fejlesztési és működési dokumentáció
+- `eval/` - evaluation harness
+- `frontend/` - aktív React SPA
+- `integrations/` - mock külső adapterek
+- `legacy/ui/` - archivált Streamlit UI
+- `preprocessing/` - ingest, parse, embedding, indexelés, smoke CLI-k
+- `scripts/` - quality gate és diagnosztikai segédprogramok
+- `security/` - RBAC, prompt guard, redakció
+- `tests/` - pytest regressziós és kontraktusteszt-készlet
 
-## Projektváz
+## Dokumentáció
 
-- `preprocessing/` letöltés, parse, chunk, index, mintaadat
-- `backend/` FastAPI API + DB
-- `agent/` LangGraph állapotgép
-- `legacy/ui/` archivált Streamlit felület
-- `eval/` referencia-mentes kiértékelés
-- `demo/` automatizált demó-szcenáriók
-- `integrations/` külső rendszer adapterek (mock)
-- `scripts/` minőség-kapu és segéd CLI-k
-- `config/` policy és runtime konfig
-- `data/` lokális adatok
-- `docs/` DPIA, demó forgatókönyv, compliance
+A docs belépési pontja: [docs/README.md](docs/README.md).
+
+Fő csoportok:
+
+- `docs/specs/` - üzleti, technikai, frontend, contract, prompt és fejlesztési specifikációk
+- `docs/roadmaps/` - UI, RAG, agentic és kódbázis egyszerűsítési roadmapek
+- `docs/governance/` - DPIA és compliance
+- `docs/operations/` - demó, quality/bugfix operatív anyagok
+- `docs/superpowers/` - implementációs tervek és design specek
+- `docs/archive/` - történeti vagy leváltott dokumentáció

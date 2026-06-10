@@ -3,23 +3,24 @@
 > Mentve: 2026-06-06, frissítve: 2026-06-07. Forrás üzleti spec: [ASZF_QnA_Agent_uzleti_spec.md](ASZF_QnA_Agent_uzleti_spec.md).
 > Ez a terv a tisztázó körök döntéseit konszolidálja: rögzített tech-stack, funkcionális/üzleti döntések, fázisonkénti megvalósítás (modulok, endpointok, agent-node-ok, UI-nézetek, audit, kiértékelés) és compliance/adatbiztonság. A **részletes frontend-spec (wireframe szint)** és a **konkrét al-agent promptkatalógus** külön, későbbi lépés.
 > Fejlesztési guardrailek: [FEJLESZTESI_GUARDRAILS.md](FEJLESZTESI_GUARDRAILS.md).
+> Jelenlegi repo-állapot: az aktív UI a `frontend/` React SPA; a korábbi Streamlit felület `legacy/ui/` alatt maradt referenciának.
 
 ---
 
 ## Feladatlista (todo)
 
 - [x] **scaffold** — Projektváz: mappastruktúra, requirements, kapcsolható felhő/on-prem config, README
-- [x] **runtime-observability** — docker-compose (Qdrant, Ollama onprem, Langfuse observability profile), lokális JSON trace (`backend/tracing_service.py`), futtatási sorrend README + `docs/demo_script.md`
+- [x] **runtime-observability** — docker-compose (Qdrant, Ollama onprem, Langfuse observability profile), lokális JSON trace (`backend/tracing_service.py`), futtatási sorrend README + `docs/operations/demo_script.md`
 - [x] **preprocessing** — Előfeldolgozó CLI: kézi PDF ingest, PyMuPDF parse, hierarchikus §-chunking (cross_refs, szolgáltató-szeparáció), sparse+dense index fallback, 16 minta-email katalógus
 - [x] **dok-parameterezes** — Offline származtató CLI (`derive_params`): eszkalációs triggerek, kötelező behivatkozások, disclaimer provenance → YAML + `data/derived/derive_report.json`
 - [x] **backend-rag** — FastAPI RAG backend: hibrid retrieval (sparse+dense, Qdrant opció), rerank, cross-ref feloldás, modell-router meta, core endpointok bekötve
 - [x] **postai-ocr** — Backend `POST /ocr`: PDF feltöltés, PyMuPDF szövegkinyerés, konfidencia-heurisztika, automatikus maszkolás (UI előnézet Fázis 4)
 - [x] **elozmeny-ugyfeltorzs** — `GET /history` SQLite lekérdezés + `GET /customer-lookup` mock adapter (UI panel Fázis 4)
 - [x] **agent-statemachine** — LangGraph állapotgép (`agent/graph.py`): 12 node, `POST /agent/run`, timeline + audit meta
-- [x] **ui** — Streamlit UI (`ui/app.py`): inbox, szabad bevitel, ügy nézet (idővonal/források/draft), csatorna-fülek, Evaluation, Supervisor, demo login
+- [x] **ui** — React SPA (`frontend/`) aktív felületként; korábbi Streamlit referencia `legacy/ui/app.py` alatt
 - [x] **audit-governance** — `backend/audit_service.py`: iterációs audit, teljesség-ellenőrzés, workflow, disclaimer, Art. 22, retention
 - [x] **eval-harness** — Teljes harness: KPI-k, judge, baseline diff, human score, export (`eval/`, `POST /eval/*`)
-- [x] **compliance-security** — `security/rbac.py`, `security/redaction.py`, `security/prompt_guard.py`, RBAC unmask/approve, `docs/dpia.md` (POC-szint)
+- [x] **compliance-security** — `security/rbac.py`, `security/redaction.py`, `security/prompt_guard.py`, RBAC unmask/approve, `docs/governance/dpia.md` (POC-szint)
 - [x] **testing** — pytest: ingest, retrieval, masking, Phase 2–7 endpoint tesztek, PII szivárgás-kapu, adversariális harness, demó-szcenáriók, acceptance kapu
 - [x] **vector-search** — Docker-mentes vektoros keresés: beágyazott Qdrant (`QdrantClient(path=)`), OpenAI `text-embedding-3-large` + sqlite cache (`data/processed/embedding_cache.db`), determinisztikus hash-fallback, hermetikus teszt-conftest
 - [x] **llm-generation** — Valódi LLM-generálás: `backend/llm.py` shared JSON-client, LLM classify (kategória-validálás), LLM draft (citation-alapú), LLM eszkalációs javaslat (monoton: csak emel), prompt-injection preambulum, 132 passing teszt
@@ -56,7 +57,8 @@
 - `tests/conftest.py`: hermetikus autouse fixture — `OPENAI_API_KEY=""` az összes tesztben, megelőzi az éles API-hívást
 
 ### Fázis 4 — kész (POC-szint)
-- `ui/app.py` + `ui/views/*`: inbox, szabad bevitel, háromhasábos ügy nézet, csatorna-fülek (email/chat/telefon/postai OCR)
+- `frontend/`: React + TypeScript + Tailwind SPA aktív UI-ként (Login, Inbox, ügy-munkaállomás, Új ügy, Copilot, postai import, Evaluation, Supervisor, Knowledge)
+- `legacy/ui/app.py` + `legacy/ui/views/*`: korábbi Streamlit referenciafelület
 - `backend/case_service.py`: inbox seed, feldolgozás, draft verzió, mock jóváhagyás, feedback, supervisor statisztika
 - API: `/auth/login`, `/inbox`, `/cases/*`, `/supervisor/*`
 - Demo belépés: `config/users.yaml` (`ui_demo` / `supervisor_demo`)
@@ -66,7 +68,7 @@
 - `backend/workflow.py`: státusz-átmenetek (`uj` → `folyamatban` → `eszkalálva` → `jovahagyasra_var` → `lezarva`)
 - `security/rbac.py` + `security/redaction.py`: unmask/approve/audit/purge jogosultság, redakció
 - `config/retention.yaml` + `POST /governance/purge`; GDPR Art. 22 esemény automata módban
-- `docs/dpia.md`: DPIA és adatáramlási térkép
+- `docs/governance/dpia.md`: DPIA és adatáramlási térkép
 - API: `/audit/cases/{id}`, `/audit/events`, `/audit/completeness/{id}`, `/cases/status`
 
 ### Fázis 6 — kész (POC-szint)
@@ -82,7 +84,7 @@
 - `demo/scenarios.py` + `demo/runner.py`: 4 demó-szcenárió (számlázás E2E, egyedi szerződés, SLA, copilot)
 - `backend/acceptance_service.py`: eval KPI + demó együttes elfogadási kapu
 - `scripts/run_quality_gate.py`: pytest + acceptance CLI
-- Dokumentáció: `docs/demo_script.md`, `docs/compliance_checklist.md`
+- Dokumentáció: `docs/operations/demo_script.md`, `docs/governance/compliance_checklist.md`
 - API: `POST /demo/run`, `POST /acceptance/run`, `GET /observability/traces`
 
 ### Tudatos POC-hiányok (Fázis 7 után)
@@ -180,7 +182,7 @@ flowchart TD
         S6[Levelgeneralas]
         S7[Ellenorzo_groundedness]
     end
-    subgraph ui [Streamlit_UI]
+    subgraph ui [React_SPA]
         Inbox[Inbox_es_szabad_kerdes]
         Copilot[Chat_telefon_copilot]
         Draft[Draft_verzio_jovahagyas]
@@ -207,11 +209,12 @@ flowchart TD
   - `agent/` — LangGraph gráf, node-ok (osztályozás, maszkolás, szabályzat-térkép, sablon, eszkaláció, levél, ellenőrző), állapot-séma, checkpoint.
   - `security/` — Presidio maszkoló + de-id térkép kezelő, napló-redakció, RBAC-ellenőrzés.
   - `integrations/` — adapter-interfészek + mock implementációk: `CaseStore` (ticketing/CRM), email-adapter (be/ki), `CustomerDirectory` (ügyféltörzs email alapján).
-  - `ui/` — Streamlit app, nézetenként külön modul (inbox, ügy, copilot, evaluation, login).
+  - `frontend/` — React + TypeScript + Tailwind SPA, képernyők és komponensek.
+  - `legacy/ui/` — Streamlit referenciafelület, nem aktív UI.
   - `eval/` — referencia-mentes kiértékelő futtató + riport.
   - `data/` — `raw_pdfs/`, `processed/`, `sample_emails/`, `postal_pdfs/` (postai importok), SQLite fájl.
   - `config/` — `settings.py`, `doc_sources.yaml`, `policies.yaml`, `mandatory_refs.yaml`, `individual_contract_terms.yaml` (kézi), `templates/`, `users.yaml`, `disclaimer.yaml`.
-  - `docs/` — `dpia.md` (DPIA + adatáramlási térkép).
+  - `docs/` — rendezett specifikációk, roadmapek, governance és működési dokumentumok.
 - **`config/settings.py`**: profilváltó (`PROVIDER=cloud|onprem`) embeddinghez, generáláshoz, rerankinghez; Azure OpenAI EU vs. Ollama endpoint; Qdrant-kapcsolat (hibrid keresés ki/be); SQLite-útvonal; konfidencia-küszöb; SLA-alapérték (30 nap); retention-paraméterek.
 - `docker-compose.yml` a Qdrant-hoz (és opcionálisan Ollamához); `.env.example` (kulcsok, endpointok); README a futtatáshoz (előfeldolgozás → backend → UI sorrend).
 
@@ -341,7 +344,8 @@ A gráf node-jai (sorrendben), eszközhívásokkal és a Fázis 2 endpointokra t
 - **Modellek**: elsődlegesen **Azure OpenAI (EU)** (felhő); az **on-prem ág demóként** Ollamával, kisebb modellen (a kapcsolható router miatt a kód mindkettővel megy).
 
 ### Komponensek futása
-- **FastAPI backend** és **Streamlit UI**: lokális Python virtuális környezetben.
+- **FastAPI backend**: lokális Python virtuális környezetben.
+- **React frontend**: `frontend/` alatt Node/npm környezettel; buildelt SPA esetén `backend.serve` egy folyamatban szolgálja ki az API-t és a felületet.
 - **Qdrant**: alapból **beágyazott helyi mód** (`QDRANT_MODE=local`) — Python-folyamatban fut, nincs Docker-igény. Külső szerveres módhoz (`QDRANT_MODE=server`): `docker compose --profile server up -d`.
 - **Ollama** (opcionális, on-prem ág): Dockerben.
 - **Langfuse**: self-hosted tracing (saját compose), vagy felhős free tier; az agent-lépések és LLM-hívások trace-elése, latency/költség mérés.
@@ -349,7 +353,7 @@ A gráf node-jai (sorrendben), eszközhívásokkal és a Fázis 2 endpointokra t
 
 ### Konfiguráció és futtatási sorrend
 - `PROVIDER=cloud|onprem` profil (Azure OpenAI vs. Ollama) `config/settings.py` + `.env`.
-- Sorrend: (1) `docker compose up` (Qdrant [+ Ollama]) → (2) előfeldolgozó CLI (letöltés/parse/index/minta-emailek) → (3) FastAPI backend → (4) Streamlit UI. Külön opcionális Langfuse indítás.
+- Sorrend: (1) előfeldolgozó CLI (manifest/parse/index/minta-emailek) → (2) FastAPI backend → (3) React frontend. Docker csak külső Qdrant (`QDRANT_MODE=server`), Ollama vagy Langfuse esetén szükséges.
 - README a teljes lokális setuphoz (WSL2/Docker megjegyzésekkel).
 
 ### Hermes Agent / OpenClaw — értékelés (megvizsgálva, POC-ban NEM adoptálva)
@@ -366,7 +370,7 @@ A gráf node-jai (sorrendben), eszközhívásokkal és a Fázis 2 endpointokra t
 - **RBAC + PII-láthatóság**: maszkolatlan PII-t csak adott szerepkör lát; minden hozzáférés naplózva. Az **email-előzmény** szintén maszkoltan kerül az agent kontextusába; az **ügyféltörzs-lekérdezés** (valós integrációban) RBAC + DPA mögött, naplózva.
 - **Napló-redakció**: a logok/tracek csak maszkolt szöveget tárolnak (nincs maszkolatlan PII vagy teljes PII-s prompt).
 - **GDPR Art. 22 (automatizált döntés)**: a teljes-automata mód alacsony kockázatra korlátozva, emberi felülvizsgálat lehetősége + átláthatósági tájékoztatás + naplózás.
-- **DPIA + adatáramlási térkép**: könnyű DPIA és data-map markdown **POC-leszállítandóként** (`docs/dpia.md`).
+- **DPIA + adatáramlási térkép**: könnyű DPIA és data-map markdown **POC-leszállítandóként** (`docs/governance/dpia.md`).
 
 ### Tudatos POC-egyszerűsítések (prod-roadmap)
 - **Titkosítás nyugalmi állapotban**: a POC a **host lemeztitkosítására** támaszkodik; prod: SQLCipher / kezelt titkosított tárak.
@@ -406,7 +410,7 @@ A POC önállóan fut, de a jövőbeli integrációkat **interfész-szerződése
 - **KPI-hez kötött** a szintetikus, címkézett készleten: Source citation rate ≥95%, kritikus hallucináció 0, Coverage ≥80%, Escalation appropriateness ≥90%, Time-to-answer <30 mp; **plusz** a fenti demó-szcenáriók hibátlan végigfutása. *Miért:* mérhető, nem csak „működik a demó".
 
 ### Leszállítandók
-- Forráskód + **README** (lokális setup/futtatás) + **`docs/dpia.md`** + **eval-riport** + **demó-script**.
+- Forráskód + **README** (lokális setup/futtatás) + **`docs/governance/dpia.md`** + **eval-riport** + **demó-script**.
 
 ## Halasztott, külön spec / későbbi fázis
 - ~~Részletes frontend-spec (komponensek, interakciók, wireframe).~~ → kész: [ASZF_QnA_Agent_frontend_spec.md](ASZF_QnA_Agent_frontend_spec.md).
