@@ -8,6 +8,7 @@ import { Inbox } from "./screens/Inbox";
 import { CaseWorkstation } from "./screens/CaseWorkstation";
 import { NewCase } from "./screens/NewCase";
 import { Copilot } from "./screens/Copilot";
+import { CustomerProfile } from "./screens/CustomerProfile";
 import { Evaluation } from "./screens/Evaluation";
 import { Metrics } from "./screens/Metrics";
 import { Supervisor } from "./screens/Supervisor";
@@ -28,6 +29,7 @@ function AppRoutes() {
         <Route index element={<Navigate to="/inbox" replace />} />
         <Route path="/inbox" element={<Inbox />} />
         <Route path="/case/:id" element={<CaseWorkstation />} />
+        <Route path="/customer/:customerId" element={<CustomerProfile />} />
         <Route path="/new" element={<NewCase />} />
         <Route path="/copilot" element={<Copilot />} />
         {/* A postai import az „Új ügy" lapra olvadt össze — a régi útvonal átirányít. */}

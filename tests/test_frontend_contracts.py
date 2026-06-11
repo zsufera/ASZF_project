@@ -45,3 +45,26 @@ def test_case_header_uses_stable_sender_display_not_reusable_mask_token() -> Non
 
     assert "{caseData.sender_email_masked}" not in source
     assert "{caseData.sender_email_display}" in source
+
+
+def test_frontend_exposes_customer_profile_route_and_api() -> None:
+    app_source = (ROOT / "frontend/src/App.tsx").read_text(encoding="utf-8")
+    api_source = (ROOT / "frontend/src/lib/api.ts").read_text(encoding="utf-8")
+    types_source = (ROOT / "frontend/src/lib/types.ts").read_text(encoding="utf-8")
+    candidate_source = (ROOT / "frontend/src/components/CustomerCandidate.tsx").read_text(encoding="utf-8")
+
+    assert 'path="/customer/:customerId"' in app_source
+    assert "getCustomer: (customerId: string)" in api_source
+    assert "interface CustomerProfile" in types_source
+    assert "react-router-dom" in candidate_source
+    assert "to={c.link_url}" in candidate_source
+
+
+def test_history_card_can_render_mock_message_details() -> None:
+    types_source = (ROOT / "frontend/src/lib/types.ts").read_text(encoding="utf-8")
+    history_source = (ROOT / "frontend/src/components/HistoryCard.tsx").read_text(encoding="utf-8")
+
+    assert "excerpt_masked?: string;" in types_source
+    assert "case_id?: string;" in types_source
+    assert "h.excerpt_masked" in history_source
+    assert "h.status" in history_source

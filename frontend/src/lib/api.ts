@@ -3,7 +3,7 @@ import type {
   EvalResult, EscalatedItem, SupervisorStats, OcrResult, CopilotChatResponse,
   AuditCaseRecord, AuditCompleteness, AuditEvent, TraceEvent, AcceptanceResult,
   AgentStreamEvent, CaseAssignmentResult, CopilotSessionItem,
-  AszfKnowledgeGroup, AszfKnowledgeItem, OperationalMetrics,
+  AszfKnowledgeGroup, AszfKnowledgeItem, OperationalMetrics, CustomerProfile,
 } from "./types";
 
 const BASE = (import.meta.env.VITE_BACKEND_URL ?? "/api") as string;
@@ -109,6 +109,9 @@ export const api = {
 
   getCustomerLookup: (address: string) =>
     req<{ candidates: CustomerCandidateItem[] }>("GET", `/customer-lookup?address=${encodeURIComponent(address)}`),
+
+  getCustomer: (customerId: string) =>
+    req<CustomerProfile>("GET", `/customers/${encodeURIComponent(customerId)}`),
 
   ocr: (caseId: string, file: File) => {
     const fd = new FormData();

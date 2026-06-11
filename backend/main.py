@@ -58,6 +58,7 @@ from backend.draft import synthesize_answer
 from backend.api.agent import router as agent_router
 from backend.api.cases import router as cases_router
 from backend.api.copilot import router as copilot_router
+from backend.api.customers import router as customers_router
 from backend.api.history import router as history_router
 from backend.api.knowledge import router as knowledge_router
 from backend.api.metrics import router as metrics_router
@@ -86,6 +87,7 @@ app.include_router(cases_router)
 app.include_router(history_router)
 app.include_router(agent_router)
 app.include_router(copilot_router)
+app.include_router(customers_router)
 app.include_router(knowledge_router)
 app.include_router(metrics_router)
 

@@ -136,6 +136,25 @@ export interface CustomerCandidateItem {
   customer_name: string;
   customer_id: string;
   link_url: string;
+  source?: string;
+}
+
+export interface CustomerProfile {
+  customer_id: string;
+  customer_name: string;
+  primary_email?: string;
+  customer_number: string;
+  service_provider?: string;
+  status?: string;
+  segment?: string;
+  billing_account?: string;
+  contract_id?: string;
+  address_masked?: string;
+  services: string[];
+  preferred_channel?: string;
+  since?: string;
+  notes?: string;
+  link_url?: string;
 }
 
 export interface Case {
@@ -163,10 +182,14 @@ export interface Case {
 }
 
 export interface HistoryItem {
+  case_id?: string;
   date: string;
   subject: string;
   category: string;
   status: string;
+  message_type?: string;
+  excerpt_masked?: string;
+  source?: string;
 }
 
 export interface EscalatedItem {

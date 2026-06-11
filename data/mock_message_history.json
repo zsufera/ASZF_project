@@ -1,0 +1,54 @@
+{
+  "messages": [
+    {
+      "sender_email": "kovacs.anna.poc@example.invalid",
+      "case_id": "MOCK-HIST-KA-001",
+      "date": "2026-05-18T09:25:00+00:00",
+      "subject": "Korabbi mobilnet opcio szamlazasi kerdes",
+      "category": "szamlazas",
+      "status": "lezarva",
+      "message_type": "panasz",
+      "excerpt_masked": "Az ugyfel korabban is vitatta a mobilnet opcio szamlazasat."
+    },
+    {
+      "sender_email": "kovacs.anna.poc@example.invalid",
+      "case_id": "MOCK-HIST-KA-002",
+      "date": "2026-03-04T14:10:00+00:00",
+      "subject": "SIM kartya csere visszaigazolasa",
+      "category": "eszkoz_keszulek",
+      "status": "lezarva",
+      "message_type": "panasz",
+      "excerpt_masked": "SIM csere ugyintezes lezart allapotban."
+    },
+    {
+      "sender_email": "nagy.peter.poc@example.invalid",
+      "case_id": "MOCK-HIST-NP-001",
+      "date": "2026-04-29T08:45:00+00:00",
+      "subject": "Dijmodositasrol kert tajekoztatas",
+      "category": "dijemeles",
+      "status": "lezarva",
+      "message_type": "panasz",
+      "excerpt_masked": "Az ugyfel korabban irasos indoklast kert a dijmodositasrol."
+    },
+    {
+      "sender_email": "szabo.eszter.poc@example.invalid",
+      "case_id": "MOCK-HIST-SZE-001",
+      "date": "2026-05-31T18:05:00+00:00",
+      "subject": "Esti internetkimaradas bejelentese",
+      "category": "hibabejelentes_szolgaltataskieses",
+      "status": "lezarva",
+      "message_type": "panasz",
+      "excerpt_masked": "Az ugyfel ugyanazon cimen korabban is szolgaltataskiesest jelzett."
+    },
+    {
+      "sender_email": "toth.balazs.poc@example.invalid",
+      "case_id": "MOCK-HIST-TB-001",
+      "date": "2026-04-11T11:30:00+00:00",
+      "subject": "Flotta SIM aktivacios kerdes",
+      "category": "eszkoz_keszulek",
+      "status": "folyamatban",
+      "message_type": "panasz",
+      "excerpt_masked": "Kisvallalati flotta SIM aktivacios elozmeny."
+    }
+  ]
+}
