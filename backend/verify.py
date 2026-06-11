@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 from backend.llm import chat_json, llm_available, load_prompt
+from backend.llm_schemas import VerifyResponse
 from config.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -42,8 +43,8 @@ def llm_verify_grounding(
     try:
         sources_block = "\n".join(f'- [{cid}] "{chunk_by_id[cid].get("quote", "")}"' for cid in cited)
         user = f'VÁLASZ:\n"""\n{draft_body_masked}\n"""\nFORRÁSOK:\n{sources_block}'
-        data = chat_json(VERIFY_SYSTEM, user)
-        raw = data.get("nem_megalapozott") or data.get("nem_megalapozott_chunk_idk") or []
+        parsed = VerifyResponse.model_validate(chat_json(VERIFY_SYSTEM, user))
+        raw = parsed.nem_megalapozott or parsed.nem_megalapozott_chunk_idk
         return {str(x) for x in raw if str(x) in chunk_by_id}
     except Exception:
         logger.exception("llm_verify_grounding failed; falling back to heuristic")

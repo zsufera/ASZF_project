@@ -7,6 +7,8 @@ const KPI_LABELS: Record<string, string> = {
   faithfulness: "Hitelesség",
   citation_support_rate: "Citáció-támogatás",
   judge_score: "Bíró-pontszám",
+  llm_judge_score: "LLM-bíró",
+  llm_judge_coverage: "LLM-bíró lefedettség",
   coverage: "Lefedettség",
   escalation_appropriateness: "Eszkaláció",
   retrieval_support: "Retrieval",
@@ -83,6 +85,14 @@ export function Evaluation() {
     URL.revokeObjectURL(url);
   };
 
+  const judgeAvg = useMemo(() => {
+    if (!result) return null;
+    const scores = result.results
+      .map((r) => r.llm_judge_score)
+      .filter((v): v is number => typeof v === "number");
+    return scores.length ? scores.reduce((sum, v) => sum + v, 0) / scores.length : null;
+  }, [result]);
+
   const kpiItems = result ? Object.entries(result.kpis.values).map(([k, v]) => ({
     label: KPI_LABELS[k] ?? k,
     value: v !== undefined ? formatVal(k, v) : "-",
@@ -135,7 +145,7 @@ export function Evaluation() {
           </div>
 
           <KpiGrid items={kpiItems} perRow={4} />
-          <HumanScoreSummary scores={humanScores} />
+          <HumanScoreSummary scores={humanScores} judgeAvg={judgeAvg} />
           <EvalRegressionDiff diff={result.baseline_diff} />
 
           <div className="mt-4 grid grid-cols-[1.1fr_0.9fr] gap-4">
@@ -203,7 +213,7 @@ function EvalRegressionDiff({ diff }: { diff: EvalResult["baseline_diff"] }) {
   );
 }
 
-function HumanScoreSummary({ scores }: { scores: Record<string, number> }) {
+function HumanScoreSummary({ scores, judgeAvg }: { scores: Record<string, number>; judgeAvg: number | null }) {
   const values = useMemo(() => Object.values(scores), [scores]);
   if (!values.length) return null;
   const avg = values.reduce((sum, value) => sum + value, 0) / values.length;
@@ -211,6 +221,11 @@ function HumanScoreSummary({ scores }: { scores: Record<string, number> }) {
   return (
     <div className="mt-4 bg-one-surface border border-one-line rounded-one p-3 text-[12px]">
       Emberi értékelés: <strong>{avg.toFixed(1)}</strong> átlag · {values.length} pontozott eset · {low} alacsony pontszám
+      {judgeAvg !== null && (
+        <span className="text-one-grey">
+          {" "}· LLM-bíró átlag: <strong>{judgeAvg.toFixed(1)}</strong> · eltérés: {avg - judgeAvg >= 0 ? "+" : ""}{(avg - judgeAvg).toFixed(1)}
+        </span>
+      )}
     </div>
   );
 }

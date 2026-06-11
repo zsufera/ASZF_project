@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 from backend.llm import chat_json, llm_available, load_prompt
+from backend.llm_schemas import EscalationResponse
 
 logger = logging.getLogger(__name__)
 
@@ -47,8 +48,8 @@ def llm_escalation_suggestion(
             f"Szabályzat-térkép lefedi a kérdést?: {policy_coverage}\n"
             f'Maszkolt üzenet:\n"""\n{text_masked}\n"""'
         )
-        data = chat_json(ESCALATION_SYSTEM, user)
-        return {"suggested": bool(data.get("eszkalacio", False)), "okok": list(data.get("okok", []))}
+        parsed = EscalationResponse.model_validate(chat_json(ESCALATION_SYSTEM, user))
+        return {"suggested": parsed.eszkalacio, "okok": parsed.okok}
     except Exception:
         logger.exception("llm_escalation_suggestion failed; ignoring LLM suggestion")
         return {"suggested": False, "okok": []}

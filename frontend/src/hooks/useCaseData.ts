@@ -26,7 +26,7 @@ export function useCaseData(caseId?: string) {
           .then(setHistory)
           .catch(() => setHistory(null));
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Hiba az ugy betoltese soran"))
+      .catch((err) => setError(err instanceof Error ? err.message : "Hiba az ügy betöltése során"))
       .finally(() => setLoading(false));
   }, [caseId]);
 

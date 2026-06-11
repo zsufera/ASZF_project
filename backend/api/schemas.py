@@ -141,6 +141,7 @@ class FeedbackRequest(BaseModel):
     case_id: str
     rating: str
     wrong_source: bool = False
+    reason: str | None = None
     username: str | None = None
 
 

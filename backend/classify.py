@@ -4,6 +4,7 @@ import logging
 from typing import Any
 
 from backend.llm import chat_json, llm_available, load_prompt
+from backend.llm_schemas import ClassifyResponse
 from preprocessing.index import fold_text
 
 logger = logging.getLogger(__name__)
@@ -82,24 +83,23 @@ def classify_message(message_text_masked: str, history_summary_masked: str | Non
             f'Maszkolt üzenet:\n"""\n{message_text_masked}\n"""\n'
             f"Előzmény-összegzés (opcionális): {history_summary_masked or ''}"
         )
-        data = chat_json(CLASSIFY_SYSTEM, user)
+        parsed = ClassifyResponse.model_validate(chat_json(CLASSIFY_SYSTEM, user))
         # A modell visszaadhatja a kategóriát szóközzel ("hibabejelentés szolgáltatáskiesés")
         # az aláhúzós whitelist-forma helyett — normalizáljuk, hogy ne essen feleslegesen fallbackre.
-        category = fold_text(str(data.get("fo_kategoria", ""))).strip().replace(" ", "_")
+        category = fold_text(parsed.fo_kategoria).strip().replace(" ", "_")
         if category not in ALLOWED_CATEGORIES:
             raise ValueError("invalid category")
-        confidence = float(data.get("konfidencia", 0.6))
         candidates: list[dict[str, Any]] = []
-        for candidate in data.get("tobb_jelolt", []) or []:
-            key = fold_text(str(candidate.get("kategoria", "")))
+        for candidate in parsed.tobb_jelolt:
+            key = fold_text(candidate.kategoria)
             if key in ALLOWED_CATEGORIES:
-                candidates.append({"category": key, "confidence": float(candidate.get("konfidencia", 0.5))})
+                candidates.append({"category": key, "confidence": candidate.konfidencia})
         if not candidates:
-            candidates = [{"category": category, "confidence": confidence}]
+            candidates = [{"category": category, "confidence": parsed.konfidencia}]
         return {
             "category": category,
-            "subtype": data.get("altipus"),
-            "confidence": confidence,
+            "subtype": parsed.altipus,
+            "confidence": parsed.konfidencia,
             "candidates": candidates,
             "is_repeated": rule["is_repeated"],
             "classify_mode": "llm",

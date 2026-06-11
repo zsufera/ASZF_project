@@ -54,6 +54,13 @@ def aggregate_kpis(results: list[dict[str, Any]], targets: dict[str, Any]) -> di
         "aszf_version": manifest.get("aszf_version"),
     }
 
+    llm_scores = [
+        float(row["llm_judge_score"]) for row in results if row.get("llm_judge_score") is not None
+    ]
+    if llm_scores:
+        kpis["llm_judge_score"] = round(sum(llm_scores) / len(llm_scores), 2)
+        kpis["llm_judge_coverage"] = round(len(llm_scores) / total, 3)
+
     status: dict[str, str] = {}
     kpis["time_to_answer_ms"] = kpis["time_to_answer_ms_p95"]
     for key, target in targets.items():

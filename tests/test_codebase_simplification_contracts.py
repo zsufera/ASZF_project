@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import subprocess
-import warnings
 from pathlib import Path
 
 from fastapi.routing import APIRoute
@@ -69,16 +68,5 @@ def test_key_api_routes_are_registered_from_router_modules_with_response_models(
         assert route.response_model is not None
 
 
-def test_legacy_build_draft_is_explicitly_deprecated_wrapper() -> None:
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        result = draft.build_draft(
-            case_id="CASE-1",
-            category="szamlazas",
-            output_mode="hitl",
-            policy_map={"policy_items": []},
-            actions=[],
-        )
-
-    assert result["generation_mode"] in {"template", "insufficient"}
-    assert any(item.category is DeprecationWarning for item in caught)
+def test_legacy_build_draft_is_removed() -> None:
+    assert not hasattr(draft, "build_draft")

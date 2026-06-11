@@ -16,6 +16,7 @@ from backend.retrieval import retrieve
 from backend.verify import verify_draft
 from config.settings import settings
 from eval.judge import heuristic_judge_score
+from eval.llm_judge import llm_judge_review
 from eval.metrics import (
     compute_citation_support,
     compute_coverage,
@@ -148,6 +149,10 @@ def evaluate_single(payload: dict[str, Any]) -> dict[str, Any]:
         "service_provider": provider,
     }
     item["judge_score"] = heuristic_judge_score(item)
+    judge_review = llm_judge_review(text, draft.get("body_masked", ""), chunks)
+    item["llm_judge_score"] = judge_review["score"] if judge_review else None
+    item["llm_judge_indoklas"] = judge_review["indoklas"] if judge_review else None
+    item["judge_mode"] = "llm" if judge_review else "heuristic"
     return item
 
 

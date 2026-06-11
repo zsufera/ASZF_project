@@ -60,6 +60,7 @@ from backend.api.cases import router as cases_router
 from backend.api.copilot import router as copilot_router
 from backend.api.history import router as history_router
 from backend.api.knowledge import router as knowledge_router
+from backend.api.metrics import router as metrics_router
 from agent.runner import run_agent
 from backend.acceptance_service import run_acceptance
 from backend.eval_service import export_run, run_eval, set_baseline_from_run
@@ -86,6 +87,7 @@ app.include_router(history_router)
 app.include_router(agent_router)
 app.include_router(copilot_router)
 app.include_router(knowledge_router)
+app.include_router(metrics_router)
 
 
 def _resolve_actor(username: str | None) -> tuple[int | None, str | None]:
@@ -412,6 +414,7 @@ def case_feedback(payload: FeedbackRequest) -> dict:
             case_code=payload.case_id,
             rating=payload.rating,
             wrong_source=payload.wrong_source,
+            reason=payload.reason,
             actor_user_id=actor_id,
         ),
     }
