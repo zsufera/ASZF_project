@@ -28,7 +28,7 @@ export function useCaseActions({
       await api.processCase({ case_id: caseData.case_id, output_mode: outputMode, username: user.username });
       onRefresh();
     } catch (err) {
-      show(err instanceof Error ? err.message : "Hiba a feldolgozas soran", "error");
+      show(err instanceof Error ? err.message : "Hiba a feldolgozás során", "error");
     } finally {
       setProcessing(false);
     }
@@ -45,7 +45,7 @@ export function useCaseActions({
         citations: caseData.agent_state.draft?.citations ?? [],
         username: user.username,
       });
-      show("Draft mentve");
+      show("Vázlat mentve");
       onRefresh();
     },
     [caseData, onRefresh, outputMode, show, user],
@@ -77,7 +77,7 @@ export function useCaseActions({
         wrong_source: reason === "rossz_forras",
         username: user.username,
       });
-      show(rating === "jo" ? "Koszonjuk a visszajelzest!" : "Visszajelzes elkuldve");
+      show(rating === "jo" ? "Köszönjük a visszajelzést!" : "Visszajelzés elküldve");
     },
     [caseData, show, user],
   );

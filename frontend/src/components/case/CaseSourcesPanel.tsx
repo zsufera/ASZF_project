@@ -43,7 +43,7 @@ export function CaseSourcesPanel({ sources, chunks, unresolvedRefs = [], sourceR
           </div>
         ))
       ) : chunks.length === 0 ? (
-        <p className="text-one-grey text-[11px]">Nincs forras.</p>
+        <p className="text-one-grey text-[11px]">Nincs forrás.</p>
       ) : (
         chunks.map((chunk) => (
           <div key={chunk.chunk_id} ref={(el) => { sourceRefs.current[chunk.chunk_id] = el; }}>

@@ -25,7 +25,7 @@ export function Metrics() {
     try {
       setMetrics(await api.getOperationalMetrics());
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Nem sikerult betolteni a mereseket");
+      setError(e instanceof Error ? e.message : "Nem sikerült betölteni a méréseket");
     } finally {
       setLoading(false);
     }
@@ -39,19 +39,19 @@ export function Metrics() {
     return (
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-[16px] font-bold text-one-ink">Visszameres</h1>
+          <h1 className="text-[16px] font-bold text-one-ink">Visszamérés</h1>
           <button
             onClick={load}
             disabled={loading}
             className="text-[11px] border border-one-line px-3 py-1 rounded-pill hover:bg-one-canvas transition-colors disabled:opacity-50"
           >
-            Frissites
+            Frissítés
           </button>
         </div>
         {error ? (
           <div className="text-status-urgent-fg text-[12px]" role="alert">{error}</div>
         ) : (
-          <div className="text-[12px] text-one-grey">{loading ? "Betoltes..." : "Nincs megjelenitheto adat."}</div>
+          <div className="text-[12px] text-one-grey">{loading ? "Betöltés..." : "Nincs megjeleníthető adat."}</div>
         )}
       </div>
     );
@@ -60,42 +60,42 @@ export function Metrics() {
   const { case_funnel, handling_time, draft_acceptance, feedback, escalation } = metrics;
   const kpiItems = [
     {
-      label: "Copilot-lefedettseg",
+      label: "Copilot-lefedettség",
       value: pct(case_funnel.adoption_rate),
       status: (case_funnel.adoption_rate >= 0.7 ? "green" : case_funnel.adoption_rate >= 0.4 ? "yellow" : "red") as KpiStatus,
     },
     {
-      label: "Atlagos atfutasi ido",
+      label: "Átlagos átfutási idő",
       value: formatDuration(handling_time.avg_seconds),
       status: (handling_time.avg_seconds === null || handling_time.avg_seconds <= 300 ? "green" : "yellow") as KpiStatus,
     },
     {
-      label: "Pozitiv visszajelzes",
+      label: "Pozitív visszajelzés",
       value: pct(feedback.positive_rate),
       status: (feedback.positive_rate === null || feedback.positive_rate >= 0.75 ? "green" : feedback.positive_rate >= 0.5 ? "yellow" : "red") as KpiStatus,
     },
     {
-      label: "Eszkalacios arany",
+      label: "Eszkalációs arány",
       value: pct(escalation.escalation_rate),
       status: (escalation.escalation_rate > 0.1 ? "yellow" : "green") as KpiStatus,
     },
     {
-      label: "Lezart ugyek",
+      label: "Lezárt ügyek",
       value: case_funnel.closed_cases,
       status: "green" as KpiStatus,
     },
     {
-      label: "Draft mintak",
+      label: "Draft minták",
       value: draft_acceptance.sample_size,
       status: "green" as KpiStatus,
     },
     {
-      label: "Rossz forras jelzes",
+      label: "Rossz forrás jelzés",
       value: feedback.wrong_source,
       status: (feedback.wrong_source > 3 ? "yellow" : "green") as KpiStatus,
     },
     {
-      label: "Osszes ugy",
+      label: "Összes ügy",
       value: case_funnel.total_cases,
       status: "green" as KpiStatus,
     },
@@ -104,17 +104,17 @@ export function Metrics() {
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
-        <h1 className="text-[16px] font-bold text-one-ink">Visszameres</h1>
+        <h1 className="text-[16px] font-bold text-one-ink">Visszamérés</h1>
         <button
           onClick={load}
           disabled={loading}
           className="text-[11px] border border-one-line px-3 py-1 rounded-pill hover:bg-one-canvas transition-colors disabled:opacity-50"
         >
-          {loading ? "Frissites..." : "Frissites"}
+          {loading ? "Frissítés..." : "Frissítés"}
         </button>
       </div>
       <p className="text-[12px] text-one-grey mb-4">
-        Elo mukodesi mutatok a feldolgozott ugyek audit-naplojabol.
+        Élő működési mutatók a feldolgozott ügyek audit-naplójából.
       </p>
       {error && <div className="text-status-urgent-fg text-[12px] mb-3" role="alert">{error}</div>}
 
@@ -136,15 +136,15 @@ export function Metrics() {
 function DraftAcceptanceCard({ acceptance }: { acceptance: OperationalMetrics["draft_acceptance"] }) {
   const total = acceptance.sample_size;
   const segments = [
-    { key: "unchanged", label: "Valtoztatas nelkul", count: acceptance.unchanged, color: "bg-kpi-ok" },
-    { key: "light_edit", label: "Kis szerkesztes", count: acceptance.light_edit, color: "bg-kpi-warn" },
-    { key: "rewrite", label: "Ujrairas", count: acceptance.rewrite, color: "bg-kpi-bad" },
+    { key: "unchanged", label: "Változtatás nélkül", count: acceptance.unchanged, color: "bg-kpi-ok" },
+    { key: "light_edit", label: "Kis szerkesztés", count: acceptance.light_edit, color: "bg-kpi-warn" },
+    { key: "rewrite", label: "Újraírás", count: acceptance.rewrite, color: "bg-kpi-bad" },
   ];
   return (
     <div className="bg-one-surface border border-one-line rounded-one shadow-card p-4">
-      <h2 className="text-[13px] font-semibold mb-1">Draft-atvetel megoszlasa</h2>
+      <h2 className="text-[13px] font-semibold mb-1">Draft-átvétel megoszlása</h2>
       <p className="text-[11px] text-one-grey mb-3">
-        Elso draft es vegleges szoveg elterese ({total} lezart ugy).
+        Első draft és végleges szöveg eltérése ({total} lezárt ügy).
       </p>
       {total ? (
         <>
@@ -168,7 +168,7 @@ function DraftAcceptanceCard({ acceptance }: { acceptance: OperationalMetrics["d
           </div>
         </>
       ) : (
-        <p className="text-[11px] text-one-grey">Meg nincs lezart ugy draft-verzioval.</p>
+        <p className="text-[11px] text-one-grey">Még nincs lezárt ügy draft-verzióval.</p>
       )}
     </div>
   );
@@ -177,14 +177,14 @@ function DraftAcceptanceCard({ acceptance }: { acceptance: OperationalMetrics["d
 function HandlingTimeCard({ handling }: { handling: OperationalMetrics["handling_time"] }) {
   return (
     <div className="bg-one-surface border border-one-line rounded-one shadow-card p-4">
-      <h2 className="text-[13px] font-semibold mb-1">Ugykezelesi ido</h2>
+      <h2 className="text-[13px] font-semibold mb-1">Ügykezelési idő</h2>
       <p className="text-[11px] text-one-grey mb-3">
-        Agent-feldolgozastol jovahagyasig eltelt ido ({handling.sample_size} minta).
+        Agent-feldolgozástól jóváhagyásig eltelt idő ({handling.sample_size} minta).
       </p>
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-[12px]">
-        <dt className="text-one-grey">Atlag</dt>
+        <dt className="text-one-grey">Átlag</dt>
         <dd className="font-semibold">{formatDuration(handling.avg_seconds)}</dd>
-        <dt className="text-one-grey">Median</dt>
+        <dt className="text-one-grey">Medián</dt>
         <dd className="font-semibold">{formatDuration(handling.median_seconds)}</dd>
       </dl>
     </div>
@@ -195,14 +195,14 @@ function FeedbackByCategoryCard({ items }: { items: OperationalMetrics["feedback
   return (
     <div className="bg-one-surface border border-one-line rounded-one shadow-card overflow-hidden">
       <div className="px-4 pt-4 pb-2">
-        <h2 className="text-[13px] font-semibold">Visszajelzes kategoriankent</h2>
+        <h2 className="text-[13px] font-semibold">Visszajelzés kategóriánként</h2>
       </div>
       {items.length ? (
         <table className="w-full text-[11px]">
           <thead className="bg-one-canvas border-y border-one-line">
             <tr>
-              <th className="text-left px-4 py-2 text-one-grey font-semibold">Kategoria</th>
-              <th className="text-right px-4 py-2 text-one-grey font-semibold">Jo</th>
+              <th className="text-left px-4 py-2 text-one-grey font-semibold">Kategória</th>
+              <th className="text-right px-4 py-2 text-one-grey font-semibold">Jó</th>
               <th className="text-right px-4 py-2 text-one-grey font-semibold">Rossz</th>
             </tr>
           </thead>
@@ -217,7 +217,7 @@ function FeedbackByCategoryCard({ items }: { items: OperationalMetrics["feedback
           </tbody>
         </table>
       ) : (
-        <p className="text-[11px] text-one-grey px-4 pb-4">Meg nincs ugyintezoi visszajelzes.</p>
+        <p className="text-[11px] text-one-grey px-4 pb-4">Még nincs ügyintézői visszajelzés.</p>
       )}
     </div>
   );
@@ -227,8 +227,8 @@ function FeedbackReasonsCard({ byReason }: { byReason: Record<string, number> })
   const entries = Object.entries(byReason).sort(([, a], [, b]) => b - a);
   return (
     <div className="bg-one-surface border border-one-line rounded-one shadow-card p-4">
-      <h2 className="text-[13px] font-semibold mb-1">Negativ visszajelzes okai</h2>
-      <p className="text-[11px] text-one-grey mb-3">A rossz visszajelzesekhez valasztott okkodok megoszlasa.</p>
+      <h2 className="text-[13px] font-semibold mb-1">Negatív visszajelzés okai</h2>
+      <p className="text-[11px] text-one-grey mb-3">A rossz visszajelzésekhez választott okkódok megoszlása.</p>
       {entries.length ? (
         <div className="flex flex-col gap-1.5">
           {entries.map(([code, count]) => (
@@ -239,7 +239,7 @@ function FeedbackReasonsCard({ byReason }: { byReason: Record<string, number> })
           ))}
         </div>
       ) : (
-        <p className="text-[11px] text-one-grey">Meg nincs okkoddal ellatott visszajelzes.</p>
+        <p className="text-[11px] text-one-grey">Még nincs okkóddal ellátott visszajelzés.</p>
       )}
     </div>
   );
