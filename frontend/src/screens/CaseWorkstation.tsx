@@ -26,7 +26,7 @@ export function CaseWorkstation() {
   const [approvalResult, setApprovalResult] = useState<{ subject_unmasked: string; body_unmasked: string } | null>(null);
   const sourceRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  const { processing, handleProcess, handleSave, handleApprove, handleFeedback } = useCaseActions({
+  const { processing, escalating, handleProcess, handleSave, handleApprove, handleFeedback, handleEscalateToSupervisor } = useCaseActions({
     caseData,
     user,
     outputMode,
@@ -122,6 +122,9 @@ export function CaseWorkstation() {
           hasTimeline={hasTimeline}
           steps={caseData.agent_state?.timeline ?? []}
           escalation={escalation}
+          onEscalateToSupervisor={handleEscalateToSupervisor}
+          escalationPending={escalating}
+          alreadyEscalated={caseData.status === "eszkalalva"}
         />
       </div>
 

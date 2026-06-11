@@ -31,3 +31,15 @@ def test_case_workstation_is_split_into_hooks_and_panels() -> None:
     assert 'from "../hooks/useCaseActions"' in workstation
     assert workstation.count("<Card") == 0
     assert len(workstation.splitlines()) < 180
+
+
+def test_escalation_handoff_button_calls_status_transition() -> None:
+    workstation = (ROOT / "frontend" / "src" / "screens" / "CaseWorkstation.tsx").read_text(encoding="utf-8")
+    actions = (ROOT / "frontend" / "src" / "hooks" / "useCaseActions.ts").read_text(encoding="utf-8")
+    timeline = (ROOT / "frontend" / "src" / "components" / "case" / "CaseTimelinePanel.tsx").read_text(encoding="utf-8")
+
+    assert "handleEscalateToSupervisor" in actions
+    assert "target_status: \"eszkalalva\"" in actions
+    assert "api.updateStatus" in actions
+    assert "onEscalateToSupervisor={handleEscalateToSupervisor}" in workstation
+    assert "onClick={onEscalateToSupervisor}" in timeline

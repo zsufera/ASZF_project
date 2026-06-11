@@ -164,6 +164,7 @@ export interface Case {
   confidence: number;
   escalated: boolean;
   channel_label: string;
+  status: string;
   status_label: string;
   sla_days_remaining: number;
   sla_due_at?: string | null;

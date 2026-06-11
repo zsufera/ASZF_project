@@ -20,6 +20,7 @@ export function useCaseActions({
   show,
 }: UseCaseActionsParams) {
   const [processing, setProcessing] = useState(false);
+  const [escalating, setEscalating] = useState(false);
 
   const handleProcess = useCallback(async () => {
     if (!caseData || !user) return;
@@ -82,5 +83,24 @@ export function useCaseActions({
     [caseData, show, user],
   );
 
-  return { processing, handleProcess, handleSave, handleApprove, handleFeedback };
+  const handleEscalateToSupervisor = useCallback(async () => {
+    if (!caseData || !user || caseData.status === "eszkalalva") return;
+    setEscalating(true);
+    try {
+      await api.updateStatus({
+        case_id: caseData.case_id,
+        target_status: "eszkalalva",
+        username: user.username,
+        role: user.role,
+      });
+      show("Ügy supervisor sorba küldve", "success");
+      onRefresh();
+    } catch (err) {
+      show(err instanceof Error ? err.message : "Eszkalációs átadás hiba", "error");
+    } finally {
+      setEscalating(false);
+    }
+  }, [caseData, onRefresh, show, user]);
+
+  return { processing, escalating, handleProcess, handleSave, handleApprove, handleFeedback, handleEscalateToSupervisor };
 }

@@ -6,9 +6,22 @@ interface CaseTimelinePanelProps {
   steps: TimelineStep[];
   escalation: EscalationState | null;
   onToggle?: (open: boolean) => void;
+  onEscalateToSupervisor?: () => void;
+  escalationPending?: boolean;
+  alreadyEscalated?: boolean;
 }
 
-export function CaseTimelinePanel({ hasTimeline, steps, escalation, onToggle }: CaseTimelinePanelProps) {
+export function CaseTimelinePanel({
+  hasTimeline,
+  steps,
+  escalation,
+  onToggle,
+  onEscalateToSupervisor,
+  escalationPending = false,
+  alreadyEscalated = false,
+}: CaseTimelinePanelProps) {
+  const escalationDisabled = !onEscalateToSupervisor || escalationPending || alreadyEscalated;
+
   return (
     <div className="min-w-0">
       {!hasTimeline ? (
@@ -21,8 +34,12 @@ export function CaseTimelinePanel({ hasTimeline, steps, escalation, onToggle }: 
       {escalation?.required && hasTimeline ? (
         <div className="mt-3 bg-status-esc-bg border border-status-esc-fg rounded-one p-3 text-[11px]">
           <p className="font-semibold text-status-esc-fg mb-2">Eszkaláció szükséges</p>
-          <button className="bg-status-esc-fg text-white text-[10px] px-3 py-1.5 rounded-pill font-bold hover:opacity-90 transition-opacity">
-            Eszkaláció supervisorhoz →
+          <button
+            onClick={onEscalateToSupervisor}
+            disabled={escalationDisabled}
+            className="bg-status-esc-fg text-white text-[10px] px-3 py-1.5 rounded-pill font-bold hover:opacity-90 transition-opacity disabled:opacity-60"
+          >
+            {alreadyEscalated ? "Supervisor sorban" : escalationPending ? "Küldés..." : "Eszkaláció supervisorhoz →"}
           </button>
         </div>
       ) : null}
