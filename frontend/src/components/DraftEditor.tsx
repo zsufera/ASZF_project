@@ -164,17 +164,17 @@ export function DraftEditor({ draft, versions, onSave, onApprove, onFeedback, on
         )}
       </div>
 
-      {draft.citations.length > 0 && (
-        <div className="mb-3 flex flex-wrap gap-1">
-          <span className="text-[10px] text-one-grey mr-1 self-center">Hivatkozás-beszúrás:</span>
-          {draft.citations.map((citation) => (
-            <span key={citation} className="inline-flex rounded-full border border-one-line overflow-hidden">
-              <button onClick={() => insertCitation(citation)} className="px-2 py-1 text-[10px] bg-white hover:bg-one-canvas">{citation}</button>
-              <button onClick={() => onCitationClick(citation)} className="px-2 py-1 text-[10px] bg-one-canvas text-one-grey hover:text-one-ink">forrás</button>
-            </span>
-          ))}
-        </div>
-      )}
+      <CitationInsertMenu
+        citations={draft.citations}
+        onInsert={insertCitation}
+        onCitationClick={onCitationClick}
+      />
+
+      <ApprovalChecklist
+        hasSubject={subject.trim().length > 0}
+        hasBody={body.trim().length > 0}
+        hasVersion={Boolean(selectedVersion)}
+      />
 
       <div className="flex items-center gap-2 flex-wrap">
         <button
@@ -227,6 +227,70 @@ export function DraftEditor({ draft, versions, onSave, onApprove, onFeedback, on
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function CitationInsertMenu({
+  citations,
+  onInsert,
+  onCitationClick,
+}: {
+  citations: string[];
+  onInsert: (citation: string) => void;
+  onCitationClick: (citation: string) => void;
+}) {
+  if (!citations.length) return null;
+  return (
+    <div className="mb-3 flex flex-wrap gap-1">
+      <span className="text-[10px] text-one-grey mr-1 self-center">Hivatkozás-beszúrás:</span>
+      {citations.map((citation) => (
+        <span key={citation} className="inline-flex rounded-full border border-one-line overflow-hidden">
+          <button
+            onClick={() => onInsert(citation)}
+            className="px-2 py-1 text-[10px] bg-white hover:bg-one-canvas"
+          >
+            {citation}
+          </button>
+          <button
+            onClick={() => onCitationClick(citation)}
+            className="px-2 py-1 text-[10px] bg-one-canvas text-one-grey hover:text-one-ink"
+          >
+            forrás
+          </button>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function ApprovalChecklist({
+  hasSubject,
+  hasBody,
+  hasVersion,
+}: {
+  hasSubject: boolean;
+  hasBody: boolean;
+  hasVersion: boolean;
+}) {
+  const items = [
+    { key: "subject", label: "Tárgy", ok: hasSubject },
+    { key: "body", label: "Szöveg", ok: hasBody },
+    { key: "version", label: "Verzió", ok: hasVersion },
+  ];
+  return (
+    <div className="mb-3 flex flex-wrap gap-2 text-[10px] text-one-grey">
+      {items.map((item) => (
+        <span
+          key={item.key}
+          className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 ${
+            item.ok ? "border-kpi-ok text-kpi-ok bg-[#eefaf4]" : "border-one-line bg-one-canvas"
+          }`}
+        >
+          <span aria-hidden="true">{item.ok ? "✓" : "•"}</span>
+          {item.label}
+        </span>
+      ))}
     </div>
   );
 }
