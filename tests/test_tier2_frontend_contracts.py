@@ -12,6 +12,10 @@ def test_frontend_api_exposes_tier2_contracts() -> None:
     api = read("frontend/src/lib/api.ts")
     assert "streamAgentRun" in api
     assert "/agent/run/stream" in api
+    assert "streamCopilotChat" in api
+    assert "/copilot/chat/stream" in api
+    assert "streamCaseProcess" in api
+    assert "/cases/process/stream" in api
     assert "claimCase" in api
     assert "/cases/claim" in api
     assert "assignCase" in api
@@ -40,3 +44,15 @@ def test_copilot_renders_session_handoff_controls() -> None:
     assert "getCopilotSessions" in copilot
     assert "recordCopilotTurn" in copilot
     assert "handoffCopilotSession" in copilot
+
+
+def test_processing_indicator_uses_realtime_timeline_steps() -> None:
+    indicator = read("frontend/src/components/ProcessingIndicator.tsx")
+    copilot = read("frontend/src/screens/Copilot.tsx")
+    case_actions = read("frontend/src/hooks/useCaseActions.ts")
+
+    assert "steps?: TimelineStep[]" in indicator
+    assert "setInterval" not in indicator
+    assert "COPILOT_STEPS" not in copilot
+    assert "streamCopilotChat" in copilot
+    assert "streamCaseProcess" in case_actions

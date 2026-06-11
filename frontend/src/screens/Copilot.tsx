@@ -4,12 +4,11 @@ import { api } from "../lib/api";
 import { useSession } from "../state/session";
 import { useToast } from "../state/toast";
 import { ChatTurn } from "../components/ChatTurn";
-import type { CopilotSessionItem, GenerationMode, SourceRef, TimelineStep } from "../lib/types";
+import type { CopilotChatResponse, CopilotSessionItem, GenerationMode, SourceRef, TimelineStep } from "../lib/types";
 import { InlineAnswer } from "../components/InlineAnswer";
 import { RichSourceCard } from "../components/SourceCard";
 import { ProcessingIndicator } from "../components/ProcessingIndicator";
 import { AgentTimeline } from "../components/AgentTimeline";
-import { COPILOT_STEPS } from "../lib/agentSteps";
 
 interface Message {
   role: "user" | "assistant";
@@ -107,6 +106,7 @@ export function Copilot() {
   const [transcript, setTranscript] = useState("");
   const [streamTrigger, setStreamTrigger] = useState(0);
   const [lastAssistantFull, setLastAssistantFull] = useState("");
+  const [processingSteps, setProcessingSteps] = useState<TimelineStep[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const streamedText = useStreamText(lastAssistantFull, streamTrigger);
@@ -138,6 +138,7 @@ export function Copilot() {
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setLoading(true);
+    setProcessingSteps([]);
     try {
       await api.recordCopilotTurn({
         session_id: sessionCaseId,
@@ -145,15 +146,33 @@ export function Copilot() {
         content: text,
         username: user?.username,
       });
-      const res = await api.copilotChat({
-        session_id: sessionCaseId,
-        message: text,
-        history: messages.map((m) => ({ role: m.role, content: m.content })),
-      });
+      const resultRef: { current?: CopilotChatResponse } = {};
+      await api.streamCopilotChat(
+        {
+          session_id: sessionCaseId,
+          message: text,
+          history: messages.map((m) => ({ role: m.role, content: m.content })),
+        },
+        (event) => {
+          if (event.event === "step") {
+            const step = event.data.step as TimelineStep | undefined;
+            if (step) setProcessingSteps((prev) => [...prev, step]);
+          }
+          if (event.event === "complete") {
+            resultRef.current = event.data as unknown as CopilotChatResponse;
+          }
+          if (event.event === "error") {
+            throw new Error(String(event.data.error ?? "Copilot hiba"));
+          }
+        },
+      );
+      const finalResponse = resultRef.current;
+      if (!finalResponse) throw new Error("Copilot stream nem adott vegso valaszt");
+      const res = finalResponse;
 
       const body = res.reply ?? "Nincs válasz.";
-      const sources = res.sources ?? [];
-      const draft: CopilotDraftMeta | null | undefined = res.draft;
+      const sources = finalResponse.sources ?? [];
+      const draft: CopilotDraftMeta | null | undefined = finalResponse.draft;
       const generationMode = draft?.generation_mode;
       await api.recordCopilotTurn({
         session_id: sessionCaseId,
@@ -267,7 +286,7 @@ export function Copilot() {
               })}
               {loading && messages[messages.length - 1]?.role === "user" && (
                 <div className="mb-3 animate-fade-up">
-                  <ProcessingIndicator active={loading} steps={COPILOT_STEPS} />
+                  <ProcessingIndicator active={loading} steps={processingSteps} />
                 </div>
               )}
               <div ref={bottomRef} />

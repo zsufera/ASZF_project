@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from collections.abc import Callable
 from typing import Any
 
 from backend.timeline import timeline_entry
@@ -19,6 +20,7 @@ class CopilotSession:
     escalation: dict[str, Any] | None = None
     draft: dict[str, Any] | None = None
     timeline: list[dict[str, Any]] = field(default_factory=list)
+    on_timeline_step: Callable[[dict[str, Any]], None] | None = None
 
     def record(
         self,
@@ -30,13 +32,14 @@ class CopilotSession:
         counts: dict[str, Any] | None = None,
         summary: str = "",
     ) -> None:
-        self.timeline.append(
-            timeline_entry(
-                step,
-                output=output,
-                mode=mode,
-                status=status,
-                counts=counts,
-                summary=summary,
-            )
+        entry = timeline_entry(
+            step,
+            output=output,
+            mode=mode,
+            status=status,
+            counts=counts,
+            summary=summary,
         )
+        self.timeline.append(entry)
+        if self.on_timeline_step:
+            self.on_timeline_step(entry)

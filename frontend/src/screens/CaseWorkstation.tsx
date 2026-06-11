@@ -26,7 +26,7 @@ export function CaseWorkstation() {
   const [approvalResult, setApprovalResult] = useState<{ subject_unmasked: string; body_unmasked: string } | null>(null);
   const sourceRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  const { processing, escalating, handleProcess, handleSave, handleApprove, handleFeedback, handleEscalateToSupervisor } = useCaseActions({
+  const { processing, processingSteps, escalating, handleProcess, handleSave, handleApprove, handleFeedback, handleEscalateToSupervisor } = useCaseActions({
     caseData,
     user,
     outputMode,
@@ -40,7 +40,9 @@ export function CaseWorkstation() {
   if (!caseData) return null;
 
   const draft = caseData.agent_state?.draft ?? { subject: "", body_masked: "", citations: [] };
-  const hasTimeline = (caseData.agent_state?.timeline ?? []).length > 0;
+  const persistedTimeline = caseData.agent_state?.timeline ?? [];
+  const displayedTimeline = processing && processingSteps.length ? processingSteps : persistedTimeline;
+  const hasTimeline = displayedTimeline.length > 0;
   const escalation = caseData.agent_state?.escalation ?? null;
   const chunks = caseData.agent_state?.retrieval?.chunks ?? [];
   const sources = caseData.agent_state?.draft?.sources ?? [];
@@ -109,6 +111,7 @@ export function CaseWorkstation() {
             missingMandatory={caseData.agent_state?.policy_map?.missing_mandatory ?? []}
             generationMode={generationMode}
             processing={processing}
+            processingSteps={processingSteps}
             sourceRefs={sourceRefs}
             onProcess={handleProcess}
             onSave={handleSave}
@@ -120,11 +123,12 @@ export function CaseWorkstation() {
 
         <CaseTimelinePanel
           hasTimeline={hasTimeline}
-          steps={caseData.agent_state?.timeline ?? []}
+          steps={displayedTimeline}
           escalation={escalation}
           onEscalateToSupervisor={handleEscalateToSupervisor}
           escalationPending={escalating}
           alreadyEscalated={caseData.status === "eszkalalva"}
+          processing={processing}
         />
       </div>
 

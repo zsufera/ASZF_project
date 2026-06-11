@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { MutableRefObject } from "react";
 import { AlertTriangle, CheckCircle2, ChevronDown, ShieldCheck, XCircle } from "lucide-react";
-import type { Case, EscalationState, FeedbackReason, SourceRef, VerifyState } from "../../lib/types";
+import type { Case, EscalationState, FeedbackReason, SourceRef, TimelineStep, VerifyState } from "../../lib/types";
 import { Card } from "../Card";
 import { DraftEditor } from "../DraftEditor";
 import { ProcessingIndicator } from "../ProcessingIndicator";
@@ -17,6 +17,7 @@ interface CaseDraftPanelProps {
   missingMandatory?: string[];
   generationMode?: string;
   processing: boolean;
+  processingSteps?: TimelineStep[];
   sourceRefs: MutableRefObject<Record<string, HTMLDivElement | null>>;
   onProcess: () => void;
   onSave: (subject: string, body: string) => Promise<void>;
@@ -34,6 +35,7 @@ export function CaseDraftPanel({
   missingMandatory = [],
   generationMode,
   processing,
+  processingSteps = [],
   onProcess,
   onSave,
   onApprove,
@@ -53,7 +55,7 @@ export function CaseDraftPanel({
       ) : null}
 
       {processing ? (
-        <ProcessingIndicator active={processing} />
+        <ProcessingIndicator active={processing} steps={processingSteps} />
       ) : !hasTimeline ? (
         <div className="text-center py-6">
           <p className="text-one-grey text-[12px] mb-3">Az agent még nem futott.</p>

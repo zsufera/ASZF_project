@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from collections.abc import Callable
 from typing import Any
 
 from agent.runner import run_agent
@@ -34,6 +35,7 @@ def process_case(
     service_provider: str | None = None,
     input_text_masked: str | None = None,
     sla_expired: bool = False,
+    on_timeline_step: Callable[[dict[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
     detail = get_case_detail(case_code)
     if not detail:
@@ -58,6 +60,7 @@ def process_case(
         selected_customer_id=selected_customer_id,
         sla_expired=sla_expired,
         persist=True,
+        on_timeline_step=on_timeline_step,
     )
     result["channel"] = detail["channel"]
     result["output_mode"] = output_mode

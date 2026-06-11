@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from typing import Any, TypedDict
 
 
@@ -26,3 +27,4 @@ class AgentState(TypedDict, total=False):
     draft_preview_unmasked: dict[str, Any]
     audit_refs: dict[str, Any]
     timeline: list[dict[str, Any]]
+    on_timeline_step: Callable[[dict[str, Any]], None]

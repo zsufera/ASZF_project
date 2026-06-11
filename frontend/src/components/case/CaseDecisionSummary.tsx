@@ -22,9 +22,10 @@ export function CaseDecisionSummary({ caseData }: CaseDecisionSummaryProps) {
   const state = caseData.agent_state;
   if (!state) return null;
 
-  const classifyStep = state.timeline.find((s) => s.step === "classify");
-  const priorityStep = state.timeline.find((s) => s.step === "priority_triage");
-  const retrievalStep = state.timeline.find((s) => s.step === "retrieve");
+  const timeline = state.timeline ?? [];
+  const classifyStep = timeline.find((s) => s.step === "classify");
+  const priorityStep = timeline.find((s) => s.step === "priority_triage");
+  const retrievalStep = timeline.find((s) => s.step === "retrieve");
 
   // A category_label a közérthető magyar megnevezés (pl. „Számlázás"); a timeline raw kódja (pl. „szamlazas") csak fallback.
   const category = caseData.category_label || (classifyStep?.output?.category as string | undefined) || "—";

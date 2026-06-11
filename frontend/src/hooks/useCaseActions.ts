@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { api } from "../lib/api";
-import type { Case, FeedbackReason, OutputMode, User } from "../lib/types";
+import type { Case, FeedbackReason, OutputMode, TimelineStep, User } from "../lib/types";
 
 interface UseCaseActionsParams {
   caseData: Case | null;
@@ -20,13 +20,26 @@ export function useCaseActions({
   show,
 }: UseCaseActionsParams) {
   const [processing, setProcessing] = useState(false);
+  const [processingSteps, setProcessingSteps] = useState<TimelineStep[]>([]);
   const [escalating, setEscalating] = useState(false);
 
   const handleProcess = useCallback(async () => {
     if (!caseData || !user) return;
     setProcessing(true);
+    setProcessingSteps([]);
     try {
-      await api.processCase({ case_id: caseData.case_id, output_mode: outputMode, username: user.username });
+      await api.streamCaseProcess(
+        { case_id: caseData.case_id, output_mode: outputMode, username: user.username },
+        (event) => {
+          if (event.event === "step") {
+            const step = event.data.step as TimelineStep | undefined;
+            if (step) setProcessingSteps((prev) => [...prev, step]);
+          }
+          if (event.event === "error") {
+            throw new Error(String(event.data.error ?? "Hiba a feldolgozás során"));
+          }
+        },
+      );
       onRefresh();
     } catch (err) {
       show(err instanceof Error ? err.message : "Hiba a feldolgozás során", "error");
@@ -102,5 +115,5 @@ export function useCaseActions({
     }
   }, [caseData, onRefresh, show, user]);
 
-  return { processing, escalating, handleProcess, handleSave, handleApprove, handleFeedback, handleEscalateToSupervisor };
+  return { processing, processingSteps, escalating, handleProcess, handleSave, handleApprove, handleFeedback, handleEscalateToSupervisor };
 }

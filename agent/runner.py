@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import time
+from collections.abc import Callable
 from datetime import datetime, timezone
 from typing import Any
 
@@ -26,8 +27,9 @@ def build_initial_state(
     history_summary_masked: str | None = None,
     customer_candidates: list[dict[str, Any]] | None = None,
     sla_expired: bool = False,
+    on_timeline_step: Callable[[dict[str, Any]], None] | None = None,
 ) -> AgentState:
-    return {
+    state: AgentState = {
         "case_id": case_id,
         "channel": channel,
         "input_text": input_text,
@@ -42,6 +44,9 @@ def build_initial_state(
         "sla_expired": sla_expired,
         "timeline": [],
     }
+    if on_timeline_step:
+        state["on_timeline_step"] = on_timeline_step
+    return state
 
 
 def persist_agent_run(case_id: str, state: AgentState) -> None:
@@ -94,6 +99,7 @@ def run_agent(
     customer_candidates: list[dict[str, Any]] | None = None,
     sla_expired: bool = False,
     persist: bool = False,
+    on_timeline_step: Callable[[dict[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
     initial = build_initial_state(
         case_id=case_id,
@@ -108,6 +114,7 @@ def run_agent(
         history_summary_masked=history_summary_masked,
         customer_candidates=customer_candidates,
         sla_expired=sla_expired,
+        on_timeline_step=on_timeline_step,
     )
     started = time.perf_counter()
     final_state = compiled_agent_graph.invoke(initial)

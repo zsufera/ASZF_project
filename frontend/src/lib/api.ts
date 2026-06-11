@@ -126,8 +126,14 @@ export const api = {
   streamAgentRun: (body: Record<string, unknown>, onEvent: (event: AgentStreamEvent) => void) =>
     streamPost("/agent/run/stream", body, onEvent),
 
+  streamCaseProcess: (body: { case_id: string; output_mode: string; username: string; service_provider?: string; selected_customer_id?: string | null; input_text_masked?: string; sla_expired?: boolean }, onEvent: (event: AgentStreamEvent) => void) =>
+    streamPost("/cases/process/stream", body, onEvent),
+
   copilotChat: (body: { session_id: string; message: string; history: { role: string; content: string }[]; customer_facing?: boolean }) =>
     req<CopilotChatResponse>("POST", "/copilot/chat", body),
+
+  streamCopilotChat: (body: { session_id: string; message: string; history: { role: string; content: string }[]; customer_facing?: boolean }, onEvent: (event: AgentStreamEvent) => void) =>
+    streamPost("/copilot/chat/stream", body, onEvent),
 
   getCopilotSessions: (username?: string) => {
     const qs = username ? `?${new URLSearchParams({ username }).toString()}` : "";

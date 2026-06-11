@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 
 from backend.case_service import (
     assign_case,
@@ -19,6 +20,7 @@ from backend.services.inbox_service import (
     seed_inbox_from_samples,
 )
 from backend.metadata import response_meta
+from backend.sse import stream_timeline_worker
 from backend.workflow import WorkflowError
 from security.rbac import RBACError
 
@@ -155,6 +157,33 @@ def case_process(payload: CaseProcessRequest) -> dict:
     except RBACError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     return {**response_meta(), **result}
+
+
+@router.post("/cases/process/stream")
+def case_process_stream(payload: CaseProcessRequest) -> StreamingResponse:
+    actor_id, actor_role = resolve_actor(payload.username)
+
+    def run(emit_step):
+        try:
+            return {
+                **response_meta(),
+                **process_case(
+                    case_code=payload.case_id,
+                    output_mode=payload.output_mode,
+                    actor_user_id=actor_id,
+                    actor_role=actor_role,
+                    selected_customer_id=payload.selected_customer_id,
+                    service_provider=payload.service_provider,
+                    input_text_masked=payload.input_text_masked,
+                    sla_expired=payload.sla_expired,
+                    on_timeline_step=emit_step,
+                ),
+            }
+        except RBACError as exc:
+            return {**response_meta(), "error": str(exc)}
+
+    events = stream_timeline_worker(start={"case_id": payload.case_id}, run=run)
+    return StreamingResponse(events, media_type="text/event-stream")
 
 
 @router.post("/cases/draft")

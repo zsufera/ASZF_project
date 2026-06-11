@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 from agent.copilot import orchestrator
@@ -14,12 +15,14 @@ def run_copilot_turn(
     history: list[dict[str, str]] | None = None,
     *,
     customer_facing: bool = False,
+    on_timeline_step: Callable[[dict[str, Any]], None] | None = None,
 ) -> dict[str, Any]:
     masked = mask_text(session_id, message)
     session = CopilotSession(
         session_id=session_id,
         message_masked=masked["masked_text"],
         history=history or [],
+        on_timeline_step=on_timeline_step,
     )
     result = orchestrator.run(session)
     reply_unmasked = unmask_text(session_id, result["reply_masked"])

@@ -54,7 +54,11 @@ def _timeline_entry(step: str, payload: dict[str, Any]) -> dict[str, Any]:
 
 def _append_timeline(state: AgentState, step: str, payload: dict[str, Any]) -> list[dict[str, Any]]:
     timeline = list(state.get("timeline", []))
-    timeline.append(_timeline_entry(step, payload))
+    entry = _timeline_entry(step, payload)
+    timeline.append(entry)
+    callback = state.get("on_timeline_step")
+    if callback:
+        callback(entry)
     return timeline
 
 
